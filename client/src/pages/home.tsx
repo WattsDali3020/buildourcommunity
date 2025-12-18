@@ -3,6 +3,7 @@ import { Footer } from "@/components/Footer";
 import { HeroSection } from "@/components/HeroSection";
 import { FeaturedProperties } from "@/components/FeaturedProperties";
 import { NominatePropertyCTA } from "@/components/NominatePropertyCTA";
+import { TokenizePropertyCTA } from "@/components/TokenizePropertyCTA";
 import { HowItWorks } from "@/components/HowItWorks";
 import { ImpactStats } from "@/components/ImpactStats";
 import { CTASection } from "@/components/CTASection";
@@ -15,6 +16,7 @@ export default function Home() {
         <HeroSection />
         <FeaturedProperties />
         <NominatePropertyCTA />
+        <TokenizePropertyCTA />
         <HowItWorks />
         <ImpactStats />
         <CTASection />
