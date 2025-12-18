@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertPropertySchema, insertPropertySubmissionSchema } from "@shared/schema";
 import { z } from "zod";
+import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -301,6 +302,9 @@ export async function registerRoutes(
     }
     res.json({ success: true });
   });
+
+  // Register object storage routes for document uploads
+  registerObjectStorageRoutes(app);
 
   return httpServer;
 }

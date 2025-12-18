@@ -66,6 +66,8 @@ export default function Tokenize() {
   const [currentStep, setCurrentStep] = useState(1);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [uploadedDocuments, setUploadedDocuments] = useState<Array<{ name: string; objectPath: string; size: number; type: string }>>([]);
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -227,6 +229,80 @@ export default function Tokenize() {
   };
 
   const isLoading = createSubmissionMutation.isPending || updateSubmissionMutation.isPending || submitForReviewMutation.isPending;
+
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingDocument(true);
+    try {
+      // Step 1: Request presigned URL from backend
+      const response = await fetch("/api/uploads/request-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: file.name,
+          size: file.size,
+          contentType: file.type || "application/octet-stream",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get upload URL");
+      }
+
+      const { uploadURL, objectPath } = await response.json();
+
+      // Step 2: Upload file directly to presigned URL
+      const uploadResponse = await fetch(uploadURL, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload file");
+      }
+
+      // Step 3: Register document with the submission if we have a submissionId
+      if (submissionId) {
+        const docResponse = await apiRequest("POST", `/api/property-submissions/${submissionId}/documents`, {
+          fileName: file.name,
+          fileType: file.type || "application/octet-stream",
+          fileSize: file.size,
+          storageKey: objectPath,
+          documentType: "supporting_document",
+        });
+
+        if (!docResponse.ok) {
+          console.error("Failed to register document with submission");
+        }
+      }
+
+      // Track uploaded document in local state
+      setUploadedDocuments(prev => [...prev, {
+        name: file.name,
+        objectPath,
+        size: file.size,
+        type: file.type,
+      }]);
+
+      toast({
+        title: "Document Uploaded",
+        description: `${file.name} has been uploaded successfully.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload document",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingDocument(false);
+      // Reset the input
+      e.target.value = "";
+    }
+  };
 
   const progress = (currentStep / 5) * 100;
 
@@ -666,12 +742,47 @@ export default function Tokenize() {
                     )}
 
                     <div className="p-4 rounded-md bg-muted/50">
-                      <h4 className="font-medium mb-2">Document Upload (Coming Soon)</h4>
-                      <div className="flex items-center gap-3 p-4 border border-dashed rounded-md text-muted-foreground">
-                        <Upload className="h-5 w-5" />
-                        <span className="text-sm">
-                          Property deeds, surveys, environmental reports, and other documentation
-                        </span>
+                      <h4 className="font-medium mb-2">Document Upload</h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Upload property deeds, surveys, environmental reports, and other supporting documentation.
+                      </p>
+                      {!submissionId && (
+                        <p className="text-sm text-muted-foreground mb-3 italic">
+                          Complete the property details first and click "Next" to enable document uploads.
+                        </p>
+                      )}
+                      {uploadedDocuments.length > 0 && (
+                        <div className="mb-3 space-y-2">
+                          {uploadedDocuments.map((doc, index) => (
+                            <div key={index} className="flex items-center justify-between p-2 bg-background rounded border">
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">{doc.name}</span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setUploadedDocuments(prev => prev.filter((_, i) => i !== index))}
+                                data-testid={`button-remove-doc-${index}`}
+                              >
+                                <span className="sr-only">Remove</span>
+                                <span aria-hidden>x</span>
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3 p-4 border border-dashed rounded-md">
+                        <Upload className="h-5 w-5 text-muted-foreground" />
+                        <input
+                          type="file"
+                          onChange={handleDocumentUpload}
+                          disabled={isUploadingDocument || !submissionId}
+                          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                          className="text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                          data-testid="input-document-upload"
+                        />
+                        {isUploadingDocument && <Loader2 className="h-4 w-4 animate-spin" />}
                       </div>
                     </div>
                   </>
