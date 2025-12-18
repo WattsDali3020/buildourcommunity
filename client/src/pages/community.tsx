@@ -241,9 +241,9 @@ export default function Community() {
         <div className="mx-auto max-w-7xl px-4 py-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-3xl font-semibold mb-2">Community Voice</h1>
+              <h1 className="text-3xl font-semibold mb-2">Token Holder Governance</h1>
               <p className="text-muted-foreground">
-                Elect properties for development and vote on what your community needs
+                Vote on property decisions and governance proposals. You must own tokens to vote.
               </p>
             </div>
             <Dialog open={nominateDialogOpen} onOpenChange={setNominateDialogOpen}>

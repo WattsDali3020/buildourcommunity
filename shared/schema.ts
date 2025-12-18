@@ -134,6 +134,23 @@ export const insertTokenOfferingSchema = createInsertSchema(tokenOfferings).omit
 export type InsertTokenOffering = z.infer<typeof insertTokenOfferingSchema>;
 export type TokenOffering = typeof tokenOfferings.$inferSelect;
 
+// Fund escrow tracking - USDC deposits and yield generation for investor protection
+export const fundEscrow = pgTable("fund_escrow", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  offeringId: varchar("offering_id").references(() => tokenOfferings.id).notNull(),
+  totalUsdcDeposited: decimal("total_usdc_deposited", { precision: 18, scale: 6 }).default("0"),
+  totalYieldEarned: decimal("total_yield_earned", { precision: 18, scale: 6 }).default("0"),
+  currentYieldRate: decimal("current_yield_rate", { precision: 5, scale: 2 }).default("3.00"),
+  yieldProtocol: text("yield_protocol").default("aave_v3"),
+  yieldContractAddress: text("yield_contract_address"),
+  lastYieldAccrualAt: timestamp("last_yield_accrual_at").defaultNow(),
+  escrowWalletAddress: text("escrow_wallet_address"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type FundEscrow = typeof fundEscrow.$inferSelect;
+
 export const offeringPhases = pgTable("offering_phases", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   offeringId: varchar("offering_id").references(() => tokenOfferings.id).notNull(),
@@ -177,7 +194,11 @@ export const tokenPurchases = pgTable("token_purchases", {
   tokenCount: integer("token_count").notNull(),
   pricePerToken: decimal("price_per_token", { precision: 10, scale: 2 }).notNull(),
   totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).notNull(),
+  usdcAmount: decimal("usdc_amount", { precision: 18, scale: 6 }),
+  usdcConversionRate: decimal("usdc_conversion_rate", { precision: 10, scale: 4 }),
+  paymentMethod: text("payment_method").default("usdc"),
   transactionHash: text("transaction_hash"),
+  usdcTransactionHash: text("usdc_transaction_hash"),
   status: purchaseStatusEnum("status").default("pending"),
   purchasedAt: timestamp("purchased_at").defaultNow(),
 });
@@ -185,6 +206,7 @@ export const tokenPurchases = pgTable("token_purchases", {
 export const insertTokenPurchaseSchema = createInsertSchema(tokenPurchases).omit({
   id: true,
   transactionHash: true,
+  usdcTransactionHash: true,
   status: true,
   purchasedAt: true,
 });
@@ -331,12 +353,23 @@ export const votes = pgTable("votes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   proposalId: varchar("proposal_id").references(() => proposals.id).notNull(),
   userId: varchar("user_id").references(() => users.id).notNull(),
+  offeringId: varchar("offering_id").references(() => tokenOfferings.id).notNull(),
+  tokenBalanceAtVote: integer("token_balance_at_vote").notNull(),
   voteDirection: boolean("vote_direction").notNull(),
   votingPower: integer("voting_power").notNull(),
   votedAt: timestamp("voted_at").defaultNow(),
 });
 
 export type Vote = typeof votes.$inferSelect;
+
+// Vote eligibility check - must own tokens to vote
+export function canVote(tokenBalance: number): boolean {
+  return tokenBalance > 0;
+}
+
+export function calculateVotingPower(tokenBalance: number): number {
+  return tokenBalance;
+}
 
 // Community Property Election System
 export const nominationStatusEnum = pgEnum("nomination_status", [
