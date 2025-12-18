@@ -15,6 +15,7 @@ import About from "@/pages/about";
 import Submit from "@/pages/submit";
 import Tokenize from "@/pages/tokenize";
 import Nominate from "@/pages/nominate";
+import OwnerResponse from "@/pages/owner-response";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/about" component={About} />
       <Route path="/submit" component={Submit} />
       <Route path="/tokenize" component={Tokenize} />
+      <Route path="/owner-response/:token" component={OwnerResponse} />
       <Route component={NotFound} />
     </Switch>
   );

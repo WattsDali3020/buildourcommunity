@@ -74,6 +74,21 @@ export interface IStorage {
   addDesiredUseVote(nominationId: string, userId: string, desiredUse: string): Promise<DesiredUseVote>;
   getDesiredUseVotes(nominationId: string): Promise<DesiredUseVote[]>;
   hasUserVotedOnNomination(userId: string, nominationId: string): Promise<boolean>;
+  
+  // Owner Detection
+  updateNominationOwnerInfo(nominationId: string, ownerInfo: {
+    ownerDetectionStatus?: string;
+    detectedOwnerName?: string;
+    detectedOwnerType?: string;
+    detectedOwnerAddress?: string;
+    detectedOwnerEmail?: string;
+    detectedOwnerPhone?: string;
+    ownerDataSource?: string;
+    ownerDataConfidence?: number;
+    ownerNotifiedAt?: Date;
+    ownerNotificationLink?: string;
+    ownerResponseStatus?: string;
+  }): Promise<PropertyNomination | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -707,6 +722,39 @@ export class MemStorage implements IStorage {
     return Array.from(this.desiredUseVotes.values()).some(
       v => v.nominationId === nominationId && v.userId === userId
     );
+  }
+
+  async updateNominationOwnerInfo(nominationId: string, ownerInfo: {
+    ownerDetectionStatus?: string;
+    detectedOwnerName?: string;
+    detectedOwnerType?: string;
+    detectedOwnerAddress?: string;
+    detectedOwnerEmail?: string;
+    detectedOwnerPhone?: string;
+    ownerDataSource?: string;
+    ownerDataConfidence?: number;
+    ownerNotifiedAt?: Date;
+    ownerNotificationLink?: string;
+    ownerResponseStatus?: string;
+  }): Promise<PropertyNomination | undefined> {
+    const nomination = this.propertyNominations.get(nominationId);
+    if (!nomination) return undefined;
+    
+    const updated: PropertyNomination = {
+      ...nomination,
+      ownerDetectionStatus: (ownerInfo.ownerDetectionStatus as any) || nomination.ownerDetectionStatus,
+      detectedOwnerName: ownerInfo.detectedOwnerName || nomination.detectedOwnerName,
+      detectedOwnerType: ownerInfo.detectedOwnerType || nomination.detectedOwnerType,
+      detectedOwnerAddress: ownerInfo.detectedOwnerAddress || nomination.detectedOwnerAddress,
+      detectedOwnerEmail: ownerInfo.detectedOwnerEmail || nomination.detectedOwnerEmail,
+      detectedOwnerPhone: ownerInfo.detectedOwnerPhone || nomination.detectedOwnerPhone,
+      ownerDataSource: ownerInfo.ownerDataSource || nomination.ownerDataSource,
+      ownerDataConfidence: ownerInfo.ownerDataConfidence ?? nomination.ownerDataConfidence,
+      ownerNotifiedAt: ownerInfo.ownerNotifiedAt || nomination.ownerNotifiedAt,
+    };
+    
+    this.propertyNominations.set(nominationId, updated);
+    return updated;
   }
 }
 

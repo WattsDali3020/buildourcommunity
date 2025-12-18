@@ -4,6 +4,13 @@ import { storage } from "./storage";
 import { insertPropertySchema, insertPropertySubmissionSchema, insertPropertyNominationSchema } from "@shared/schema";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import { 
+  lookupOwnerByAddress, 
+  lookupOwnerByCoordinates, 
+  prepareOwnerOutreach,
+  decodeOwnerNotificationToken
+} from "./services/ownerDetection";
+import { notifyPropertyOwner, logNotification } from "./services/notifications";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -357,6 +364,178 @@ export async function registerRoutes(
 
     const vote = await storage.addDesiredUseVote(nominationId, userId, desiredUse);
     res.status(201).json(vote);
+  });
+
+  // Owner detection routes
+  app.post("/api/owner-lookup/address", async (req: Request, res: Response) => {
+    const { address, city, state } = req.body;
+    
+    if (!address || !city || !state) {
+      return res.status(400).json({ error: "Address, city, and state are required" });
+    }
+    
+    const result = await lookupOwnerByAddress(address, city, state);
+    res.json(result);
+  });
+
+  app.post("/api/owner-lookup/coordinates", async (req: Request, res: Response) => {
+    const { latitude, longitude } = req.body;
+    
+    if (typeof latitude !== "number" || typeof longitude !== "number") {
+      return res.status(400).json({ error: "Valid latitude and longitude are required" });
+    }
+    
+    const result = await lookupOwnerByCoordinates(latitude, longitude);
+    res.json(result);
+  });
+
+  app.post("/api/nominations/:id/lookup-owner", async (req: Request, res: Response) => {
+    const nominationId = req.params.id;
+    const nomination = await storage.getPropertyNomination(nominationId);
+    
+    if (!nomination) {
+      return res.status(404).json({ error: "Nomination not found" });
+    }
+    
+    let result;
+    if (nomination.latitude && nomination.longitude) {
+      result = await lookupOwnerByCoordinates(
+        parseFloat(nomination.latitude),
+        parseFloat(nomination.longitude)
+      );
+    } else {
+      result = await lookupOwnerByAddress(
+        nomination.propertyAddress,
+        nomination.city,
+        nomination.state
+      );
+    }
+    
+    if (result.success && result.owner) {
+      await storage.updateNominationOwnerInfo(nominationId, {
+        ownerDetectionStatus: "found",
+        detectedOwnerName: result.owner.name,
+        detectedOwnerAddress: result.owner.mailingAddress,
+        detectedOwnerEmail: result.owner.email,
+        detectedOwnerPhone: result.owner.phone,
+        ownerDataSource: result.owner.dataSource,
+        ownerDataConfidence: result.owner.confidence === "high" ? 90 : result.owner.confidence === "medium" ? 60 : 30,
+      });
+    }
+    
+    res.json(result);
+  });
+
+  app.post("/api/nominations/:id/notify-owner", async (req: Request, res: Response) => {
+    const nominationId = req.params.id;
+    const nomination = await storage.getPropertyNomination(nominationId);
+    
+    if (!nomination) {
+      return res.status(404).json({ error: "Nomination not found" });
+    }
+    
+    if (!nomination.detectedOwnerName) {
+      return res.status(400).json({ error: "Owner information not found. Run owner lookup first." });
+    }
+    
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const votes = await storage.getDesiredUseVotes(nominationId);
+    
+    // Group votes by desired use and count them
+    const votesByUse: Record<string, number> = {};
+    for (const vote of votes) {
+      votesByUse[vote.desiredUse] = (votesByUse[vote.desiredUse] || 0) + 1;
+    }
+    const topUse = Object.entries(votesByUse).length > 0
+      ? Object.entries(votesByUse).reduce((a, b) => a[1] > b[1] ? a : b)[0]
+      : "community development";
+    
+    const outreach = prepareOwnerOutreach(
+      nominationId,
+      nomination.detectedOwnerName,
+      nomination.propertyAddress,
+      topUse,
+      baseUrl
+    );
+    
+    const results = await notifyPropertyOwner(
+      outreach,
+      nomination.detectedOwnerEmail || undefined,
+      nomination.detectedOwnerPhone || undefined
+    );
+    
+    for (const result of results) {
+      logNotification({
+        nominationId,
+        timestamp: new Date(),
+        channel: result.channel as "email" | "sms" | "link",
+        recipient: result.channel === "email" ? nomination.detectedOwnerEmail || undefined : nomination.detectedOwnerPhone || undefined,
+        success: result.success,
+        messageId: result.messageId,
+        error: result.error,
+      });
+    }
+    
+    await storage.updateNominationOwnerInfo(nominationId, {
+      ownerNotifiedAt: new Date(),
+      ownerNotificationLink: outreach.notificationLink,
+    });
+    
+    res.json({ 
+      success: true, 
+      notificationLink: outreach.notificationLink,
+      results 
+    });
+  });
+
+  app.get("/api/owner-response/:token", async (req: Request, res: Response) => {
+    const decoded = decodeOwnerNotificationToken(req.params.token);
+    
+    if (!decoded) {
+      return res.status(400).json({ error: "Invalid or expired link" });
+    }
+    
+    const nomination = await storage.getPropertyNomination(decoded.nominationId);
+    if (!nomination) {
+      return res.status(404).json({ error: "Property nomination not found" });
+    }
+    
+    const votes = await storage.getDesiredUseVotes(decoded.nominationId);
+    
+    res.json({
+      nomination: {
+        propertyAddress: nomination.propertyAddress,
+        city: nomination.city,
+        county: nomination.county,
+        state: nomination.state,
+        description: nomination.description,
+      },
+      communityVotes: votes,
+      tokenExpiresAt: new Date(decoded.timestamp + 30 * 24 * 60 * 60 * 1000),
+    });
+  });
+
+  app.post("/api/owner-response/:token", async (req: Request, res: Response) => {
+    const decoded = decodeOwnerNotificationToken(req.params.token);
+    
+    if (!decoded) {
+      return res.status(400).json({ error: "Invalid or expired link" });
+    }
+    
+    const { interested, contactEmail, contactPhone, message } = req.body;
+    
+    const nomination = await storage.getPropertyNomination(decoded.nominationId);
+    if (!nomination) {
+      return res.status(404).json({ error: "Property nomination not found" });
+    }
+    
+    await storage.updateNominationOwnerInfo(decoded.nominationId, {
+      ownerResponseStatus: interested ? "interested" : "not_interested",
+      detectedOwnerEmail: contactEmail || nomination.detectedOwnerEmail,
+      detectedOwnerPhone: contactPhone || nomination.detectedOwnerPhone,
+    });
+    
+    res.json({ success: true, message: "Response recorded. We will be in touch shortly." });
   });
 
   // Register object storage routes for document uploads
