@@ -11,6 +11,13 @@ import {
   decodeOwnerNotificationToken
 } from "./services/ownerDetection";
 import { notifyPropertyOwner, logNotification } from "./services/notifications";
+import { 
+  initiateTokenization, 
+  getTokenizationStatus,
+  advancePhase,
+  processRefunds 
+} from "./services/tokenizationOrchestrator";
+import { getExplorerUrl } from "./services/blockchain";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -536,6 +543,65 @@ export async function registerRoutes(
     });
     
     res.json({ success: true, message: "Response recorded. We will be in touch shortly." });
+  });
+
+  // Tokenization routes
+  app.post("/api/tokenize", async (req: Request, res: Response) => {
+    const { nominationId, propertyValue, tokenName, tokenSymbol, totalTokens } = req.body;
+    
+    if (!nominationId || !propertyValue || !tokenName || !tokenSymbol || !totalTokens) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    
+    const result = await initiateTokenization({
+      nominationId,
+      propertyValue,
+      tokenName,
+      tokenSymbol,
+      totalTokens,
+    });
+    
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+    
+    res.status(201).json(result);
+  });
+
+  app.get("/api/tokenization-status/:propertyId", async (req: Request, res: Response) => {
+    const status = await getTokenizationStatus(req.params.propertyId);
+    res.json(status);
+  });
+
+  app.post("/api/offerings/:offeringId/advance-phase", async (req: Request, res: Response) => {
+    const result = await advancePhase(req.params.offeringId);
+    
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+    
+    res.json(result);
+  });
+
+  app.post("/api/offerings/:offeringId/process-refunds", async (req: Request, res: Response) => {
+    const result = await processRefunds(req.params.offeringId);
+    
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+    
+    res.json(result);
+  });
+
+  app.get("/api/blockchain/explorer/:type/:value", async (req: Request, res: Response) => {
+    const { type, value } = req.params;
+    
+    if (type !== "address" && type !== "tx") {
+      return res.status(400).json({ error: "Type must be 'address' or 'tx'" });
+    }
+    
+    const url = getExplorerUrl(type as "address" | "tx", value);
+    res.json({ url });
   });
 
   // Register object storage routes for document uploads
