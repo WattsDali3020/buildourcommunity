@@ -1,5 +1,5 @@
 import { 
-  type User, type InsertUser,
+  type User, type UpsertUser,
   type Property, type InsertProperty,
   type TokenOffering, type InsertTokenOffering,
   type OfferingPhase, type InsertOfferingPhase,
@@ -11,14 +11,19 @@ import {
   type SubmissionDocument, type InsertSubmissionDocument,
   type PropertyNomination, type InsertPropertyNomination,
   type DesiredUseVote,
-  PHASE_CONFIG, calculatePhasePrice, getPhaseAllocation
+  PHASE_CONFIG, calculatePhasePrice, getPhaseAllocation,
+  users, properties, tokenOfferings, offeringPhases, tokenPurchases, 
+  tokenHoldings, proposals, votes, propertySubmissions, submissionDocuments,
+  propertyNominations, desiredUseVotes
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq, and, sql } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
   
   getProperties(): Promise<Property[]>;
   getProperty(id: string): Promise<Property | undefined>;
@@ -209,24 +214,30 @@ export class MemStorage implements IStorage {
     return this.users.get(id);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
+  async getUserByEmail(email: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+      (user) => user.email === email,
     );
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const existing = this.users.get(userData.id);
     const user: User = { 
-      ...insertUser, 
-      id,
-      walletAddress: null,
-      county: null,
-      state: null,
-      country: "USA",
-      isVerified: false,
+      id: userData.id,
+      email: userData.email ?? existing?.email ?? null,
+      firstName: userData.firstName ?? existing?.firstName ?? null,
+      lastName: userData.lastName ?? existing?.lastName ?? null,
+      profileImageUrl: userData.profileImageUrl ?? existing?.profileImageUrl ?? null,
+      walletAddress: userData.walletAddress ?? existing?.walletAddress ?? null,
+      county: userData.county ?? existing?.county ?? null,
+      state: userData.state ?? existing?.state ?? null,
+      country: userData.country ?? existing?.country ?? "USA",
+      kycStatus: userData.kycStatus ?? existing?.kycStatus ?? "pending",
+      kycVerifiedAt: userData.kycVerifiedAt ?? existing?.kycVerifiedAt ?? null,
+      createdAt: existing?.createdAt ?? new Date(),
+      updatedAt: new Date(),
     };
-    this.users.set(id, user);
+    this.users.set(userData.id, user);
     return user;
   }
 
@@ -762,4 +773,7 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { DatabaseStorage } from "./databaseStorage";
+
+// Use DatabaseStorage for persistent PostgreSQL storage
+export const storage: IStorage = new DatabaseStorage();

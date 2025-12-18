@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertPropertySchema, insertPropertySubmissionSchema, insertPropertyNominationSchema } from "@shared/schema";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import { setupAuth, isAuthenticated } from "./replit_integrations/auth";
 import { 
   lookupOwnerByAddress, 
   lookupOwnerByCoordinates, 
@@ -23,6 +24,7 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  await setupAuth(app);
   app.get("/api/properties", async (req: Request, res: Response) => {
     const properties = await storage.getProperties();
     res.json(properties);

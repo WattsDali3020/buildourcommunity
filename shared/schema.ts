@@ -2,25 +2,16 @@ import { sql } from "drizzle-orm";
 import { pgTable, text, varchar, integer, decimal, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { users, sessions, type User, type UpsertUser } from "./models/auth";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  walletAddress: text("wallet_address"),
-  county: text("county"),
-  state: text("state"),
-  country: text("country").default("USA"),
-  isVerified: boolean("is_verified").default(false),
-});
+export { users, sessions, type User, type UpsertUser };
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-});
-
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+export const kycStatusEnum = pgEnum("kyc_status", [
+  "pending",
+  "submitted",
+  "verified",
+  "rejected"
+]);
 
 export const propertyTypeEnum = pgEnum("property_type", [
   "vacant_land",
