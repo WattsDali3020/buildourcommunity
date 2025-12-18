@@ -173,7 +173,7 @@ const categoryIcons: Record<string, any> = {
 
 export default function Community() {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("nominations");
+  const [activeTab, setActiveTab] = useState("proposals");
   const [nominateDialogOpen, setNominateDialogOpen] = useState(false);
   const [proposeUseDialogOpen, setProposeUseDialogOpen] = useState(false);
   const [selectedNomination, setSelectedNomination] = useState<PropertyNomination | null>(null);
@@ -247,12 +247,6 @@ export default function Community() {
               </p>
             </div>
             <Dialog open={nominateDialogOpen} onOpenChange={setNominateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-2" data-testid="button-nominate-property">
-                  <Plus className="h-4 w-4" />
-                  Nominate Property
-                </Button>
-              </DialogTrigger>
               <DialogContent className="max-w-lg">
                 <DialogHeader>
                   <DialogTitle>Nominate a Property</DialogTitle>
@@ -319,7 +313,7 @@ export default function Community() {
                   <Building2 className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Properties Nominated</p>
+                  <p className="text-sm text-muted-foreground">Tokenized Properties</p>
                   <p className="text-xl font-semibold">{mockNominations.length}</p>
                 </div>
               </CardContent>
@@ -330,8 +324,8 @@ export default function Community() {
                   <Vote className="h-5 w-5 text-chart-3" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Active Votes</p>
-                  <p className="text-xl font-semibold">{mockNominations.filter(n => n.status === "in_voting").length + mockUseProposals.length}</p>
+                  <p className="text-sm text-muted-foreground">Active Proposals</p>
+                  <p className="text-xl font-semibold">{mockUseProposals.length}</p>
                 </div>
               </CardContent>
             </Card>
@@ -394,97 +388,15 @@ export default function Community() {
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-6">
-              <TabsTrigger value="nominations" data-testid="tab-nominations">Property Elections</TabsTrigger>
-              <TabsTrigger value="proposals" data-testid="tab-proposals">Use Proposals</TabsTrigger>
-              <TabsTrigger value="needs" data-testid="tab-needs">Community Needs</TabsTrigger>
+              <TabsTrigger value="proposals" data-testid="tab-proposals">Governance Proposals</TabsTrigger>
+              <TabsTrigger value="needs" data-testid="tab-needs">Community Priorities</TabsTrigger>
             </TabsList>
-
-            <TabsContent value="nominations">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold">Elect Properties for Development</h2>
-                  <p className="text-sm text-muted-foreground">Vote for properties you want the community to develop</p>
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {mockNominations.map((nomination) => (
-                    <Card key={nomination.id}>
-                      <CardHeader>
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <CardTitle className="text-lg">{nomination.propertyAddress}</CardTitle>
-                            <CardDescription className="flex items-center gap-1 mt-1">
-                              <MapPin className="h-3 w-3" />
-                              {nomination.city}, {nomination.county} County, {nomination.state}
-                            </CardDescription>
-                          </div>
-                          <Badge variant={nomination.status === "in_voting" ? "default" : "outline"}>
-                            {nomination.status === "in_voting" ? "Voting Open" : "Under Review"}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground">{nomination.description}</p>
-                        
-                        <div className="p-3 rounded-md bg-muted/50">
-                          <p className="text-xs font-medium mb-1">Why This Property?</p>
-                          <p className="text-sm text-muted-foreground">{nomination.whyThisProperty}</p>
-                        </div>
-
-                        {(nomination.estimatedSize || nomination.currentCondition) && (
-                          <div className="flex gap-4 text-sm">
-                            {nomination.estimatedSize && (
-                              <div>
-                                <span className="text-muted-foreground">Size:</span>
-                                <span className="ml-1 font-medium">{nomination.estimatedSize}</span>
-                              </div>
-                            )}
-                            {nomination.currentCondition && (
-                              <div>
-                                <span className="text-muted-foreground">Condition:</span>
-                                <span className="ml-1 font-medium">{nomination.currentCondition}</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </CardContent>
-                      <CardFooter className="flex justify-between items-center gap-2">
-                        <div className="flex items-center gap-2">
-                          <ThumbsUp className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">{nomination.nominationVotes} votes</span>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={!mockUserTokenHoldings.hasTokens}
-                            onClick={() => openProposeDialog(nomination)}
-                            data-testid={`button-propose-use-${nomination.id}`}
-                          >
-                            Propose Use
-                          </Button>
-                          <Button
-                            size="sm"
-                            disabled={nomination.hasVoted || !mockUserTokenHoldings.hasTokens}
-                            onClick={() => handleVoteNomination(nomination)}
-                            data-testid={`button-vote-nomination-${nomination.id}`}
-                            title={!mockUserTokenHoldings.hasTokens ? "Purchase tokens to vote" : ""}
-                          >
-                            {!mockUserTokenHoldings.hasTokens ? "Buy Tokens to Vote" : nomination.hasVoted ? "Voted" : "Vote to Elect"}
-                          </Button>
-                        </div>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            </TabsContent>
 
             <TabsContent value="proposals">
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold">Vote on Property Uses</h2>
-                  <p className="text-sm text-muted-foreground">What should elected properties become?</p>
+                  <h2 className="text-lg font-semibold">Active Governance Proposals</h2>
+                  <p className="text-sm text-muted-foreground">Vote on decisions for properties you own tokens in</p>
                 </div>
 
                 {mockNominations.filter(n => n.status === "in_voting").map((nomination) => {
