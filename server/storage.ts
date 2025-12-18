@@ -7,6 +7,8 @@ import {
   type TokenHolding,
   type Proposal, type InsertProposal,
   type Vote,
+  type PropertySubmission, type InsertPropertySubmission,
+  type SubmissionDocument, type InsertSubmissionDocument,
   PHASE_CONFIG, calculatePhasePrice, getPhaseAllocation
 } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -45,6 +47,19 @@ export interface IStorage {
   castVote(proposalId: string, userId: string, voteDirection: boolean, votingPower: number): Promise<Vote>;
   
   calculateVotingPower(userId: string, offeringId: string): Promise<number>;
+  
+  // Property Submissions
+  createPropertySubmission(submission: InsertPropertySubmission): Promise<PropertySubmission>;
+  getPropertySubmission(id: string): Promise<PropertySubmission | undefined>;
+  getPropertySubmissionsByOwner(ownerId: string): Promise<PropertySubmission[]>;
+  getPropertySubmissionsByStatus(status: PropertySubmission["status"]): Promise<PropertySubmission[]>;
+  updatePropertySubmission(id: string, data: Partial<InsertPropertySubmission>): Promise<PropertySubmission | undefined>;
+  updatePropertySubmissionStatus(id: string, status: PropertySubmission["status"], reviewNotes?: string, reviewedBy?: string): Promise<PropertySubmission | undefined>;
+  
+  // Submission Documents
+  addSubmissionDocument(document: InsertSubmissionDocument): Promise<SubmissionDocument>;
+  getSubmissionDocuments(submissionId: string): Promise<SubmissionDocument[]>;
+  deleteSubmissionDocument(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -56,6 +71,8 @@ export class MemStorage implements IStorage {
   private tokenHoldings: Map<string, TokenHolding>;
   private proposals: Map<string, Proposal>;
   private votes: Map<string, Vote>;
+  private propertySubmissions: Map<string, PropertySubmission>;
+  private submissionDocuments: Map<string, SubmissionDocument>;
 
   constructor() {
     this.users = new Map();
@@ -66,6 +83,8 @@ export class MemStorage implements IStorage {
     this.tokenHoldings = new Map();
     this.proposals = new Map();
     this.votes = new Map();
+    this.propertySubmissions = new Map();
+    this.submissionDocuments = new Map();
     
     this.seedMockData();
   }
@@ -444,6 +463,110 @@ export class MemStorage implements IStorage {
     }
     
     return totalVotingPower;
+  }
+
+  // Property Submissions
+  async createPropertySubmission(insertSubmission: InsertPropertySubmission): Promise<PropertySubmission> {
+    const id = randomUUID();
+    const submission: PropertySubmission = {
+      id,
+      ownerId: insertSubmission.ownerId ?? null,
+      propertyType: insertSubmission.propertyType,
+      name: insertSubmission.name,
+      description: insertSubmission.description,
+      streetAddress: insertSubmission.streetAddress,
+      city: insertSubmission.city,
+      state: insertSubmission.state,
+      zipCode: insertSubmission.zipCode,
+      county: insertSubmission.county,
+      estimatedValue: insertSubmission.estimatedValue,
+      fundingGoal: insertSubmission.fundingGoal,
+      expectedReturn: insertSubmission.expectedReturn ?? null,
+      communityBenefits: insertSubmission.communityBenefits ?? null,
+      status: "draft",
+      ownershipConfirmed: insertSubmission.ownershipConfirmed ?? false,
+      termsAccepted: insertSubmission.termsAccepted ?? false,
+      reviewNotes: null,
+      reviewedBy: null,
+      reviewedAt: null,
+      submittedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.propertySubmissions.set(id, submission);
+    return submission;
+  }
+
+  async getPropertySubmission(id: string): Promise<PropertySubmission | undefined> {
+    return this.propertySubmissions.get(id);
+  }
+
+  async getPropertySubmissionsByOwner(ownerId: string): Promise<PropertySubmission[]> {
+    return Array.from(this.propertySubmissions.values()).filter(s => s.ownerId === ownerId);
+  }
+
+  async getPropertySubmissionsByStatus(status: PropertySubmission["status"]): Promise<PropertySubmission[]> {
+    return Array.from(this.propertySubmissions.values()).filter(s => s.status === status);
+  }
+
+  async updatePropertySubmission(id: string, data: Partial<InsertPropertySubmission>): Promise<PropertySubmission | undefined> {
+    const submission = this.propertySubmissions.get(id);
+    if (!submission) return undefined;
+
+    const updated: PropertySubmission = {
+      ...submission,
+      ...data,
+      updatedAt: new Date(),
+    };
+    this.propertySubmissions.set(id, updated);
+    return updated;
+  }
+
+  async updatePropertySubmissionStatus(
+    id: string, 
+    status: PropertySubmission["status"], 
+    reviewNotes?: string, 
+    reviewedBy?: string
+  ): Promise<PropertySubmission | undefined> {
+    const submission = this.propertySubmissions.get(id);
+    if (!submission) return undefined;
+
+    const updated: PropertySubmission = {
+      ...submission,
+      status,
+      reviewNotes: reviewNotes ?? submission.reviewNotes,
+      reviewedBy: reviewedBy ?? submission.reviewedBy,
+      reviewedAt: reviewedBy ? new Date() : submission.reviewedAt,
+      submittedAt: status === "submitted" ? new Date() : submission.submittedAt,
+      updatedAt: new Date(),
+    };
+    this.propertySubmissions.set(id, updated);
+    return updated;
+  }
+
+  // Submission Documents
+  async addSubmissionDocument(insertDoc: InsertSubmissionDocument): Promise<SubmissionDocument> {
+    const id = randomUUID();
+    const doc: SubmissionDocument = {
+      id,
+      submissionId: insertDoc.submissionId,
+      fileName: insertDoc.fileName,
+      fileType: insertDoc.fileType,
+      fileSize: insertDoc.fileSize,
+      storageKey: insertDoc.storageKey,
+      documentType: insertDoc.documentType,
+      uploadedAt: new Date(),
+    };
+    this.submissionDocuments.set(id, doc);
+    return doc;
+  }
+
+  async getSubmissionDocuments(submissionId: string): Promise<SubmissionDocument[]> {
+    return Array.from(this.submissionDocuments.values()).filter(d => d.submissionId === submissionId);
+  }
+
+  async deleteSubmissionDocument(id: string): Promise<boolean> {
+    return this.submissionDocuments.delete(id);
   }
 }
 

@@ -467,6 +467,82 @@ export const communityNeedVotes = pgTable("community_need_votes", {
 export type CommunityNeedVote = typeof communityNeedVotes.$inferSelect;
 
 // Generic property use choices
+// Property Submissions - for property owners submitting their properties for tokenization
+export const submissionStatusEnum = pgEnum("submission_status", [
+  "draft",
+  "submitted",
+  "under_review",
+  "approved",
+  "rejected"
+]);
+
+export const propertySubmissions = pgTable("property_submissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ownerId: varchar("owner_id").references(() => users.id),
+  // Property Details
+  propertyType: text("property_type").notNull(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  // Location
+  streetAddress: text("street_address").notNull(),
+  city: text("city").notNull(),
+  state: text("state").notNull(),
+  zipCode: text("zip_code").notNull(),
+  county: text("county").notNull(),
+  // Financials
+  estimatedValue: decimal("estimated_value", { precision: 15, scale: 2 }).notNull(),
+  fundingGoal: decimal("funding_goal", { precision: 15, scale: 2 }).notNull(),
+  expectedReturn: decimal("expected_return", { precision: 5, scale: 2 }),
+  // Community Impact
+  communityBenefits: text("community_benefits").array(),
+  // Status
+  status: submissionStatusEnum("status").default("draft"),
+  ownershipConfirmed: boolean("ownership_confirmed").default(false),
+  termsAccepted: boolean("terms_accepted").default(false),
+  // Review info
+  reviewNotes: text("review_notes"),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  // Timestamps
+  submittedAt: timestamp("submitted_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertPropertySubmissionSchema = createInsertSchema(propertySubmissions).omit({
+  id: true,
+  status: true,
+  reviewNotes: true,
+  reviewedBy: true,
+  reviewedAt: true,
+  submittedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertPropertySubmission = z.infer<typeof insertPropertySubmissionSchema>;
+export type PropertySubmission = typeof propertySubmissions.$inferSelect;
+
+// Documents uploaded for property submissions
+export const submissionDocuments = pgTable("submission_documents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  submissionId: varchar("submission_id").references(() => propertySubmissions.id).notNull(),
+  fileName: text("file_name").notNull(),
+  fileType: text("file_type").notNull(),
+  fileSize: integer("file_size").notNull(),
+  storageKey: text("storage_key").notNull(),
+  documentType: text("document_type").notNull(), // ownership_proof, deed, survey, etc.
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+});
+
+export const insertSubmissionDocumentSchema = createInsertSchema(submissionDocuments).omit({
+  id: true,
+  uploadedAt: true,
+});
+
+export type InsertSubmissionDocument = z.infer<typeof insertSubmissionDocumentSchema>;
+export type SubmissionDocument = typeof submissionDocuments.$inferSelect;
+
 export const GENERIC_PROPERTY_USES = [
   { id: "affordable_housing", label: "Affordable Housing", category: "Housing" },
   { id: "mixed_use", label: "Mixed-Use Development", category: "Development" },
