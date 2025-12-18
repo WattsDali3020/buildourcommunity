@@ -14,6 +14,7 @@ import Dashboard from "@/pages/dashboard";
 import About from "@/pages/about";
 import Submit from "@/pages/submit";
 import Tokenize from "@/pages/tokenize";
+import Nominate from "@/pages/nominate";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/properties/:id" component={PropertyDetail} />
       <Route path="/governance" component={Governance} />
       <Route path="/community" component={Community} />
+      <Route path="/nominate" component={Nominate} />
       <Route path="/learn" component={Learn} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/about" component={About} />

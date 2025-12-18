@@ -381,6 +381,14 @@ export const nominationStatusEnum = pgEnum("nomination_status", [
   "rejected"
 ]);
 
+export const ownerDetectionStatusEnum = pgEnum("owner_detection_status", [
+  "pending",
+  "searching",
+  "found",
+  "not_found",
+  "verified"
+]);
+
 export const propertyNominations = pgTable("property_nominations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   nominatorId: varchar("nominator_id").references(() => users.id),
@@ -388,10 +396,30 @@ export const propertyNominations = pgTable("property_nominations", {
   city: text("city").notNull(),
   county: text("county").notNull(),
   state: text("state").notNull(),
+  zipCode: text("zip_code"),
+  // Map coordinates for location
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
+  parcelId: text("parcel_id"),
+  // Nomination details
   description: text("description").notNull(),
   whyThisProperty: text("why_this_property").notNull(),
   currentCondition: text("current_condition"),
   estimatedSize: text("estimated_size"),
+  // Desired use voting
+  desiredUses: text("desired_uses").array(),
+  topVotedUse: text("top_voted_use"),
+  // Owner detection
+  ownerDetectionStatus: ownerDetectionStatusEnum("owner_detection_status").default("pending"),
+  detectedOwnerName: text("detected_owner_name"),
+  detectedOwnerType: text("detected_owner_type"), // individual, corporation, government, estate
+  detectedOwnerAddress: text("detected_owner_address"),
+  detectedOwnerEmail: text("detected_owner_email"),
+  detectedOwnerPhone: text("detected_owner_phone"),
+  ownerDataSource: text("owner_data_source"), // county_assessor, regrid, opencorporates
+  ownerDataConfidence: integer("owner_data_confidence"), // 0-100
+  ownerNotifiedAt: timestamp("owner_notified_at"),
+  // Status
   status: nominationStatusEnum("status").default("submitted"),
   nominationVotes: integer("nomination_votes").default(0),
   createdAt: timestamp("created_at").defaultNow(),
@@ -498,6 +526,94 @@ export const communityNeedVotes = pgTable("community_need_votes", {
 });
 
 export type CommunityNeedVote = typeof communityNeedVotes.$inferSelect;
+
+// Votes on desired uses for nominations
+export const desiredUseVotes = pgTable("desired_use_votes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  nominationId: varchar("nomination_id").references(() => propertyNominations.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  desiredUse: text("desired_use").notNull(), // from GENERIC_PROPERTY_USES
+  votedAt: timestamp("voted_at").defaultNow(),
+});
+
+export type DesiredUseVote = typeof desiredUseVotes.$inferSelect;
+
+// Owner contact attempts - tracking outreach to property owners
+export const contactMethodEnum = pgEnum("contact_method", [
+  "email",
+  "sms",
+  "phone",
+  "mail",
+  "portal_link"
+]);
+
+export const contactStatusEnum = pgEnum("contact_status", [
+  "pending",
+  "sent",
+  "delivered",
+  "opened",
+  "responded",
+  "bounced",
+  "failed"
+]);
+
+export const ownerContactAttempts = pgTable("owner_contact_attempts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  nominationId: varchar("nomination_id").references(() => propertyNominations.id).notNull(),
+  method: contactMethodEnum("method").notNull(),
+  recipient: text("recipient").notNull(), // email address, phone number, or mailing address
+  subject: text("subject"),
+  messagePreview: text("message_preview"),
+  portalLinkToken: text("portal_link_token"), // unique token for owner portal access
+  status: contactStatusEnum("status").default("pending"),
+  sentAt: timestamp("sent_at"),
+  deliveredAt: timestamp("delivered_at"),
+  openedAt: timestamp("opened_at"),
+  respondedAt: timestamp("responded_at"),
+  response: text("response"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type OwnerContactAttempt = typeof ownerContactAttempts.$inferSelect;
+
+// Blockchain deployments - tracking smart contract deployments on Base
+export const deploymentStatusEnum = pgEnum("deployment_status", [
+  "pending",
+  "deploying",
+  "deployed",
+  "verified",
+  "failed"
+]);
+
+export const blockchainDeployments = pgTable("blockchain_deployments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  offeringId: varchar("offering_id").references(() => tokenOfferings.id).notNull(),
+  propertyId: varchar("property_id").references(() => properties.id).notNull(),
+  // Contract details
+  contractType: text("contract_type").notNull(), // ERC20, ERC1155
+  contractAddress: text("contract_address"),
+  deployerAddress: text("deployer_address"),
+  // Base network details
+  networkId: integer("network_id").default(8453), // Base mainnet
+  networkName: text("network_name").default("Base"),
+  deploymentTxHash: text("deployment_tx_hash"),
+  blockNumber: integer("block_number"),
+  // Token details
+  tokenName: text("token_name").notNull(),
+  tokenSymbol: text("token_symbol").notNull(),
+  totalSupply: integer("total_supply").notNull(),
+  decimals: integer("decimals").default(0),
+  // Status
+  status: deploymentStatusEnum("status").default("pending"),
+  verificationUrl: text("verification_url"),
+  errorMessage: text("error_message"),
+  // Timestamps
+  deployedAt: timestamp("deployed_at"),
+  verifiedAt: timestamp("verified_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type BlockchainDeployment = typeof blockchainDeployments.$inferSelect;
 
 // Generic property use choices
 // Property Submissions - for property owners submitting their properties for tokenization

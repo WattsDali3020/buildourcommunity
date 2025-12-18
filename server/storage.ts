@@ -9,6 +9,8 @@ import {
   type Vote,
   type PropertySubmission, type InsertPropertySubmission,
   type SubmissionDocument, type InsertSubmissionDocument,
+  type PropertyNomination, type InsertPropertyNomination,
+  type DesiredUseVote,
   PHASE_CONFIG, calculatePhasePrice, getPhaseAllocation
 } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -60,6 +62,18 @@ export interface IStorage {
   addSubmissionDocument(document: InsertSubmissionDocument): Promise<SubmissionDocument>;
   getSubmissionDocuments(submissionId: string): Promise<SubmissionDocument[]>;
   deleteSubmissionDocument(id: string): Promise<boolean>;
+  
+  // Property Nominations
+  createPropertyNomination(nomination: InsertPropertyNomination): Promise<PropertyNomination>;
+  getPropertyNomination(id: string): Promise<PropertyNomination | undefined>;
+  getPropertyNominations(): Promise<PropertyNomination[]>;
+  getPropertyNominationsByStatus(status: PropertyNomination["status"]): Promise<PropertyNomination[]>;
+  updatePropertyNomination(id: string, data: Partial<PropertyNomination>): Promise<PropertyNomination | undefined>;
+  
+  // Desired Use Votes
+  addDesiredUseVote(nominationId: string, userId: string, desiredUse: string): Promise<DesiredUseVote>;
+  getDesiredUseVotes(nominationId: string): Promise<DesiredUseVote[]>;
+  hasUserVotedOnNomination(userId: string, nominationId: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -73,6 +87,8 @@ export class MemStorage implements IStorage {
   private votes: Map<string, Vote>;
   private propertySubmissions: Map<string, PropertySubmission>;
   private submissionDocuments: Map<string, SubmissionDocument>;
+  private propertyNominations: Map<string, PropertyNomination>;
+  private desiredUseVotes: Map<string, DesiredUseVote>;
 
   constructor() {
     this.users = new Map();
@@ -85,6 +101,8 @@ export class MemStorage implements IStorage {
     this.votes = new Map();
     this.propertySubmissions = new Map();
     this.submissionDocuments = new Map();
+    this.propertyNominations = new Map();
+    this.desiredUseVotes = new Map();
     
     this.seedMockData();
   }
@@ -132,6 +150,11 @@ export class MemStorage implements IStorage {
       contractAddress: null,
       currentPhase: "county",
       status: "active",
+      fundingOutcome: "in_progress",
+      minimumFundingThreshold: "6000000",
+      fundingDeadline: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      totalFundingRaised: "231250",
+      interestRateOnRefund: "3.00",
       createdAt: new Date(),
     };
     this.tokenOfferings.set(etowahOffering.id, etowahOffering);
@@ -260,12 +283,20 @@ export class MemStorage implements IStorage {
   async createTokenOffering(insertOffering: InsertTokenOffering): Promise<TokenOffering> {
     const id = randomUUID();
     const offering: TokenOffering = {
-      ...insertOffering,
       id,
+      propertyId: insertOffering.propertyId,
+      tokenSymbol: insertOffering.tokenSymbol,
+      tokenName: insertOffering.tokenName,
+      totalSupply: insertOffering.totalSupply,
       tokensSold: 0,
       contractAddress: null,
       currentPhase: "county",
       status: "upcoming",
+      fundingOutcome: insertOffering.fundingOutcome ?? "in_progress",
+      minimumFundingThreshold: insertOffering.minimumFundingThreshold ?? null,
+      fundingDeadline: insertOffering.fundingDeadline ?? null,
+      totalFundingRaised: insertOffering.totalFundingRaised ?? "0",
+      interestRateOnRefund: insertOffering.interestRateOnRefund ?? "3.00",
       createdAt: new Date(),
     };
     this.tokenOfferings.set(id, offering);
@@ -360,9 +391,18 @@ export class MemStorage implements IStorage {
   async createTokenPurchase(insertPurchase: InsertTokenPurchase): Promise<TokenPurchase> {
     const id = randomUUID();
     const purchase: TokenPurchase = {
-      ...insertPurchase,
       id,
+      userId: insertPurchase.userId,
+      offeringId: insertPurchase.offeringId,
+      phaseId: insertPurchase.phaseId,
+      tokenCount: insertPurchase.tokenCount,
+      pricePerToken: insertPurchase.pricePerToken,
+      totalAmount: insertPurchase.totalAmount,
+      usdcAmount: insertPurchase.usdcAmount ?? null,
+      usdcConversionRate: insertPurchase.usdcConversionRate ?? null,
+      paymentMethod: insertPurchase.paymentMethod ?? "usdc",
       transactionHash: null,
+      usdcTransactionHash: null,
       status: "pending",
       purchasedAt: new Date(),
     };
@@ -421,17 +461,20 @@ export class MemStorage implements IStorage {
 
   async castVote(proposalId: string, userId: string, voteDirection: boolean, votingPower: number): Promise<Vote> {
     const id = randomUUID();
+    const proposal = this.proposals.get(proposalId);
+    
     const vote: Vote = {
       id,
       proposalId,
       userId,
+      offeringId: proposal?.offeringId || "",
+      tokenBalanceAtVote: votingPower,
       voteDirection,
       votingPower,
       votedAt: new Date(),
     };
     this.votes.set(id, vote);
     
-    const proposal = this.proposals.get(proposalId);
     if (proposal) {
       if (voteDirection) {
         proposal.votesFor = (proposal.votesFor || 0) + votingPower;
@@ -567,6 +610,103 @@ export class MemStorage implements IStorage {
 
   async deleteSubmissionDocument(id: string): Promise<boolean> {
     return this.submissionDocuments.delete(id);
+  }
+
+  // Property Nominations
+  async createPropertyNomination(insertNomination: InsertPropertyNomination): Promise<PropertyNomination> {
+    const id = randomUUID();
+    const nomination: PropertyNomination = {
+      id,
+      nominatorId: insertNomination.nominatorId ?? null,
+      propertyAddress: insertNomination.propertyAddress,
+      city: insertNomination.city,
+      county: insertNomination.county,
+      state: insertNomination.state,
+      zipCode: insertNomination.zipCode ?? null,
+      latitude: insertNomination.latitude ?? null,
+      longitude: insertNomination.longitude ?? null,
+      parcelId: insertNomination.parcelId ?? null,
+      description: insertNomination.description,
+      whyThisProperty: insertNomination.whyThisProperty,
+      currentCondition: insertNomination.currentCondition ?? null,
+      estimatedSize: insertNomination.estimatedSize ?? null,
+      desiredUses: insertNomination.desiredUses ?? null,
+      topVotedUse: null,
+      ownerDetectionStatus: "pending",
+      detectedOwnerName: null,
+      detectedOwnerType: null,
+      detectedOwnerAddress: null,
+      detectedOwnerEmail: null,
+      detectedOwnerPhone: null,
+      ownerDataSource: null,
+      ownerDataConfidence: null,
+      ownerNotifiedAt: null,
+      status: "submitted",
+      nominationVotes: 0,
+      createdAt: new Date(),
+    };
+    this.propertyNominations.set(id, nomination);
+    return nomination;
+  }
+
+  async getPropertyNomination(id: string): Promise<PropertyNomination | undefined> {
+    return this.propertyNominations.get(id);
+  }
+
+  async getPropertyNominations(): Promise<PropertyNomination[]> {
+    return Array.from(this.propertyNominations.values()).sort((a, b) => 
+      (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)
+    );
+  }
+
+  async getPropertyNominationsByStatus(status: PropertyNomination["status"]): Promise<PropertyNomination[]> {
+    return Array.from(this.propertyNominations.values())
+      .filter(n => n.status === status)
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  }
+
+  async updatePropertyNomination(id: string, data: Partial<PropertyNomination>): Promise<PropertyNomination | undefined> {
+    const nomination = this.propertyNominations.get(id);
+    if (!nomination) return undefined;
+
+    const updated: PropertyNomination = {
+      ...nomination,
+      ...data,
+    };
+    this.propertyNominations.set(id, updated);
+    return updated;
+  }
+
+  // Desired Use Votes
+  async addDesiredUseVote(nominationId: string, userId: string, desiredUse: string): Promise<DesiredUseVote> {
+    const id = randomUUID();
+    const vote: DesiredUseVote = {
+      id,
+      nominationId,
+      userId,
+      desiredUse,
+      votedAt: new Date(),
+    };
+    this.desiredUseVotes.set(id, vote);
+    
+    // Update the nomination with the vote count
+    const nomination = this.propertyNominations.get(nominationId);
+    if (nomination) {
+      nomination.nominationVotes = (nomination.nominationVotes ?? 0) + 1;
+      this.propertyNominations.set(nominationId, nomination);
+    }
+    
+    return vote;
+  }
+
+  async getDesiredUseVotes(nominationId: string): Promise<DesiredUseVote[]> {
+    return Array.from(this.desiredUseVotes.values()).filter(v => v.nominationId === nominationId);
+  }
+
+  async hasUserVotedOnNomination(userId: string, nominationId: string): Promise<boolean> {
+    return Array.from(this.desiredUseVotes.values()).some(
+      v => v.nominationId === nominationId && v.userId === userId
+    );
   }
 }
 

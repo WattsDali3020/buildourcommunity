@@ -18,6 +18,7 @@ import {
   ChevronRight, Target, TrendingUp
 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { GENERIC_PROPERTY_USES } from "@shared/schema";
 
@@ -241,10 +242,18 @@ export default function Community() {
         <div className="mx-auto max-w-7xl px-4 py-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-3xl font-semibold mb-2">Token Holder Governance</h1>
+              <h1 className="text-3xl font-semibold mb-2">Community Hub</h1>
               <p className="text-muted-foreground">
-                Vote on property decisions and governance proposals. You must own tokens to vote.
+                Nominate properties for development, vote on governance proposals, and shape your community.
               </p>
+            </div>
+            <div className="flex gap-2">
+              <Link href="/nominate">
+                <Button className="flex items-center gap-2" data-testid="button-nominate-property">
+                  <MapPin className="h-4 w-4" />
+                  Nominate Property
+                </Button>
+              </Link>
             </div>
             <Dialog open={nominateDialogOpen} onOpenChange={setNominateDialogOpen}>
               <DialogContent className="max-w-lg">

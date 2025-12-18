@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPropertySchema, insertPropertySubmissionSchema } from "@shared/schema";
+import { insertPropertySchema, insertPropertySubmissionSchema, insertPropertyNominationSchema } from "@shared/schema";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 
@@ -301,6 +301,62 @@ export async function registerRoutes(
       return res.status(404).json({ error: "Document not found" });
     }
     res.json({ success: true });
+  });
+
+  // Property Nominations API
+  app.post("/api/nominations", async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertPropertyNominationSchema.parse(req.body);
+      const nomination = await storage.createPropertyNomination(validatedData);
+      res.status(201).json(nomination);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid nomination data", details: error.errors });
+      }
+      return res.status(500).json({ error: "Failed to create nomination" });
+    }
+  });
+
+  app.get("/api/nominations", async (req: Request, res: Response) => {
+    const status = req.query.status as string | undefined;
+    let nominations;
+    if (status) {
+      nominations = await storage.getPropertyNominationsByStatus(status as any);
+    } else {
+      nominations = await storage.getPropertyNominations();
+    }
+    res.json(nominations);
+  });
+
+  app.get("/api/nominations/:id", async (req: Request, res: Response) => {
+    const nomination = await storage.getPropertyNomination(req.params.id);
+    if (!nomination) {
+      return res.status(404).json({ error: "Nomination not found" });
+    }
+    const votes = await storage.getDesiredUseVotes(nomination.id);
+    res.json({ nomination, votes });
+  });
+
+  app.post("/api/nominations/:id/vote", async (req: Request, res: Response) => {
+    const { userId, desiredUse } = req.body;
+    const nominationId = req.params.id;
+
+    if (!userId || !desiredUse) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const nomination = await storage.getPropertyNomination(nominationId);
+    if (!nomination) {
+      return res.status(404).json({ error: "Nomination not found" });
+    }
+
+    const hasVoted = await storage.hasUserVotedOnNomination(userId, nominationId);
+    if (hasVoted) {
+      return res.status(403).json({ error: "User has already voted on this nomination" });
+    }
+
+    const vote = await storage.addDesiredUseVote(nominationId, userId, desiredUse);
+    res.status(201).json(vote);
   });
 
   // Register object storage routes for document uploads
