@@ -8,6 +8,7 @@ import Home from "@/pages/home";
 import Properties from "@/pages/properties";
 import PropertyDetail from "@/pages/property-detail";
 import Governance from "@/pages/governance";
+import Community from "@/pages/community";
 import Learn from "@/pages/learn";
 import Dashboard from "@/pages/dashboard";
 import About from "@/pages/about";
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/properties" component={Properties} />
       <Route path="/properties/:id" component={PropertyDetail} />
       <Route path="/governance" component={Governance} />
+      <Route path="/community" component={Community} />
       <Route path="/learn" component={Learn} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/about" component={About} />

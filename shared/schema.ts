@@ -238,6 +238,153 @@ export const votes = pgTable("votes", {
 
 export type Vote = typeof votes.$inferSelect;
 
+// Community Property Election System
+export const nominationStatusEnum = pgEnum("nomination_status", [
+  "submitted",
+  "under_review",
+  "approved",
+  "in_voting",
+  "selected",
+  "rejected"
+]);
+
+export const propertyNominations = pgTable("property_nominations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  nominatorId: varchar("nominator_id").references(() => users.id),
+  propertyAddress: text("property_address").notNull(),
+  city: text("city").notNull(),
+  county: text("county").notNull(),
+  state: text("state").notNull(),
+  description: text("description").notNull(),
+  whyThisProperty: text("why_this_property").notNull(),
+  currentCondition: text("current_condition"),
+  estimatedSize: text("estimated_size"),
+  status: nominationStatusEnum("status").default("submitted"),
+  nominationVotes: integer("nomination_votes").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertPropertyNominationSchema = createInsertSchema(propertyNominations).omit({
+  id: true,
+  status: true,
+  nominationVotes: true,
+  createdAt: true,
+});
+
+export type InsertPropertyNomination = z.infer<typeof insertPropertyNominationSchema>;
+export type PropertyNomination = typeof propertyNominations.$inferSelect;
+
+// Community needs categories from surveys
+export const communityNeeds = pgTable("community_needs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  county: text("county").notNull(),
+  state: text("state").notNull(),
+  category: text("category").notNull(),
+  need: text("need").notNull(),
+  description: text("description"),
+  priority: integer("priority").default(0),
+  voteCount: integer("vote_count").default(0),
+  isGeneric: boolean("is_generic").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCommunityNeedSchema = createInsertSchema(communityNeeds).omit({
+  id: true,
+  priority: true,
+  voteCount: true,
+  createdAt: true,
+});
+
+export type InsertCommunityNeed = z.infer<typeof insertCommunityNeedSchema>;
+export type CommunityNeed = typeof communityNeeds.$inferSelect;
+
+// Property use proposals - what the community wants property to become
+export const useProposalStatusEnum = pgEnum("use_proposal_status", [
+  "proposed",
+  "in_voting",
+  "approved",
+  "rejected"
+]);
+
+export const propertyUseProposals = pgTable("property_use_proposals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  nominationId: varchar("nomination_id").references(() => propertyNominations.id).notNull(),
+  proposerId: varchar("proposer_id").references(() => users.id),
+  proposedUse: text("proposed_use").notNull(),
+  description: text("description").notNull(),
+  communityNeedIds: text("community_need_ids").array(),
+  estimatedBudget: decimal("estimated_budget", { precision: 15, scale: 2 }),
+  estimatedJobs: integer("estimated_jobs"),
+  estimatedTimeline: text("estimated_timeline"),
+  status: useProposalStatusEnum("status").default("proposed"),
+  votesFor: integer("votes_for").default(0),
+  votesAgainst: integer("votes_against").default(0),
+  totalVoters: integer("total_voters").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertPropertyUseProposalSchema = createInsertSchema(propertyUseProposals).omit({
+  id: true,
+  status: true,
+  votesFor: true,
+  votesAgainst: true,
+  totalVoters: true,
+  createdAt: true,
+});
+
+export type InsertPropertyUseProposal = z.infer<typeof insertPropertyUseProposalSchema>;
+export type PropertyUseProposal = typeof propertyUseProposals.$inferSelect;
+
+// Votes on property nominations
+export const nominationVotes = pgTable("nomination_votes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  nominationId: varchar("nomination_id").references(() => propertyNominations.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  votedAt: timestamp("voted_at").defaultNow(),
+});
+
+export type NominationVote = typeof nominationVotes.$inferSelect;
+
+// Votes on property use proposals
+export const useProposalVotes = pgTable("use_proposal_votes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  proposalId: varchar("proposal_id").references(() => propertyUseProposals.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  voteDirection: boolean("vote_direction").notNull(),
+  votedAt: timestamp("voted_at").defaultNow(),
+});
+
+export type UseProposalVote = typeof useProposalVotes.$inferSelect;
+
+// Votes on community needs
+export const communityNeedVotes = pgTable("community_need_votes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  needId: varchar("need_id").references(() => communityNeeds.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  votedAt: timestamp("voted_at").defaultNow(),
+});
+
+export type CommunityNeedVote = typeof communityNeedVotes.$inferSelect;
+
+// Generic property use choices
+export const GENERIC_PROPERTY_USES = [
+  { id: "affordable_housing", label: "Affordable Housing", category: "Housing" },
+  { id: "mixed_use", label: "Mixed-Use Development", category: "Development" },
+  { id: "community_center", label: "Community Center", category: "Community" },
+  { id: "small_business_hub", label: "Small Business Hub / Incubator", category: "Economic" },
+  { id: "healthcare_facility", label: "Healthcare Facility", category: "Healthcare" },
+  { id: "youth_center", label: "Youth Recreation Center", category: "Community" },
+  { id: "senior_center", label: "Senior Services Center", category: "Community" },
+  { id: "arts_culture", label: "Arts & Culture Space", category: "Culture" },
+  { id: "urban_farm", label: "Urban Farm / Community Garden", category: "Food" },
+  { id: "workforce_training", label: "Workforce Training Center", category: "Education" },
+  { id: "childcare", label: "Childcare Facility", category: "Family" },
+  { id: "food_hall", label: "Food Hall / Market", category: "Food" },
+  { id: "coworking", label: "Co-Working Space", category: "Economic" },
+  { id: "park_greenspace", label: "Park / Green Space", category: "Recreation" },
+  { id: "historic_preservation", label: "Historic Preservation", category: "Culture" },
+] as const;
+
 export const PHASE_CONFIG = {
   county: {
     order: 1,
