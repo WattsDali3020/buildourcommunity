@@ -11,8 +11,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, MapPin, DollarSign, Users, FileText, ArrowLeft, ArrowRight, CheckCircle2, Upload, Info } from "lucide-react";
+import { Building2, MapPin, DollarSign, Users, FileText, ArrowLeft, ArrowRight, CheckCircle2, Upload, Info, Loader2 } from "lucide-react";
 import { Link } from "wouter";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import type { PropertySubmission } from "@shared/schema";
 
 const PROPERTY_TYPES = [
   { value: "vacant_land", label: "Vacant Land" },
@@ -61,6 +64,8 @@ const steps = [
 export default function Tokenize() {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -86,6 +91,58 @@ export default function Tokenize() {
     termsAccepted: false,
   });
 
+  const createSubmissionMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", "/api/property-submissions", data);
+      return response.json() as Promise<PropertySubmission>;
+    },
+    onSuccess: (data) => {
+      setSubmissionId(data.id);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save submission",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateSubmissionMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await apiRequest("PATCH", `/api/property-submissions/${id}`, data);
+      return response.json() as Promise<PropertySubmission>;
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update submission",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const submitForReviewMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest("POST", `/api/property-submissions/${id}/submit`, {});
+      return response.json() as Promise<PropertySubmission>;
+    },
+    onSuccess: () => {
+      setIsSubmitted(true);
+      toast({
+        title: "Property Submitted",
+        description: "Your property has been submitted for community review. You'll receive updates via email.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Submission Failed",
+        description: error.message || "Failed to submit property for review",
+        variant: "destructive",
+      });
+    },
+  });
+
   const updateField = (field: string, value: string | boolean | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -99,15 +156,50 @@ export default function Tokenize() {
     }));
   };
 
-  const nextStep = () => {
-    if (currentStep < 5) setCurrentStep(currentStep + 1);
+  const prepareSubmissionData = () => ({
+    name: formData.name,
+    description: formData.description,
+    propertyType: formData.propertyType,
+    streetAddress: formData.streetAddress,
+    city: formData.city,
+    county: formData.county,
+    state: formData.state,
+    zipCode: formData.zipCode,
+    estimatedValue: formData.estimatedValue,
+    fundingGoal: formData.fundingGoal,
+    expectedReturn: formData.projectedROI || null,
+    communityBenefits: formData.communityBenefits.length > 0 ? formData.communityBenefits : null,
+    ownershipConfirmed: formData.ownershipProof,
+    termsAccepted: formData.termsAccepted,
+  });
+
+  const nextStep = async () => {
+    if (currentStep < 5) {
+      if (currentStep === 1 && !submissionId) {
+        const data = prepareSubmissionData();
+        createSubmissionMutation.mutate(data, {
+          onSuccess: () => {
+            setCurrentStep(currentStep + 1);
+          },
+        });
+      } else if (submissionId) {
+        const data = prepareSubmissionData();
+        updateSubmissionMutation.mutate({ id: submissionId, data }, {
+          onSuccess: () => {
+            setCurrentStep(currentStep + 1);
+          },
+        });
+      } else {
+        setCurrentStep(currentStep + 1);
+      }
+    }
   };
 
   const prevStep = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.ownershipProof || !formData.termsAccepted) {
       toast({
         title: "Required Agreements",
@@ -117,11 +209,24 @@ export default function Tokenize() {
       return;
     }
 
-    toast({
-      title: "Property Submitted",
-      description: "Your property has been submitted for community review. You'll receive updates via email.",
-    });
+    if (!submissionId) {
+      const data = prepareSubmissionData();
+      createSubmissionMutation.mutate(data, {
+        onSuccess: (submission) => {
+          submitForReviewMutation.mutate(submission.id);
+        },
+      });
+    } else {
+      const data = prepareSubmissionData();
+      updateSubmissionMutation.mutate({ id: submissionId, data }, {
+        onSuccess: () => {
+          submitForReviewMutation.mutate(submissionId);
+        },
+      });
+    }
   };
+
+  const isLoading = createSubmissionMutation.isPending || updateSubmissionMutation.isPending || submitForReviewMutation.isPending;
 
   const progress = (currentStep / 5) * 100;
 
@@ -187,7 +292,54 @@ export default function Tokenize() {
               <Progress value={progress} className="mt-4 h-2" />
             </div>
 
-            <Card>
+            {isSubmitted ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <div className="h-16 w-16 rounded-full bg-chart-3/10 flex items-center justify-center mx-auto mb-6">
+                    <CheckCircle2 className="h-8 w-8 text-chart-3" />
+                  </div>
+                  <h2 className="text-2xl font-bold mb-2">Property Submitted Successfully</h2>
+                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                    Your property has been submitted for community review. Our team will evaluate your submission
+                    and you'll receive updates via email about the next steps.
+                  </p>
+                  <div className="p-4 rounded-md bg-muted/50 max-w-md mx-auto mb-6 text-left">
+                    <h4 className="font-medium mb-2">What happens next?</h4>
+                    <ol className="text-sm text-muted-foreground space-y-2">
+                      <li className="flex gap-2">
+                        <span className="font-medium text-foreground">1.</span>
+                        Our team reviews your submission for eligibility
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="font-medium text-foreground">2.</span>
+                        If approved, the property goes to community voting
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="font-medium text-foreground">3.</span>
+                        Community members vote on property and proposed uses
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="font-medium text-foreground">4.</span>
+                        Token offering begins with county residents first
+                      </li>
+                    </ol>
+                  </div>
+                  <div className="flex gap-4 justify-center">
+                    <Link href="/">
+                      <Button variant="outline" data-testid="button-back-home-success">
+                        Back to Home
+                      </Button>
+                    </Link>
+                    <Link href="/community">
+                      <Button data-testid="button-view-community">
+                        View Community
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
               <CardHeader>
                 <CardTitle>
                   Step {currentStep}: {steps[currentStep - 1].title}
@@ -661,7 +813,7 @@ export default function Tokenize() {
                   <Button
                     variant="outline"
                     onClick={prevStep}
-                    disabled={currentStep === 1}
+                    disabled={currentStep === 1 || isLoading}
                     data-testid="button-prev-step"
                   >
                     <ArrowLeft className="h-4 w-4 mr-2" />
@@ -669,19 +821,38 @@ export default function Tokenize() {
                   </Button>
 
                   {currentStep < 5 ? (
-                    <Button onClick={nextStep} data-testid="button-next-step">
-                      Next
-                      <ArrowRight className="h-4 w-4 ml-2" />
+                    <Button onClick={nextStep} disabled={isLoading} data-testid="button-next-step">
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          Next
+                          <ArrowRight className="h-4 w-4 ml-2" />
+                        </>
+                      )}
                     </Button>
                   ) : (
-                    <Button onClick={handleSubmit} data-testid="button-submit-property">
-                      Submit Property
-                      <CheckCircle2 className="h-4 w-4 ml-2" />
+                    <Button onClick={handleSubmit} disabled={isLoading} data-testid="button-submit-property">
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          Submit Property
+                          <CheckCircle2 className="h-4 w-4 ml-2" />
+                        </>
+                      )}
                     </Button>
                   )}
                 </div>
               </CardContent>
             </Card>
+            )}
           </div>
         </div>
       </main>
