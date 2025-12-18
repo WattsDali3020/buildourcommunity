@@ -51,8 +51,12 @@ export async function initiateTokenization(
     return { success: false, error: "Nomination not found" };
   }
   
-  if (nomination.status !== "approved" && nomination.status !== "selected") {
-    return { success: false, error: "Nomination must be approved before tokenization" };
+  // Allow tokenization if nomination is approved/selected OR if owner has expressed interest
+  const isApproved = nomination.status === "approved" || nomination.status === "selected";
+  const ownerInterested = nomination.ownerResponseStatus === "interested";
+  
+  if (!isApproved && !ownerInterested) {
+    return { success: false, error: "Nomination must be approved or owner must express interest before tokenization" };
   }
   
   // 2. Create the property record

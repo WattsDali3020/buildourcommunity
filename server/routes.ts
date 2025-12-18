@@ -396,6 +396,34 @@ export async function registerRoutes(
     res.json(result);
   });
 
+  // Admin route to approve a nomination for tokenization
+  app.post("/api/nominations/:id/approve", async (req: Request, res: Response) => {
+    try {
+      const nomination = await storage.getPropertyNomination(req.params.id);
+      if (!nomination) {
+        return res.status(404).json({ error: "Nomination not found" });
+      }
+      
+      // Update nomination status to approved
+      await storage.updateNominationOwnerInfo(req.params.id, {
+        ownerResponseStatus: "interested", // Owner has agreed to participate
+      });
+      
+      // In production, this would also:
+      // - Verify owner has confirmed interest
+      // - Check all required documentation
+      // - Create a formal property listing
+      
+      res.json({ 
+        success: true, 
+        message: "Nomination approved for tokenization",
+        nominationId: req.params.id 
+      });
+    } catch (error) {
+      return res.status(500).json({ error: "Failed to approve nomination" });
+    }
+  });
+
   app.post("/api/nominations/:id/lookup-owner", async (req: Request, res: Response) => {
     const nominationId = req.params.id;
     const nomination = await storage.getPropertyNomination(nominationId);

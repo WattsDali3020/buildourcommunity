@@ -656,6 +656,8 @@ export class MemStorage implements IStorage {
       ownerDataSource: null,
       ownerDataConfidence: null,
       ownerNotifiedAt: null,
+      ownerNotificationLink: null,
+      ownerResponseStatus: null,
       status: "submitted",
       nominationVotes: 0,
       createdAt: new Date(),
@@ -751,6 +753,8 @@ export class MemStorage implements IStorage {
       ownerDataSource: ownerInfo.ownerDataSource || nomination.ownerDataSource,
       ownerDataConfidence: ownerInfo.ownerDataConfidence ?? nomination.ownerDataConfidence,
       ownerNotifiedAt: ownerInfo.ownerNotifiedAt || nomination.ownerNotifiedAt,
+      ownerNotificationLink: ownerInfo.ownerNotificationLink || nomination.ownerNotificationLink,
+      ownerResponseStatus: ownerInfo.ownerResponseStatus || nomination.ownerResponseStatus,
     };
     
     this.propertyNominations.set(nominationId, updated);

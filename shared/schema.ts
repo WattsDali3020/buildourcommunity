@@ -419,6 +419,8 @@ export const propertyNominations = pgTable("property_nominations", {
   ownerDataSource: text("owner_data_source"), // county_assessor, regrid, opencorporates
   ownerDataConfidence: integer("owner_data_confidence"), // 0-100
   ownerNotifiedAt: timestamp("owner_notified_at"),
+  ownerNotificationLink: text("owner_notification_link"),
+  ownerResponseStatus: text("owner_response_status"), // pending, interested, not_interested
   // Status
   status: nominationStatusEnum("status").default("submitted"),
   nominationVotes: integer("nomination_votes").default(0),
