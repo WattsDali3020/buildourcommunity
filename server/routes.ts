@@ -536,11 +536,24 @@ export async function registerRoutes(
       return res.status(404).json({ error: "Property nomination not found" });
     }
     
+    const responseStatus = interested ? "interested" : "not_interested";
+    
     await storage.updateNominationOwnerInfo(decoded.nominationId, {
-      ownerResponseStatus: interested ? "interested" : "not_interested",
+      ownerResponseStatus: responseStatus,
       detectedOwnerEmail: contactEmail || nomination.detectedOwnerEmail,
       detectedOwnerPhone: contactPhone || nomination.detectedOwnerPhone,
     });
+    
+    // Log the owner response for tracking
+    logNotification({
+      nominationId: decoded.nominationId,
+      timestamp: new Date(),
+      channel: "link",
+      recipient: contactEmail || nomination.detectedOwnerEmail || undefined,
+      success: true,
+    });
+    
+    console.log(`[Owner Response] ${nomination.propertyAddress}: Owner responded as ${responseStatus}`);
     
     res.json({ success: true, message: "Response recorded. We will be in touch shortly." });
   });
