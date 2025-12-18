@@ -1,12 +1,13 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
-import { Building2, Menu, X, Wallet } from "lucide-react";
+import { Building2, Menu, X, Wallet, Plus } from "lucide-react";
 import { useState } from "react";
 
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/properties", label: "Properties" },
+  { href: "/submit", label: "Submit Property" },
   { href: "/governance", label: "Governance" },
   { href: "/learn", label: "Learn" },
   { href: "/about", label: "About" },
