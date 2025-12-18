@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPropertySchema } from "@shared/schema";
+import { insertPropertySchema, insertPropertySubmissionSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(
@@ -161,6 +161,145 @@ export async function registerRoutes(
 
     const vote = await storage.castVote(proposalId, userId, voteDirection, votingPower);
     res.status(201).json(vote);
+  });
+
+  // Property Submissions API
+  app.post("/api/property-submissions", async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertPropertySubmissionSchema.parse(req.body);
+      const submission = await storage.createPropertySubmission(validatedData);
+      res.status(201).json(submission);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid submission data", details: error.errors });
+      }
+      return res.status(500).json({ error: "Failed to create property submission" });
+    }
+  });
+
+  app.get("/api/property-submissions/:id", async (req: Request, res: Response) => {
+    const submission = await storage.getPropertySubmission(req.params.id);
+    if (!submission) {
+      return res.status(404).json({ error: "Submission not found" });
+    }
+    
+    const documents = await storage.getSubmissionDocuments(submission.id);
+    res.json({ submission, documents });
+  });
+
+  app.get("/api/property-submissions", async (req: Request, res: Response) => {
+    const status = req.query.status as string | undefined;
+    const ownerId = req.query.ownerId as string | undefined;
+    
+    let submissions;
+    if (ownerId) {
+      submissions = await storage.getPropertySubmissionsByOwner(ownerId);
+    } else if (status) {
+      submissions = await storage.getPropertySubmissionsByStatus(status as any);
+    } else {
+      submissions = await storage.getPropertySubmissionsByStatus("submitted");
+    }
+    
+    res.json(submissions);
+  });
+
+  app.patch("/api/property-submissions/:id", async (req: Request, res: Response) => {
+    try {
+      const submission = await storage.getPropertySubmission(req.params.id);
+      if (!submission) {
+        return res.status(404).json({ error: "Submission not found" });
+      }
+      
+      const updated = await storage.updatePropertySubmission(req.params.id, req.body);
+      res.json(updated);
+    } catch (error) {
+      return res.status(500).json({ error: "Failed to update submission" });
+    }
+  });
+
+  app.post("/api/property-submissions/:id/submit", async (req: Request, res: Response) => {
+    try {
+      const submission = await storage.getPropertySubmission(req.params.id);
+      if (!submission) {
+        return res.status(404).json({ error: "Submission not found" });
+      }
+      
+      if (!submission.ownershipConfirmed || !submission.termsAccepted) {
+        return res.status(400).json({ error: "Please confirm ownership and accept terms before submitting" });
+      }
+      
+      const updated = await storage.updatePropertySubmissionStatus(req.params.id, "submitted");
+      res.json(updated);
+    } catch (error) {
+      return res.status(500).json({ error: "Failed to submit property" });
+    }
+  });
+
+  app.patch("/api/property-submissions/:id/status", async (req: Request, res: Response) => {
+    try {
+      const { status, reviewNotes, reviewedBy } = req.body;
+      
+      if (!status) {
+        return res.status(400).json({ error: "Status is required" });
+      }
+      
+      const submission = await storage.getPropertySubmission(req.params.id);
+      if (!submission) {
+        return res.status(404).json({ error: "Submission not found" });
+      }
+      
+      const updated = await storage.updatePropertySubmissionStatus(
+        req.params.id, 
+        status, 
+        reviewNotes, 
+        reviewedBy
+      );
+      res.json(updated);
+    } catch (error) {
+      return res.status(500).json({ error: "Failed to update submission status" });
+    }
+  });
+
+  // Submission Documents API
+  app.post("/api/property-submissions/:id/documents", async (req: Request, res: Response) => {
+    try {
+      const submission = await storage.getPropertySubmission(req.params.id);
+      if (!submission) {
+        return res.status(404).json({ error: "Submission not found" });
+      }
+      
+      const { fileName, fileType, fileSize, storageKey, documentType } = req.body;
+      
+      if (!fileName || !fileType || !fileSize || !storageKey || !documentType) {
+        return res.status(400).json({ error: "Missing required document fields" });
+      }
+      
+      const document = await storage.addSubmissionDocument({
+        submissionId: req.params.id,
+        fileName,
+        fileType,
+        fileSize,
+        storageKey,
+        documentType,
+      });
+      
+      res.status(201).json(document);
+    } catch (error) {
+      return res.status(500).json({ error: "Failed to add document" });
+    }
+  });
+
+  app.get("/api/property-submissions/:id/documents", async (req: Request, res: Response) => {
+    const documents = await storage.getSubmissionDocuments(req.params.id);
+    res.json(documents);
+  });
+
+  app.delete("/api/property-submissions/:submissionId/documents/:docId", async (req: Request, res: Response) => {
+    const deleted = await storage.deleteSubmissionDocument(req.params.docId);
+    if (!deleted) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+    res.json({ success: true });
   });
 
   return httpServer;
