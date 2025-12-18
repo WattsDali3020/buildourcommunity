@@ -13,6 +13,7 @@ import Learn from "@/pages/learn";
 import Dashboard from "@/pages/dashboard";
 import About from "@/pages/about";
 import Submit from "@/pages/submit";
+import Tokenize from "@/pages/tokenize";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/about" component={About} />
       <Route path="/submit" component={Submit} />
+      <Route path="/tokenize" component={Tokenize} />
       <Route component={NotFound} />
     </Switch>
   );
