@@ -2,6 +2,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PhaseOfferingCard, type Phase } from "@/components/PhaseOfferingCard";
 import { TokenOfferingTimeline } from "@/components/TokenOfferingTimeline";
+import { FundingTimeline } from "@/components/FundingTimeline";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -328,6 +329,22 @@ export default function PropertyDetail() {
                 phases={phaseStatuses}
                 propertyCounty={mockProperty.county}
                 propertyState={mockProperty.state}
+              />
+
+              <FundingTimeline
+                offeringId={mockProperty.id}
+                fundingGoal={mockProperty.fundingGoal}
+                fundingRaised={mockProperty.fundingRaised}
+                minimumThreshold={mockProperty.fundingGoal * 0.6}
+                deadline={new Date(Date.now() + 280 * 24 * 60 * 60 * 1000)}
+                startDate={new Date(Date.now() - 85 * 24 * 60 * 60 * 1000)}
+                currentPhase={mockProperty.currentPhase}
+                status="in_progress"
+                userHoldings={{
+                  tokenCount: 25,
+                  investedAmount: 312.50,
+                  purchaseDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+                }}
               />
 
               <Card>

@@ -179,6 +179,13 @@ export default function Community() {
   const [selectedNomination, setSelectedNomination] = useState<PropertyNomination | null>(null);
   const [selectedGenericUses, setSelectedGenericUses] = useState<string[]>([]);
 
+  const mockUserTokenHoldings = {
+    hasTokens: true,
+    totalTokens: 75,
+    votingPower: 112,
+    properties: ["Etowah Riverfront Wellness Village"],
+  };
+
   const handleVoteNomination = (nomination: PropertyNomination) => {
     toast({
       title: "Vote Recorded",
@@ -341,6 +348,50 @@ export default function Community() {
             </Card>
           </div>
 
+          {mockUserTokenHoldings.hasTokens ? (
+            <Card className="mb-6 border-chart-3/30 bg-chart-3/5">
+              <CardContent className="p-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-chart-3/20 flex items-center justify-center">
+                      <Vote className="h-5 w-5 text-chart-3" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Your Voting Power: {mockUserTokenHoldings.votingPower}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Based on {mockUserTokenHoldings.totalTokens} tokens in {mockUserTokenHoldings.properties.length} property
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="border-chart-3 text-chart-3">
+                    <CheckCircle className="h-3 w-3 mr-1" /> Eligible to Vote
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="mb-6 border-amber-500/30 bg-amber-500/5">
+              <CardContent className="p-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                      <Vote className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-amber-700 dark:text-amber-400">Token Ownership Required</p>
+                      <p className="text-sm text-muted-foreground">
+                        Purchase tokens in any property to participate in community voting
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" asChild>
+                    <a href="/properties">Browse Properties</a>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-6">
               <TabsTrigger value="nominations" data-testid="tab-nominations">Property Elections</TabsTrigger>
@@ -406,6 +457,7 @@ export default function Community() {
                           <Button
                             variant="outline"
                             size="sm"
+                            disabled={!mockUserTokenHoldings.hasTokens}
                             onClick={() => openProposeDialog(nomination)}
                             data-testid={`button-propose-use-${nomination.id}`}
                           >
@@ -413,11 +465,12 @@ export default function Community() {
                           </Button>
                           <Button
                             size="sm"
-                            disabled={nomination.hasVoted}
+                            disabled={nomination.hasVoted || !mockUserTokenHoldings.hasTokens}
                             onClick={() => handleVoteNomination(nomination)}
                             data-testid={`button-vote-nomination-${nomination.id}`}
+                            title={!mockUserTokenHoldings.hasTokens ? "Purchase tokens to vote" : ""}
                           >
-                            {nomination.hasVoted ? "Voted" : "Vote to Elect"}
+                            {!mockUserTokenHoldings.hasTokens ? "Buy Tokens to Vote" : nomination.hasVoted ? "Voted" : "Vote to Elect"}
                           </Button>
                         </div>
                       </CardFooter>
@@ -506,19 +559,19 @@ export default function Community() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    disabled={proposal.hasVoted}
+                                    disabled={proposal.hasVoted || !mockUserTokenHoldings.hasTokens}
                                     onClick={() => handleVoteProposal(proposal, false)}
                                     data-testid={`button-vote-against-${proposal.id}`}
                                   >
-                                    Vote Against
+                                    {!mockUserTokenHoldings.hasTokens ? "Buy Tokens" : "Vote Against"}
                                   </Button>
                                   <Button
                                     size="sm"
-                                    disabled={proposal.hasVoted}
+                                    disabled={proposal.hasVoted || !mockUserTokenHoldings.hasTokens}
                                     onClick={() => handleVoteProposal(proposal, true)}
                                     data-testid={`button-vote-for-${proposal.id}`}
                                   >
-                                    Vote For
+                                    {!mockUserTokenHoldings.hasTokens ? "Buy Tokens" : "Vote For"}
                                   </Button>
                                 </div>
                               </div>
@@ -582,11 +635,11 @@ export default function Community() {
                             <Button
                               variant={need.hasVoted ? "secondary" : "default"}
                               size="sm"
-                              disabled={need.hasVoted}
+                              disabled={need.hasVoted || !mockUserTokenHoldings.hasTokens}
                               onClick={() => handleVoteNeed(need)}
                               data-testid={`button-vote-need-${need.id}`}
                             >
-                              {need.hasVoted ? "Voted" : "This is Important"}
+                              {!mockUserTokenHoldings.hasTokens ? "Buy Tokens" : need.hasVoted ? "Voted" : "This is Important"}
                             </Button>
                           </div>
                         </CardContent>

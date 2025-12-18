@@ -93,7 +93,15 @@ export const offeringStatusEnum = pgEnum("offering_status", [
   "upcoming",
   "active",
   "completed",
-  "cancelled"
+  "cancelled",
+  "failed_funding"
+]);
+
+export const fundingOutcomeEnum = pgEnum("funding_outcome", [
+  "in_progress",
+  "funded",
+  "failed",
+  "refunded"
 ]);
 
 export const tokenOfferings = pgTable("token_offerings", {
@@ -106,6 +114,11 @@ export const tokenOfferings = pgTable("token_offerings", {
   contractAddress: text("contract_address"),
   currentPhase: offeringPhaseEnum("current_phase").default("county"),
   status: offeringStatusEnum("status").default("upcoming"),
+  fundingOutcome: fundingOutcomeEnum("funding_outcome").default("in_progress"),
+  minimumFundingThreshold: decimal("minimum_funding_threshold", { precision: 15, scale: 2 }),
+  fundingDeadline: timestamp("funding_deadline"),
+  totalFundingRaised: decimal("total_funding_raised", { precision: 15, scale: 2 }).default("0"),
+  interestRateOnRefund: decimal("interest_rate_on_refund", { precision: 5, scale: 2 }).default("3.00"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -190,6 +203,93 @@ export const tokenHoldings = pgTable("token_holdings", {
 });
 
 export type TokenHolding = typeof tokenHoldings.$inferSelect;
+
+// Failed funding refund and share transfer system
+export const refundStatusEnum = pgEnum("refund_status", [
+  "pending",
+  "processing",
+  "completed",
+  "failed"
+]);
+
+export const tokenRefunds = pgTable("token_refunds", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  offeringId: varchar("offering_id").references(() => tokenOfferings.id).notNull(),
+  tokenCount: integer("token_count").notNull(),
+  originalAmount: decimal("original_amount", { precision: 15, scale: 2 }).notNull(),
+  interestEarned: decimal("interest_earned", { precision: 15, scale: 2 }).notNull(),
+  totalRefundAmount: decimal("total_refund_amount", { precision: 15, scale: 2 }).notNull(),
+  refundTransactionHash: text("refund_transaction_hash"),
+  status: refundStatusEnum("status").default("pending"),
+  requestedAt: timestamp("requested_at").defaultNow(),
+  processedAt: timestamp("processed_at"),
+});
+
+export type TokenRefund = typeof tokenRefunds.$inferSelect;
+
+export const shareTransferStatusEnum = pgEnum("share_transfer_status", [
+  "pending",
+  "approved",
+  "completed",
+  "rejected"
+]);
+
+export const shareTransfers = pgTable("share_transfers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  fromOfferingId: varchar("from_offering_id").references(() => tokenOfferings.id).notNull(),
+  toOfferingId: varchar("to_offering_id").references(() => tokenOfferings.id).notNull(),
+  tokenCount: integer("token_count").notNull(),
+  originalValue: decimal("original_value", { precision: 15, scale: 2 }).notNull(),
+  transferValue: decimal("transfer_value", { precision: 15, scale: 2 }).notNull(),
+  status: shareTransferStatusEnum("status").default("pending"),
+  requestedAt: timestamp("requested_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
+export type ShareTransfer = typeof shareTransfers.$inferSelect;
+
+// Funding timeline configuration - 1 year distribution algo
+export const FUNDING_TIMELINE_CONFIG = {
+  totalDurationDays: 365,
+  phaseDurations: {
+    county: { daysMin: 30, daysMax: 90, targetPercent: 25 },
+    state: { daysMin: 45, daysMax: 120, targetPercent: 50 },
+    national: { daysMin: 60, daysMax: 120, targetPercent: 75 },
+    international: { daysMin: 30, daysMax: 35, targetPercent: 100 },
+  },
+  minimumFundingPercent: 60,
+  gracePeriodDays: 30,
+  refundInterestRate: 3.0,
+} as const;
+
+export function calculatePhaseDuration(
+  phase: keyof typeof FUNDING_TIMELINE_CONFIG.phaseDurations,
+  currentFundingPercent: number,
+  targetPercent: number
+): number {
+  const config = FUNDING_TIMELINE_CONFIG.phaseDurations[phase];
+  const progressRatio = currentFundingPercent / targetPercent;
+  if (progressRatio >= 0.8) {
+    return config.daysMin;
+  } else if (progressRatio >= 0.5) {
+    return Math.floor((config.daysMin + config.daysMax) / 2);
+  }
+  return config.daysMax;
+}
+
+export function calculateRefundWithInterest(
+  originalAmount: number,
+  purchaseDate: Date,
+  interestRate: number = FUNDING_TIMELINE_CONFIG.refundInterestRate
+): { interest: number; total: number } {
+  const now = new Date();
+  const daysHeld = Math.floor((now.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24));
+  const yearFraction = daysHeld / 365;
+  const interest = Number((originalAmount * (interestRate / 100) * yearFraction).toFixed(2));
+  return { interest, total: originalAmount + interest };
+}
 
 export const proposalStatusEnum = pgEnum("proposal_status", [
   "draft",
