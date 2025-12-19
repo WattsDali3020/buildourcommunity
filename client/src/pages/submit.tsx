@@ -9,10 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { 
   Building2, MapPin, FileText, DollarSign, Users, 
   ChevronRight, ChevronLeft, Check, Upload, AlertCircle,
-  Info
+  Info, Lock, Globe, Mail, Key
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -45,6 +46,12 @@ const steps = [
   { id: 6, title: "Review", icon: Check },
 ];
 
+interface InviteEntry {
+  email: string;
+  name: string;
+  maxTokens: string;
+}
+
 interface FormData {
   name: string;
   description: string;
@@ -69,6 +76,9 @@ interface FormData {
   ownershipProof: boolean;
   legalCompliance: boolean;
   communityEngagement: boolean;
+  isPrivateOffering: boolean;
+  privateAccessCode: string;
+  invites: InviteEntry[];
 }
 
 export default function Submit() {
@@ -98,6 +108,9 @@ export default function Submit() {
     ownershipProof: false,
     legalCompliance: false,
     communityEngagement: false,
+    isPrivateOffering: false,
+    privateAccessCode: "",
+    invites: [],
   });
 
   const updateField = (field: keyof FormData, value: string | boolean | string[]) => {
@@ -420,36 +433,175 @@ export default function Submit() {
                     />
                   </div>
 
-                  <div className="p-4 rounded-md bg-muted/50 space-y-4">
-                    <h4 className="font-medium">Token Offering Preview</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Based on your funding goal, here's how tokens will be distributed:
-                    </p>
-                    {formData.fundingGoal && (
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div className="p-3 rounded-md bg-background">
-                          <p className="text-xs text-muted-foreground">Phase 1: County</p>
-                          <p className="font-semibold">$12.50/token</p>
-                          <p className="text-xs">Max 100/person</p>
+                  <div className="border rounded-md p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-md ${formData.isPrivateOffering ? 'bg-primary/10' : 'bg-muted'}`}>
+                          {formData.isPrivateOffering ? <Lock className="h-5 w-5 text-primary" /> : <Globe className="h-5 w-5 text-muted-foreground" />}
                         </div>
-                        <div className="p-3 rounded-md bg-background">
-                          <p className="text-xs text-muted-foreground">Phase 2: State</p>
-                          <p className="font-semibold">$18.75/token</p>
-                          <p className="text-xs">Max 250/person</p>
+                        <div>
+                          <h4 className="font-medium">Offering Type</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {formData.isPrivateOffering ? "Private: Invite-only investors" : "Public: Community-first phases"}
+                          </p>
                         </div>
-                        <div className="p-3 rounded-md bg-background">
-                          <p className="text-xs text-muted-foreground">Phase 3: National</p>
-                          <p className="font-semibold">$28.13/token</p>
-                          <p className="text-xs">Max 500/person</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="offering-type" className="text-sm text-muted-foreground">
+                          {formData.isPrivateOffering ? "Private" : "Public"}
+                        </Label>
+                        <Switch
+                          id="offering-type"
+                          checked={formData.isPrivateOffering}
+                          onCheckedChange={(checked) => updateField("isPrivateOffering", checked)}
+                          data-testid="switch-offering-type"
+                        />
+                      </div>
+                    </div>
+
+                    {formData.isPrivateOffering && (
+                      <div className="space-y-4 pt-4 border-t">
+                        <div className="p-3 rounded-md bg-primary/5 border border-primary/20">
+                          <div className="flex gap-2">
+                            <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-medium">Private Offering Mode</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Only people you invite or those with the access code can view and invest in this property. 
+                                Great for family investments, business partnerships, or trusted networks.
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="p-3 rounded-md bg-background">
-                          <p className="text-xs text-muted-foreground">Phase 4: International</p>
-                          <p className="font-semibold">$37.50/token</p>
-                          <p className="text-xs">Max 1000/person</p>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="accessCode" className="flex items-center gap-2">
+                            <Key className="h-4 w-4" />
+                            Private Access Code (optional)
+                          </Label>
+                          <Input
+                            id="accessCode"
+                            placeholder="Enter a memorable code (e.g., FAMILY2024)"
+                            value={formData.privateAccessCode}
+                            onChange={(e) => updateField("privateAccessCode", e.target.value.toUpperCase())}
+                            data-testid="input-access-code"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Share this code with trusted investors. They can use it to access your offering directly.
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2">
+                            <Mail className="h-4 w-4" />
+                            Email Invitations
+                          </Label>
+                          <div className="space-y-2">
+                            {formData.invites.map((invite, index) => (
+                              <div key={index} className="grid grid-cols-12 gap-2">
+                                <Input
+                                  className="col-span-5"
+                                  placeholder="Email address"
+                                  value={invite.email}
+                                  onChange={(e) => {
+                                    const newInvites = [...formData.invites];
+                                    newInvites[index].email = e.target.value;
+                                    setFormData(prev => ({ ...prev, invites: newInvites }));
+                                  }}
+                                  data-testid={`input-invite-email-${index}`}
+                                />
+                                <Input
+                                  className="col-span-4"
+                                  placeholder="Name (optional)"
+                                  value={invite.name}
+                                  onChange={(e) => {
+                                    const newInvites = [...formData.invites];
+                                    newInvites[index].name = e.target.value;
+                                    setFormData(prev => ({ ...prev, invites: newInvites }));
+                                  }}
+                                  data-testid={`input-invite-name-${index}`}
+                                />
+                                <Input
+                                  className="col-span-2"
+                                  placeholder="Max tokens"
+                                  type="number"
+                                  value={invite.maxTokens}
+                                  onChange={(e) => {
+                                    const newInvites = [...formData.invites];
+                                    newInvites[index].maxTokens = e.target.value;
+                                    setFormData(prev => ({ ...prev, invites: newInvites }));
+                                  }}
+                                  data-testid={`input-invite-tokens-${index}`}
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="col-span-1"
+                                  onClick={() => {
+                                    const newInvites = formData.invites.filter((_, i) => i !== index);
+                                    setFormData(prev => ({ ...prev, invites: newInvites }));
+                                  }}
+                                  data-testid={`button-remove-invite-${index}`}
+                                >
+                                  <AlertCircle className="h-4 w-4 rotate-45" />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  invites: [...prev.invites, { email: "", name: "", maxTokens: "" }]
+                                }));
+                              }}
+                              data-testid="button-add-invite"
+                            >
+                              <Mail className="h-4 w-4 mr-2" />
+                              Add Email Invite
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Invited investors will receive an email with a unique link to access your offering.
+                          </p>
                         </div>
                       </div>
                     )}
                   </div>
+
+                  {!formData.isPrivateOffering && (
+                    <div className="p-4 rounded-md bg-muted/50 space-y-4">
+                      <h4 className="font-medium">Token Offering Preview</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Based on your funding goal, here's how tokens will be distributed:
+                      </p>
+                      {formData.fundingGoal && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div className="p-3 rounded-md bg-background">
+                            <p className="text-xs text-muted-foreground">Phase 1: County</p>
+                            <p className="font-semibold">$12.50/token</p>
+                            <p className="text-xs">Max 100/person</p>
+                          </div>
+                          <div className="p-3 rounded-md bg-background">
+                            <p className="text-xs text-muted-foreground">Phase 2: State</p>
+                            <p className="font-semibold">$18.75/token</p>
+                            <p className="text-xs">Max 250/person</p>
+                          </div>
+                          <div className="p-3 rounded-md bg-background">
+                            <p className="text-xs text-muted-foreground">Phase 3: National</p>
+                            <p className="font-semibold">$28.13/token</p>
+                            <p className="text-xs">Max 500/person</p>
+                          </div>
+                          <div className="p-3 rounded-md bg-background">
+                            <p className="text-xs text-muted-foreground">Phase 4: International</p>
+                            <p className="font-semibold">$37.50/token</p>
+                            <p className="text-xs">Max 1000/person</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
 

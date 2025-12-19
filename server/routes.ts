@@ -992,6 +992,205 @@ export async function registerRoutes(
     res.json({ success: true, message: "Purchase confirmed and holdings updated" });
   });
 
+  // ===== Private Offering Routes =====
+  
+  // Create a private offering invite
+  app.post("/api/private-offerings/:offeringId/invites", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { offeringId } = req.params;
+      const { email, inviteeName, maxTokens, expiresInDays } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      // Verify user owns the property/offering
+      const offering = await storage.getTokenOffering(offeringId);
+      if (!offering) {
+        return res.status(404).json({ error: "Offering not found" });
+      }
+
+      if (offering.offeringType !== "private") {
+        return res.status(400).json({ error: "This is not a private offering" });
+      }
+
+      // Generate unique invite code
+      const inviteCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+      
+      const expiresAt = expiresInDays 
+        ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000) 
+        : null;
+
+      const invite = await storage.createPrivateOfferingInvite({
+        offeringId,
+        email,
+        inviteeName: inviteeName || null,
+        inviteCode,
+        maxTokens: maxTokens || null,
+        invitedBy: userId,
+        expiresAt,
+      });
+
+      res.status(201).json(invite);
+    } catch (error) {
+      console.error("Error creating invite:", error);
+      res.status(500).json({ error: "Failed to create invite" });
+    }
+  });
+
+  // Get all invites for an offering (property owner only)
+  app.get("/api/private-offerings/:offeringId/invites", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { offeringId } = req.params;
+      const invites = await storage.getPrivateOfferingInvitesByOffering(offeringId);
+      res.json(invites);
+    } catch (error) {
+      console.error("Error fetching invites:", error);
+      res.status(500).json({ error: "Failed to fetch invites" });
+    }
+  });
+
+  // Validate an invite or access code
+  app.post("/api/private-offerings/validate-access", async (req: Request, res: Response) => {
+    try {
+      const { offeringId, accessCode, inviteCode } = req.body;
+
+      if (!offeringId) {
+        return res.status(400).json({ error: "Offering ID is required" });
+      }
+
+      // Check if it's a valid access code
+      if (accessCode) {
+        const isValid = await storage.validatePrivateOfferingAccess(offeringId, accessCode);
+        return res.json({ valid: isValid, type: "accessCode" });
+      }
+
+      // Check if it's a valid invite code
+      if (inviteCode) {
+        const invite = await storage.validateInviteCode(offeringId, inviteCode);
+        if (invite) {
+          return res.json({ 
+            valid: true, 
+            type: "inviteCode", 
+            invite: {
+              id: invite.id,
+              email: invite.email,
+              inviteeName: invite.inviteeName,
+              maxTokens: invite.maxTokens
+            }
+          });
+        }
+        return res.json({ valid: false, type: "inviteCode" });
+      }
+
+      return res.status(400).json({ error: "Either accessCode or inviteCode is required" });
+    } catch (error) {
+      console.error("Error validating access:", error);
+      res.status(500).json({ error: "Failed to validate access" });
+    }
+  });
+
+  // Accept an invite (mark as accepted when user starts the purchase process)
+  app.post("/api/private-offerings/invites/:inviteId/accept", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { inviteId } = req.params;
+      const invite = await storage.getPrivateOfferingInvite(inviteId);
+      
+      if (!invite) {
+        return res.status(404).json({ error: "Invite not found" });
+      }
+
+      if (invite.status === "expired" || invite.status === "declined") {
+        return res.status(400).json({ error: "This invite is no longer valid" });
+      }
+
+      if (invite.expiresAt && invite.expiresAt < new Date()) {
+        await storage.updatePrivateOfferingInviteStatus(inviteId, "expired");
+        return res.status(400).json({ error: "This invite has expired" });
+      }
+
+      const updated = await storage.updatePrivateOfferingInviteStatus(inviteId, "accepted");
+      res.json(updated);
+    } catch (error) {
+      console.error("Error accepting invite:", error);
+      res.status(500).json({ error: "Failed to accept invite" });
+    }
+  });
+
+  // Get offering with access check for private offerings
+  app.get("/api/offerings/:offeringId/with-access", async (req: Request, res: Response) => {
+    try {
+      const { offeringId } = req.params;
+      const { accessCode, inviteCode } = req.query as { accessCode?: string; inviteCode?: string };
+
+      const offering = await storage.getTokenOffering(offeringId);
+      if (!offering) {
+        return res.status(404).json({ error: "Offering not found" });
+      }
+
+      // If public offering, return it
+      if (offering.offeringType === "public" || offering.offeringType === null) {
+        const property = await storage.getProperty(offering.propertyId);
+        const phases = await storage.getOfferingPhases(offeringId);
+        return res.json({ 
+          offering, 
+          property, 
+          phases,
+          accessGranted: true,
+          isPrivate: false
+        });
+      }
+
+      // For private offerings, validate access
+      let accessGranted = false;
+      let inviteDetails = null;
+
+      if (accessCode) {
+        accessGranted = await storage.validatePrivateOfferingAccess(offeringId, accessCode);
+      }
+
+      if (!accessGranted && inviteCode) {
+        const invite = await storage.validateInviteCode(offeringId, inviteCode);
+        if (invite) {
+          accessGranted = true;
+          inviteDetails = {
+            id: invite.id,
+            maxTokens: invite.maxTokens,
+            tokensPurchased: invite.tokensPurchased
+          };
+        }
+      }
+
+      if (!accessGranted) {
+        return res.json({ 
+          isPrivate: true,
+          accessGranted: false,
+          message: "This is a private offering. Please provide a valid access code or invite."
+        });
+      }
+
+      const property = await storage.getProperty(offering.propertyId);
+      const phases = await storage.getOfferingPhases(offeringId);
+      
+      res.json({ 
+        offering, 
+        property, 
+        phases,
+        accessGranted: true,
+        isPrivate: true,
+        inviteDetails
+      });
+    } catch (error) {
+      console.error("Error fetching offering with access:", error);
+      res.status(500).json({ error: "Failed to fetch offering" });
+    }
+  });
+
   // Register object storage routes for document uploads
   registerObjectStorageRoutes(app);
 

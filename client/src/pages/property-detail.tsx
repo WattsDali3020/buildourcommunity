@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -6,6 +6,7 @@ import { PhaseOfferingCard, type Phase } from "@/components/PhaseOfferingCard";
 import { TokenOfferingTimeline } from "@/components/TokenOfferingTimeline";
 import { FundingTimeline } from "@/components/FundingTimeline";
 import { SimplePurchaseModal } from "@/components/SimplePurchaseModal";
+import { PrivateAccessGate } from "@/components/PrivateAccessGate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,9 +15,9 @@ import { Progress } from "@/components/ui/progress";
 import { 
   MapPin, Building2, Users, TrendingUp, DollarSign, 
   FileText, Calendar, ExternalLink, Share2, Heart,
-  Briefcase, Home, Leaf, CheckCircle
+  Briefcase, Home, Leaf, CheckCircle, Lock
 } from "lucide-react";
-import { useParams } from "wouter";
+import { useParams, useSearch } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import riverfrontImage from "@assets/generated_images/riverfront_wellness_community_hub.png";
 import { PHASE_CONFIG } from "@shared/schema";
@@ -60,6 +61,7 @@ const mockProperty = {
   image: riverfrontImage,
   tokenSymbol: "ETOWAH",
   currentPhase: "county" as const,
+  offeringType: "public" as "public" | "private",
 };
 
 const mockPhases: Phase[] = [
@@ -138,13 +140,113 @@ const mockPhases: Phase[] = [
 
 export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearch();
   const { toast } = useToast();
   const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
   const [selectedPhase, setSelectedPhase] = useState<Phase | null>(null);
+  const [hasPrivateAccess, setHasPrivateAccess] = useState(false);
+  const [inviteDetails, setInviteDetails] = useState<any>(null);
+  const [isValidatingAccess, setIsValidatingAccess] = useState(false);
+  const [accessCheckComplete, setAccessCheckComplete] = useState(false);
 
   const { data: user } = useQuery<User | null>({
     queryKey: ["/api/user"],
   });
+
+  useEffect(() => {
+    const validateAccess = async () => {
+      const offeringId = id || mockProperty.id;
+      const isPrivate = mockProperty.offeringType === "private";
+      
+      if (!isPrivate) {
+        setAccessCheckComplete(true);
+        return;
+      }
+
+      const storedAccess = sessionStorage.getItem(`private_access_validated_${offeringId}`);
+      if (storedAccess) {
+        try {
+          const parsed = JSON.parse(storedAccess);
+          if (parsed.validated) {
+            setHasPrivateAccess(true);
+            setInviteDetails(parsed.inviteDetails);
+            setAccessCheckComplete(true);
+            return;
+          }
+        } catch (e) {
+        }
+      }
+
+      const urlParams = new URLSearchParams(searchParams);
+      const inviteCodeFromUrl = urlParams.get("invite");
+      const accessCodeFromUrl = urlParams.get("code");
+
+      if (inviteCodeFromUrl || accessCodeFromUrl) {
+        setIsValidatingAccess(true);
+        try {
+          const response = await fetch("/api/private-offerings/validate-access", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              offeringId,
+              inviteCode: inviteCodeFromUrl || undefined,
+              accessCode: accessCodeFromUrl || undefined,
+            }),
+          });
+
+          const result = await response.json();
+
+          if (result.valid) {
+            sessionStorage.setItem(`private_access_validated_${offeringId}`, JSON.stringify({
+              validated: true,
+              type: inviteCodeFromUrl ? "inviteCode" : "accessCode",
+              inviteDetails: result.invite,
+            }));
+            setHasPrivateAccess(true);
+            setInviteDetails(result.invite);
+            toast({
+              title: "Access Granted",
+              description: "You now have access to this private offering.",
+            });
+          } else {
+            toast({
+              title: "Invalid Code",
+              description: "The access link is invalid or expired. Please enter a valid code.",
+              variant: "destructive",
+            });
+          }
+        } catch (error) {
+          toast({
+            title: "Validation Error",
+            description: "Could not validate access. Please try again.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsValidatingAccess(false);
+        }
+      }
+
+      setAccessCheckComplete(true);
+    };
+
+    validateAccess();
+  }, [id, searchParams, toast]);
+
+  const isPrivateOffering = mockProperty.offeringType === "private";
+  const needsAccessGate = isPrivateOffering && !hasPrivateAccess && accessCheckComplete;
+
+  const handleAccessGranted = (accessType: "accessCode" | "inviteCode", invite?: any) => {
+    const offeringId = id || mockProperty.id;
+    sessionStorage.setItem(`private_access_validated_${offeringId}`, JSON.stringify({
+      validated: true,
+      type: accessType,
+      inviteDetails: invite,
+    }));
+    setHasPrivateAccess(true);
+    if (invite) {
+      setInviteDetails(invite);
+    }
+  };
 
   const handlePurchase = (phaseId: string, tokenCount: number) => {
     const phase = mockPhases.find(p => p.id === phaseId);
@@ -166,6 +268,37 @@ export default function PropertyDetail() {
     currentPrice: p.currentPrice,
   }));
 
+  if (isPrivateOffering && (!accessCheckComplete || isValidatingAccess)) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 bg-muted/30 flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+            <p className="text-muted-foreground">Verifying access...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (needsAccessGate) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 bg-muted/30">
+          <PrivateAccessGate
+            offeringId={id || mockProperty.id}
+            propertyName={mockProperty.name}
+            onAccessGranted={handleAccessGranted}
+          />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -182,6 +315,12 @@ export default function PropertyDetail() {
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <Badge className="bg-chart-5 text-white">Downtown</Badge>
                 <Badge className="bg-chart-3 text-white">Phase 1 Active</Badge>
+                {isPrivateOffering && (
+                  <Badge variant="outline" className="bg-black/50 text-white border-white/30">
+                    <Lock className="h-3 w-3 mr-1" />
+                    Private Offering
+                  </Badge>
+                )}
               </div>
               <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
                 {mockProperty.name}
