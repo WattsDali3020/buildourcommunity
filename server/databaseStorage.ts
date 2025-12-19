@@ -11,10 +11,11 @@ import {
   type SubmissionDocument, type InsertSubmissionDocument,
   type PropertyNomination, type InsertPropertyNomination,
   type DesiredUseVote,
+  type PrivateOfferingInvite, type InsertPrivateOfferingInvite,
   PHASE_CONFIG, calculatePhasePrice, getPhaseAllocation,
   users, properties, tokenOfferings, offeringPhases, tokenPurchases, 
   tokenHoldings, proposals, votes, propertySubmissions, submissionDocuments,
-  propertyNominations, desiredUseVotes
+  propertyNominations, desiredUseVotes, privateOfferingInvites
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
@@ -292,6 +293,51 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(tokenHoldings).where(eq(tokenHoldings.offeringId, offeringId));
   }
 
+  async updateOrCreateHolding(
+    userId: string, 
+    offeringId: string, 
+    tokenCount: number, 
+    pricePerToken: number, 
+    votingPower: number
+  ): Promise<TokenHolding> {
+    const [existing] = await db.select().from(tokenHoldings)
+      .where(and(
+        eq(tokenHoldings.userId, userId),
+        eq(tokenHoldings.offeringId, offeringId)
+      ));
+
+    if (existing) {
+      const newTokenCount = existing.tokenCount + tokenCount;
+      const existingCost = parseFloat(existing.averagePurchasePrice || '0') * existing.tokenCount;
+      const newCost = pricePerToken * tokenCount;
+      const newAvgPrice = (existingCost + newCost) / newTokenCount;
+      const newVotingPower = (existing.votingPower || 0) + votingPower;
+
+      const [updated] = await db
+        .update(tokenHoldings)
+        .set({
+          tokenCount: newTokenCount,
+          averagePurchasePrice: newAvgPrice.toFixed(2),
+          votingPower: newVotingPower,
+        })
+        .where(eq(tokenHoldings.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [newHolding] = await db
+        .insert(tokenHoldings)
+        .values({
+          userId,
+          offeringId,
+          tokenCount,
+          averagePurchasePrice: pricePerToken.toFixed(2),
+          votingPower,
+        })
+        .returning();
+      return newHolding;
+    }
+  }
+
   async getProposals(offeringId?: string): Promise<Proposal[]> {
     if (offeringId) {
       return db.select().from(proposals)
@@ -550,5 +596,71 @@ export class DatabaseStorage implements IStorage {
       .where(eq(propertyNominations.id, nominationId))
       .returning();
     return updated || undefined;
+  }
+
+  // Private Offering Invites
+  async createPrivateOfferingInvite(invite: InsertPrivateOfferingInvite): Promise<PrivateOfferingInvite> {
+    const [newInvite] = await db
+      .insert(privateOfferingInvites)
+      .values({
+        id: randomUUID(),
+        ...invite,
+        status: "pending",
+        tokensPurchased: 0,
+        createdAt: new Date(),
+      })
+      .returning();
+    return newInvite;
+  }
+
+  async getPrivateOfferingInvite(id: string): Promise<PrivateOfferingInvite | undefined> {
+    const [invite] = await db.select().from(privateOfferingInvites).where(eq(privateOfferingInvites.id, id));
+    return invite || undefined;
+  }
+
+  async getPrivateOfferingInviteByCode(inviteCode: string): Promise<PrivateOfferingInvite | undefined> {
+    const [invite] = await db.select().from(privateOfferingInvites).where(eq(privateOfferingInvites.inviteCode, inviteCode));
+    return invite || undefined;
+  }
+
+  async getPrivateOfferingInvitesByOffering(offeringId: string): Promise<PrivateOfferingInvite[]> {
+    return db.select().from(privateOfferingInvites).where(eq(privateOfferingInvites.offeringId, offeringId));
+  }
+
+  async getPrivateOfferingInvitesByEmail(email: string): Promise<PrivateOfferingInvite[]> {
+    return db.select().from(privateOfferingInvites).where(eq(privateOfferingInvites.email, email));
+  }
+
+  async updatePrivateOfferingInviteStatus(id: string, status: PrivateOfferingInvite["status"]): Promise<PrivateOfferingInvite | undefined> {
+    const updateData: any = { status };
+    if (status === "sent") updateData.sentAt = new Date();
+    if (status === "accepted") updateData.acceptedAt = new Date();
+    
+    const [updated] = await db
+      .update(privateOfferingInvites)
+      .set(updateData)
+      .where(eq(privateOfferingInvites.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async validatePrivateOfferingAccess(offeringId: string, accessCode: string): Promise<boolean> {
+    const [offering] = await db.select().from(tokenOfferings).where(eq(tokenOfferings.id, offeringId));
+    if (!offering) return false;
+    if (offering.offeringType !== "private") return true;
+    return offering.accessCode === accessCode;
+  }
+
+  async validateInviteCode(offeringId: string, inviteCode: string): Promise<PrivateOfferingInvite | null> {
+    const [invite] = await db.select().from(privateOfferingInvites)
+      .where(and(
+        eq(privateOfferingInvites.offeringId, offeringId),
+        eq(privateOfferingInvites.inviteCode, inviteCode)
+      ));
+    
+    if (!invite) return null;
+    if (invite.status === "expired" || invite.status === "declined") return null;
+    if (invite.expiresAt && invite.expiresAt < new Date()) return null;
+    return invite;
   }
 }

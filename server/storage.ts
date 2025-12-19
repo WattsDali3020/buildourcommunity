@@ -11,10 +11,11 @@ import {
   type SubmissionDocument, type InsertSubmissionDocument,
   type PropertyNomination, type InsertPropertyNomination,
   type DesiredUseVote,
+  type PrivateOfferingInvite, type InsertPrivateOfferingInvite,
   PHASE_CONFIG, calculatePhasePrice, getPhaseAllocation,
   users, properties, tokenOfferings, offeringPhases, tokenPurchases, 
   tokenHoldings, proposals, votes, propertySubmissions, submissionDocuments,
-  propertyNominations, desiredUseVotes
+  propertyNominations, desiredUseVotes, privateOfferingInvites
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -109,6 +110,16 @@ export interface IStorage {
     ownerNotificationLink?: string;
     ownerResponseStatus?: string;
   }): Promise<PropertyNomination | undefined>;
+
+  // Private Offering Invites
+  createPrivateOfferingInvite(invite: InsertPrivateOfferingInvite): Promise<PrivateOfferingInvite>;
+  getPrivateOfferingInvite(id: string): Promise<PrivateOfferingInvite | undefined>;
+  getPrivateOfferingInviteByCode(inviteCode: string): Promise<PrivateOfferingInvite | undefined>;
+  getPrivateOfferingInvitesByOffering(offeringId: string): Promise<PrivateOfferingInvite[]>;
+  getPrivateOfferingInvitesByEmail(email: string): Promise<PrivateOfferingInvite[]>;
+  updatePrivateOfferingInviteStatus(id: string, status: PrivateOfferingInvite["status"]): Promise<PrivateOfferingInvite | undefined>;
+  validatePrivateOfferingAccess(offeringId: string, accessCode: string): Promise<boolean>;
+  validateInviteCode(offeringId: string, inviteCode: string): Promise<PrivateOfferingInvite | null>;
 }
 
 export class MemStorage implements IStorage {
@@ -124,6 +135,7 @@ export class MemStorage implements IStorage {
   private submissionDocuments: Map<string, SubmissionDocument>;
   private propertyNominations: Map<string, PropertyNomination>;
   private desiredUseVotes: Map<string, DesiredUseVote>;
+  private privateOfferingInvites: Map<string, PrivateOfferingInvite>;
 
   constructor() {
     this.users = new Map();
@@ -138,6 +150,7 @@ export class MemStorage implements IStorage {
     this.submissionDocuments = new Map();
     this.propertyNominations = new Map();
     this.desiredUseVotes = new Map();
+    this.privateOfferingInvites = new Map();
     
     this.seedMockData();
   }
@@ -190,6 +203,8 @@ export class MemStorage implements IStorage {
       fundingDeadline: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
       totalFundingRaised: "231250",
       interestRateOnRefund: "3.00",
+      offeringType: "public",
+      accessCode: null,
       createdAt: new Date(),
     };
     this.tokenOfferings.set(etowahOffering.id, etowahOffering);
@@ -253,6 +268,7 @@ export class MemStorage implements IStorage {
       country: userData.country ?? existing?.country ?? "USA",
       kycStatus: userData.kycStatus ?? existing?.kycStatus ?? "pending",
       kycVerifiedAt: userData.kycVerifiedAt ?? existing?.kycVerifiedAt ?? null,
+      role: userData.role ?? existing?.role ?? "user",
       createdAt: existing?.createdAt ?? new Date(),
       updatedAt: new Date(),
     };
@@ -346,6 +362,8 @@ export class MemStorage implements IStorage {
       fundingDeadline: insertOffering.fundingDeadline ?? null,
       totalFundingRaised: insertOffering.totalFundingRaised ?? "0",
       interestRateOnRefund: insertOffering.interestRateOnRefund ?? "3.00",
+      offeringType: insertOffering.offeringType ?? "public",
+      accessCode: insertOffering.accessCode ?? null,
       createdAt: new Date(),
     };
     this.tokenOfferings.set(id, offering);
@@ -869,6 +887,75 @@ export class MemStorage implements IStorage {
     
     this.propertyNominations.set(nominationId, updated);
     return updated;
+  }
+
+  // Private Offering Invites
+  async createPrivateOfferingInvite(invite: InsertPrivateOfferingInvite): Promise<PrivateOfferingInvite> {
+    const id = randomUUID();
+    const newInvite: PrivateOfferingInvite = {
+      id,
+      offeringId: invite.offeringId,
+      email: invite.email,
+      inviteeName: invite.inviteeName ?? null,
+      inviteCode: invite.inviteCode,
+      status: "pending",
+      maxTokens: invite.maxTokens ?? null,
+      tokensPurchased: 0,
+      invitedBy: invite.invitedBy ?? null,
+      sentAt: null,
+      acceptedAt: null,
+      expiresAt: invite.expiresAt ?? null,
+      createdAt: new Date(),
+    };
+    this.privateOfferingInvites.set(id, newInvite);
+    return newInvite;
+  }
+
+  async getPrivateOfferingInvite(id: string): Promise<PrivateOfferingInvite | undefined> {
+    return this.privateOfferingInvites.get(id);
+  }
+
+  async getPrivateOfferingInviteByCode(inviteCode: string): Promise<PrivateOfferingInvite | undefined> {
+    return Array.from(this.privateOfferingInvites.values()).find(i => i.inviteCode === inviteCode);
+  }
+
+  async getPrivateOfferingInvitesByOffering(offeringId: string): Promise<PrivateOfferingInvite[]> {
+    return Array.from(this.privateOfferingInvites.values()).filter(i => i.offeringId === offeringId);
+  }
+
+  async getPrivateOfferingInvitesByEmail(email: string): Promise<PrivateOfferingInvite[]> {
+    return Array.from(this.privateOfferingInvites.values()).filter(i => i.email === email);
+  }
+
+  async updatePrivateOfferingInviteStatus(id: string, status: PrivateOfferingInvite["status"]): Promise<PrivateOfferingInvite | undefined> {
+    const invite = this.privateOfferingInvites.get(id);
+    if (!invite) return undefined;
+    
+    const updated: PrivateOfferingInvite = {
+      ...invite,
+      status,
+      ...(status === "sent" ? { sentAt: new Date() } : {}),
+      ...(status === "accepted" ? { acceptedAt: new Date() } : {}),
+    };
+    this.privateOfferingInvites.set(id, updated);
+    return updated;
+  }
+
+  async validatePrivateOfferingAccess(offeringId: string, accessCode: string): Promise<boolean> {
+    const offering = this.tokenOfferings.get(offeringId);
+    if (!offering) return false;
+    if (offering.offeringType !== "private") return true;
+    return offering.accessCode === accessCode;
+  }
+
+  async validateInviteCode(offeringId: string, inviteCode: string): Promise<PrivateOfferingInvite | null> {
+    const invite = Array.from(this.privateOfferingInvites.values()).find(
+      i => i.offeringId === offeringId && i.inviteCode === inviteCode
+    );
+    if (!invite) return null;
+    if (invite.status === "expired" || invite.status === "declined") return null;
+    if (invite.expiresAt && invite.expiresAt < new Date()) return null;
+    return invite;
   }
 }
 
