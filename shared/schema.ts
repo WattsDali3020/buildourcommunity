@@ -80,6 +80,11 @@ export const offeringPhaseEnum = pgEnum("offering_phase", [
   "international"
 ]);
 
+export const offeringTypeEnum = pgEnum("offering_type", [
+  "public",
+  "private"
+]);
+
 export const offeringStatusEnum = pgEnum("offering_status", [
   "upcoming",
   "active",
@@ -110,6 +115,8 @@ export const tokenOfferings = pgTable("token_offerings", {
   fundingDeadline: timestamp("funding_deadline"),
   totalFundingRaised: decimal("total_funding_raised", { precision: 15, scale: 2 }).default("0"),
   interestRateOnRefund: decimal("interest_rate_on_refund", { precision: 5, scale: 2 }).default("3.00"),
+  offeringType: offeringTypeEnum("offering_type").default("public"),
+  accessCode: text("access_code"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -684,6 +691,43 @@ export const insertSubmissionDocumentSchema = createInsertSchema(submissionDocum
 
 export type InsertSubmissionDocument = z.infer<typeof insertSubmissionDocumentSchema>;
 export type SubmissionDocument = typeof submissionDocuments.$inferSelect;
+
+// Private offering invites - email-based invitations
+export const inviteStatusEnum = pgEnum("invite_status", [
+  "pending",
+  "sent",
+  "accepted",
+  "declined",
+  "expired"
+]);
+
+export const privateOfferingInvites = pgTable("private_offering_invites", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  offeringId: varchar("offering_id").references(() => tokenOfferings.id).notNull(),
+  email: text("email").notNull(),
+  inviteeName: text("invitee_name"),
+  inviteCode: text("invite_code").notNull(),
+  status: inviteStatusEnum("status").default("pending"),
+  maxTokens: integer("max_tokens"),
+  tokensPurchased: integer("tokens_purchased").default(0),
+  invitedBy: varchar("invited_by").references(() => users.id),
+  sentAt: timestamp("sent_at"),
+  acceptedAt: timestamp("accepted_at"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertPrivateOfferingInviteSchema = createInsertSchema(privateOfferingInvites).omit({
+  id: true,
+  status: true,
+  tokensPurchased: true,
+  sentAt: true,
+  acceptedAt: true,
+  createdAt: true,
+});
+
+export type InsertPrivateOfferingInvite = z.infer<typeof insertPrivateOfferingInviteSchema>;
+export type PrivateOfferingInvite = typeof privateOfferingInvites.$inferSelect;
 
 export const GENERIC_PROPERTY_USES = [
   { id: "affordable_housing", label: "Affordable Housing", category: "Housing" },
