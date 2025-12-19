@@ -794,12 +794,12 @@ export async function registerRoutes(
       });
     }
 
-    const fundingGoal = parseFloat(offering.fundingGoal?.toString() || "0");
-    const fundingRaised = parseFloat(offering.fundingRaised?.toString() || "0");
+    const fundingGoal = parseFloat(offering.minimumFundingThreshold?.toString() || "0");
+    const fundingRaised = parseFloat(offering.totalFundingRaised?.toString() || "0");
     const fundingPercent = fundingGoal > 0 ? (fundingRaised / fundingGoal) * 100 : 0;
     const minimumThreshold = 60;
 
-    const deadlineDate = offering.deadline ? new Date(offering.deadline) : null;
+    const deadlineDate = offering.fundingDeadline ? new Date(offering.fundingDeadline) : null;
     const now = new Date();
     const deadlinePassed = deadlineDate ? now > deadlineDate : false;
 
@@ -819,7 +819,7 @@ export async function registerRoutes(
       fundingPercent: fundingPercent.toFixed(1),
       minimumThreshold,
       deadlinePassed,
-      deadline: offering.deadline,
+      deadline: offering.fundingDeadline,
       investedAmount: investedAmount.toFixed(2),
       tokenCount,
       daysHeld,
@@ -875,7 +875,7 @@ export async function registerRoutes(
       return res.status(403).json({ error: eligibility.reason });
     }
 
-    const expectedPrice = parseFloat(activePhase.pricePerToken) * tokenCount;
+    const expectedPrice = parseFloat(activePhase.currentPrice) * tokenCount;
     const priceTolerance = 0.01;
     if (Math.abs(expectedPrice - amount) > priceTolerance * expectedPrice) {
       return res.status(400).json({ error: "Price mismatch. Please refresh and try again." });
