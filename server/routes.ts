@@ -647,6 +647,228 @@ export async function registerRoutes(
     res.json({ url });
   });
 
+  // User and KYC routes
+  app.get("/api/user", isAuthenticated, async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const user = await storage.getUser(userId);
+    res.json(user);
+  });
+
+  app.get("/api/user/holdings", isAuthenticated, async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const holdings = await storage.getUserHoldings(userId);
+    res.json(holdings);
+  });
+
+  app.post("/api/user/kyc", isAuthenticated, async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const { firstName, lastName, county, state, country } = req.body;
+    const currentUser = await storage.getUser(userId);
+    
+    const user = await storage.upsertUser({
+      id: userId,
+      email: currentUser?.email,
+      firstName,
+      lastName,
+      county,
+      state,
+      country: country || "USA",
+      kycStatus: "submitted",
+    });
+    
+    res.json({ success: true, user });
+  });
+
+  app.post("/api/user/wallet", isAuthenticated, async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const { walletAddress } = req.body;
+    
+    if (!walletAddress) {
+      return res.status(400).json({ error: "Wallet address is required" });
+    }
+    
+    const currentUser = await storage.getUser(userId);
+    const user = await storage.upsertUser({
+      id: userId,
+      email: currentUser?.email,
+      walletAddress,
+    });
+    
+    res.json({ success: true, user });
+  });
+
+  // Admin submissions endpoint
+  app.get("/api/submissions", async (req: Request, res: Response) => {
+    const status = req.query.status as string | undefined;
+    let submissions;
+    if (status) {
+      submissions = await storage.getPropertySubmissionsByStatus(status as any);
+    } else {
+      submissions = await storage.getPropertySubmissionsByStatus("submitted");
+    }
+    res.json(submissions);
+  });
+
+  // Admin KYC verification endpoints
+  app.get("/api/admin/kyc-pending", async (req: Request, res: Response) => {
+    const users = await storage.getUsersByKYCStatus("submitted");
+    res.json(users);
+  });
+
+  app.post("/api/admin/kyc/:userId/approve", async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    const updatedUser = await storage.upsertUser({
+      ...user,
+      kycStatus: "verified",
+    });
+    res.json({ success: true, user: updatedUser });
+  });
+
+  app.post("/api/admin/kyc/:userId/reject", async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    const updatedUser = await storage.upsertUser({
+      ...user,
+      kycStatus: "rejected",
+    });
+    res.json({ success: true, user: updatedUser });
+  });
+
+  // Investor protection: Calculate refund with 3% APR
+  app.get("/api/investor-protection/:propertyId", async (req: Request, res: Response) => {
+    const { propertyId } = req.params;
+    const userId = req.session.userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const property = await storage.getProperty(propertyId);
+    if (!property) {
+      return res.status(404).json({ error: "Property not found" });
+    }
+
+    const offering = await storage.getOfferingByPropertyId(propertyId);
+    if (!offering) {
+      return res.json({
+        eligible: false,
+        reason: "No active offering for this property",
+      });
+    }
+
+    const holdings = await storage.getUserHoldings(userId);
+    const propertyHolding = holdings.find(h => h.offeringId === offering.id);
+
+    if (!propertyHolding) {
+      return res.json({
+        eligible: false,
+        reason: "You have no holdings in this property",
+      });
+    }
+
+    const fundingGoal = parseFloat(offering.fundingGoal?.toString() || "0");
+    const fundingRaised = parseFloat(offering.fundingRaised?.toString() || "0");
+    const fundingPercent = fundingGoal > 0 ? (fundingRaised / fundingGoal) * 100 : 0;
+    const minimumThreshold = 60;
+
+    const deadlineDate = offering.deadline ? new Date(offering.deadline) : null;
+    const now = new Date();
+    const deadlinePassed = deadlineDate ? now > deadlineDate : false;
+
+    const tokenCount = propertyHolding.tokenCount;
+    const avgPrice = parseFloat(propertyHolding.averagePurchasePrice || "0");
+    const investedAmount = tokenCount * avgPrice;
+    const holdingUpdatedAt = propertyHolding.updatedAt ? new Date(propertyHolding.updatedAt) : now;
+    const daysHeld = Math.floor((now.getTime() - holdingUpdatedAt.getTime()) / (1000 * 60 * 60 * 24));
+    const yearFraction = daysHeld / 365;
+    const aprAmount = investedAmount * 0.03 * yearFraction;
+    const refundAmount = investedAmount + aprAmount;
+
+    const eligible = fundingPercent < minimumThreshold && deadlinePassed;
+
+    res.json({
+      eligible,
+      fundingPercent: fundingPercent.toFixed(1),
+      minimumThreshold,
+      deadlinePassed,
+      deadline: offering.deadline,
+      investedAmount: investedAmount.toFixed(2),
+      tokenCount,
+      daysHeld,
+      aprAmount: aprAmount.toFixed(2),
+      refundAmount: refundAmount.toFixed(2),
+      options: eligible ? ["refund", "transfer"] : [],
+    });
+  });
+
+  // Token purchase endpoint
+  app.post("/api/purchase", isAuthenticated, async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const { propertyId, tokenCount, phase, paymentMethod, amount } = req.body;
+
+    if (!propertyId || !tokenCount || !phase || !paymentMethod || !amount) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const user = await storage.getUser(userId);
+    if (!user || user.kycStatus !== "verified") {
+      return res.status(403).json({ error: "KYC verification required" });
+    }
+
+    if (!user.walletAddress) {
+      return res.status(403).json({ error: "Wallet connection required" });
+    }
+
+    const VOTING_MULTIPLIERS: Record<string, number> = {
+      county: 1.5,
+      state: 1.25,
+      national: 1.0,
+      international: 0.75,
+    };
+
+    const votingPower = Math.round(tokenCount * (VOTING_MULTIPLIERS[phase] || 1));
+
+    const purchase = await storage.createPurchase({
+      userId,
+      propertyId,
+      offeringId: propertyId,
+      tokenCount,
+      pricePerToken: (amount / tokenCount).toFixed(2),
+      totalAmount: amount.toFixed(2),
+      paymentMethod,
+      phase,
+      votingPower,
+      status: "pending",
+    });
+
+    res.json({ success: true, purchase });
+  });
+
   // Register object storage routes for document uploads
   registerObjectStorageRoutes(app);
 

@@ -1,3 +1,5 @@
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ProposalCard, type Proposal } from "@/components/ProposalCard";
@@ -7,8 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Users, Vote, Wallet, MapPin, Flag, Globe, Info, ShieldCheck } from "lucide-react";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import type { Proposal as ProposalType, TokenHolding } from "@shared/schema";
 
-// todo: remove mock functionality
+// Fallback mock data when API returns empty
 const mockProposals: Proposal[] = [
   {
     id: "prop-1",
@@ -62,13 +66,41 @@ const mockProposals: Proposal[] = [
 
 export default function Governance() {
   const [activeTab, setActiveTab] = useState("active");
+  const { toast } = useToast();
 
-  const filteredProposals = mockProposals.filter((p) => {
+  const { data: apiProposals = [] } = useQuery<ProposalType[]>({
+    queryKey: ["/api/proposals"],
+  });
+
+  const { data: holdings = [] } = useQuery<TokenHolding[]>({
+    queryKey: ["/api/user/holdings"],
+  });
+
+  const totalVotingPower = holdings.reduce((sum, h) => sum + (h.votingPower || 0), 0);
+
+  const proposals: Proposal[] = apiProposals.length > 0
+    ? apiProposals.map((p) => ({
+        id: p.id.toString(),
+        title: p.title,
+        description: p.description || "",
+        propertyName: "Community Property",
+        status: p.status as "active" | "passed" | "rejected",
+        votesFor: p.votesFor || 0,
+        votesAgainst: p.votesAgainst || 0,
+        totalVoters: p.totalVoters || 0,
+        deadline: p.votingEndsAt ? new Date(p.votingEndsAt) : new Date(),
+        proposer: p.proposerAddress || "Community",
+      }))
+    : mockProposals;
+
+  const filteredProposals = proposals.filter((p) => {
     if (activeTab === "active") return p.status === "active";
     if (activeTab === "passed") return p.status === "passed";
     if (activeTab === "rejected") return p.status === "rejected";
     return true;
   });
+
+  const activeCount = proposals.filter((p) => p.status === "active").length;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -96,7 +128,7 @@ export default function Governance() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Your Voting Power</p>
-                  <p className="text-xl font-semibold" data-testid="text-voting-power">142 Votes</p>
+                  <p className="text-xl font-semibold" data-testid="text-voting-power">{totalVotingPower} Votes</p>
                 </div>
               </CardContent>
             </Card>
@@ -107,7 +139,7 @@ export default function Governance() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Active Proposals</p>
-                  <p className="text-xl font-semibold">{mockProposals.filter(p => p.status === "active").length}</p>
+                  <p className="text-xl font-semibold">{activeCount}</p>
                 </div>
               </CardContent>
             </Card>

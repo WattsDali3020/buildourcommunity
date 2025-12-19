@@ -1,7 +1,8 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
-import { Building2, Menu, X, Wallet, Plus } from "lucide-react";
+import { WalletButton } from "./WalletButton";
+import { Building2, Menu, X } from "lucide-react";
 import { useState } from "react";
 
 const navLinks = [
@@ -9,6 +10,7 @@ const navLinks = [
   { href: "/properties", label: "Properties" },
   { href: "/community", label: "Community Voice" },
   { href: "/governance", label: "Governance" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/learn", label: "Learn" },
   { href: "/about", label: "About" },
 ];
@@ -16,12 +18,6 @@ const navLinks = [
 export function Header() {
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [walletConnected, setWalletConnected] = useState(false);
-
-  const handleConnectWallet = () => {
-    setWalletConnected(!walletConnected);
-    console.log(walletConnected ? "Wallet disconnected" : "Wallet connected");
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -48,16 +44,9 @@ export function Header() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button
-              variant={walletConnected ? "outline" : "default"}
-              size="sm"
-              onClick={handleConnectWallet}
-              className="hidden sm:flex items-center gap-2"
-              data-testid="button-connect-wallet"
-            >
-              <Wallet className="h-4 w-4" />
-              {walletConnected ? "0x1234...5678" : "Connect Wallet"}
-            </Button>
+            <div className="hidden sm:block">
+              <WalletButton />
+            </div>
             <Button
               variant="ghost"
               size="icon"
@@ -85,15 +74,9 @@ export function Header() {
                   </Button>
                 </Link>
               ))}
-              <Button
-                variant={walletConnected ? "outline" : "default"}
-                onClick={handleConnectWallet}
-                className="w-full justify-start gap-2"
-                data-testid="button-mobile-connect-wallet"
-              >
-                <Wallet className="h-4 w-4" />
-                {walletConnected ? "0x1234...5678" : "Connect Wallet"}
-              </Button>
+              <div className="pt-2">
+                <WalletButton />
+              </div>
             </div>
           </nav>
         )}

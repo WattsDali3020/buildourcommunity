@@ -32,6 +32,13 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getUsersByKYCStatus(status: User["kycStatus"]): Promise<User[]> {
+    if (status === null) {
+      return db.select().from(users).where(sql`${users.kycStatus} IS NULL`);
+    }
+    return db.select().from(users).where(sql`${users.kycStatus} = ${status}`);
+  }
+
   async upsertUser(userData: UpsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
@@ -103,6 +110,10 @@ export class DatabaseStorage implements IStorage {
     return offering || undefined;
   }
 
+  async getTokenOfferingsByProperty(propertyId: string): Promise<TokenOffering[]> {
+    return db.select().from(tokenOfferings).where(eq(tokenOfferings.propertyId, propertyId));
+  }
+
   async createTokenOffering(offering: InsertTokenOffering): Promise<TokenOffering> {
     const [newOffering] = await db
       .insert(tokenOfferings)
@@ -160,6 +171,38 @@ export class DatabaseStorage implements IStorage {
     await this.updateHoldings(purchase.userId, purchase.offeringId, purchase.tokenCount);
     await this.updatePhaseTokensSold(purchase.phaseId, purchase.tokenCount);
     await this.updateOfferingTotals(purchase.offeringId, purchase.tokenCount, purchase.totalAmount);
+    
+    return newPurchase;
+  }
+
+  async createPurchase(purchaseData: {
+    userId: string;
+    propertyId: string;
+    offeringId: string;
+    tokenCount: number;
+    pricePerToken: string;
+    totalAmount: string;
+    paymentMethod: string;
+    phase: string;
+    votingPower: number;
+    status: string;
+  }): Promise<TokenPurchase> {
+    const phaseId = `${purchaseData.propertyId}-${purchaseData.phase}`;
+    const [newPurchase] = await db
+      .insert(tokenPurchases)
+      .values({
+        id: randomUUID(),
+        userId: purchaseData.userId,
+        offeringId: purchaseData.offeringId,
+        phaseId,
+        tokenCount: purchaseData.tokenCount,
+        pricePerToken: purchaseData.pricePerToken,
+        totalAmount: purchaseData.totalAmount,
+        paymentMethod: purchaseData.paymentMethod,
+        status: purchaseData.status as TokenPurchase["status"],
+        purchasedAt: new Date(),
+      })
+      .returning();
     
     return newPurchase;
   }

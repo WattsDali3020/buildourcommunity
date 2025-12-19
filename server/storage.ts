@@ -23,6 +23,7 @@ import { eq, and, sql } from "drizzle-orm";
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUsersByKYCStatus(status: User["kycStatus"]): Promise<User[]>;
   upsertUser(user: UpsertUser): Promise<User>;
   
   getProperties(): Promise<Property[]>;
@@ -32,6 +33,7 @@ export interface IStorage {
   
   getTokenOffering(id: string): Promise<TokenOffering | undefined>;
   getOfferingByPropertyId(propertyId: string): Promise<TokenOffering | undefined>;
+  getTokenOfferingsByProperty(propertyId: string): Promise<TokenOffering[]>;
   createTokenOffering(offering: InsertTokenOffering): Promise<TokenOffering>;
   
   getOfferingPhases(offeringId: string): Promise<OfferingPhase[]>;
@@ -40,6 +42,18 @@ export interface IStorage {
   
   getUserPurchasesForPhase(userId: string, phaseId: string): Promise<TokenPurchase[]>;
   createTokenPurchase(purchase: InsertTokenPurchase): Promise<TokenPurchase>;
+  createPurchase(purchase: {
+    userId: string;
+    propertyId: string;
+    offeringId: string;
+    tokenCount: number;
+    pricePerToken: string;
+    totalAmount: string;
+    paymentMethod: string;
+    phase: string;
+    votingPower: number;
+    status: string;
+  }): Promise<TokenPurchase>;
   canUserPurchase(userId: string, phaseId: string, tokenCount: number): Promise<{ allowed: boolean; reason?: string }>;
   
   getUserHoldings(userId: string): Promise<TokenHolding[]>;
@@ -220,6 +234,10 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getUsersByKYCStatus(status: User["kycStatus"]): Promise<User[]> {
+    return Array.from(this.users.values()).filter(u => u.kycStatus === status);
+  }
+
   async upsertUser(userData: UpsertUser): Promise<User> {
     const existing = this.users.get(userData.id);
     const user: User = { 
@@ -304,6 +322,10 @@ export class MemStorage implements IStorage {
 
   async getOfferingByPropertyId(propertyId: string): Promise<TokenOffering | undefined> {
     return Array.from(this.tokenOfferings.values()).find(o => o.propertyId === propertyId);
+  }
+
+  async getTokenOfferingsByProperty(propertyId: string): Promise<TokenOffering[]> {
+    return Array.from(this.tokenOfferings.values()).filter(o => o.propertyId === propertyId);
   }
 
   async createTokenOffering(insertOffering: InsertTokenOffering): Promise<TokenOffering> {
@@ -430,6 +452,39 @@ export class MemStorage implements IStorage {
       transactionHash: null,
       usdcTransactionHash: null,
       status: "pending",
+      purchasedAt: new Date(),
+    };
+    this.tokenPurchases.set(id, purchase);
+    return purchase;
+  }
+
+  async createPurchase(purchaseData: {
+    userId: string;
+    propertyId: string;
+    offeringId: string;
+    tokenCount: number;
+    pricePerToken: string;
+    totalAmount: string;
+    paymentMethod: string;
+    phase: string;
+    votingPower: number;
+    status: string;
+  }): Promise<TokenPurchase> {
+    const id = randomUUID();
+    const purchase: TokenPurchase = {
+      id,
+      userId: purchaseData.userId,
+      offeringId: purchaseData.offeringId,
+      phaseId: `${purchaseData.propertyId}-${purchaseData.phase}`,
+      tokenCount: purchaseData.tokenCount,
+      pricePerToken: purchaseData.pricePerToken,
+      totalAmount: purchaseData.totalAmount,
+      usdcAmount: null,
+      usdcConversionRate: null,
+      paymentMethod: purchaseData.paymentMethod,
+      transactionHash: null,
+      usdcTransactionHash: null,
+      status: purchaseData.status as TokenPurchase["status"],
       purchasedAt: new Date(),
     };
     this.tokenPurchases.set(id, purchase);

@@ -58,7 +58,29 @@ Preferred communication style: Simple, everyday language.
 - Wallet connection patterns in UI (connection state managed in Header)
 
 ### Third-Party Integrations
-- Stripe for payment processing
+- Stripe for payment processing (pending full integration)
 - Nodemailer for email notifications
 - OpenAI and Google Generative AI for AI features
 - Passport.js for authentication
+
+## Recent Updates (December 2024)
+
+### Production Features Implemented
+1. **Wallet Connection**: RainbowKit + wagmi integration for Base network wallet connectivity
+2. **KYC Verification**: User identity verification with form submission and admin approval workflow
+3. **Token Purchase Flow**: SimplePurchaseModal with phase restrictions, per-person limits, and payment method selection
+4. **Investor Dashboard**: Portfolio metrics, voting power display, KYC status, and investor protection info
+5. **Governance Voting**: API-backed proposal listing with real voting power from holdings
+6. **Admin Panel**: Property/nomination approval, KYC verification management
+7. **Investor Protection API**: 3% APR refund calculation for failed property funding
+
+### Authentication
+- Uses Replit Auth (OAuth2/OIDC) with session-based authentication via `req.session.userId`
+- Session storage in PostgreSQL via connect-pg-simple
+
+### Key API Routes
+- `POST /api/purchase` - Token purchase with KYC/wallet validation
+- `GET /api/investor-protection/:propertyId` - Calculate refund eligibility
+- `GET/POST /api/admin/kyc-pending` - Admin KYC management
+- `POST /api/user/kyc` - Submit KYC verification
+- `POST /api/user/wallet` - Link wallet address

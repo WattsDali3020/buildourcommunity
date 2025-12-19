@@ -1,8 +1,11 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PhaseOfferingCard, type Phase } from "@/components/PhaseOfferingCard";
 import { TokenOfferingTimeline } from "@/components/TokenOfferingTimeline";
 import { FundingTimeline } from "@/components/FundingTimeline";
+import { SimplePurchaseModal } from "@/components/SimplePurchaseModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +20,7 @@ import { useParams } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import riverfrontImage from "@assets/generated_images/riverfront_wellness_community_hub.png";
 import { PHASE_CONFIG } from "@shared/schema";
+import type { User } from "@shared/schema";
 
 // todo: remove mock functionality
 const mockProperty = {
@@ -135,14 +139,18 @@ const mockPhases: Phase[] = [
 export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
+  const [selectedPhase, setSelectedPhase] = useState<Phase | null>(null);
+
+  const { data: user } = useQuery<User | null>({
+    queryKey: ["/api/user"],
+  });
 
   const handlePurchase = (phaseId: string, tokenCount: number) => {
     const phase = mockPhases.find(p => p.id === phaseId);
     if (phase) {
-      toast({
-        title: "Purchase Initiated",
-        description: `Purchasing ${tokenCount} ${mockProperty.tokenSymbol} tokens for $${(tokenCount * phase.currentPrice).toFixed(2)}`,
-      });
+      setSelectedPhase(phase);
+      setPurchaseModalOpen(true);
     }
   };
 
@@ -366,6 +374,24 @@ export default function PropertyDetail() {
         </div>
       </main>
       <Footer />
+
+      {selectedPhase && (
+        <SimplePurchaseModal
+          isOpen={purchaseModalOpen}
+          onClose={() => {
+            setPurchaseModalOpen(false);
+            setSelectedPhase(null);
+          }}
+          propertyId={mockProperty.id}
+          propertyName={mockProperty.name}
+          tokenSymbol={mockProperty.tokenSymbol}
+          currentPhase={selectedPhase.phase}
+          pricePerToken={selectedPhase.currentPrice}
+          maxTokensPerPerson={selectedPhase.maxTokensPerPerson}
+          userTokensPurchased={selectedPhase.userTokensPurchased || 0}
+          user={user}
+        />
+      )}
     </div>
   );
 }
