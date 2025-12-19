@@ -2,8 +2,11 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Clock, ThumbsUp, ThumbsDown, Users } from "lucide-react";
+import { Clock, ThumbsUp, ThumbsDown, Users, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export type ProposalStatus = "active" | "passed" | "rejected" | "pending";
 
@@ -29,9 +32,31 @@ const statusColors: Record<ProposalStatus, string> = {
 
 export function ProposalCard({ proposal }: { proposal: Proposal }) {
   const [userVote, setUserVote] = useState<"for" | "against" | null>(null);
+  const { toast } = useToast();
   const totalVotes = proposal.votesFor + proposal.votesAgainst;
   const forPercent = totalVotes > 0 ? Math.round((proposal.votesFor / totalVotes) * 100) : 0;
   const againstPercent = totalVotes > 0 ? Math.round((proposal.votesAgainst / totalVotes) * 100) : 0;
+
+  const voteMutation = useMutation({
+    mutationFn: async (voteDirection: boolean) => {
+      return apiRequest("POST", `/api/proposals/${proposal.id}/vote`, { voteDirection });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/proposals"] });
+      toast({
+        title: "Vote Recorded",
+        description: `Your vote has been submitted successfully.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Vote Failed",
+        description: error.message || "Failed to submit vote",
+        variant: "destructive",
+      });
+      setUserVote(null);
+    },
+  });
 
   const timeLeft = () => {
     const now = new Date();
@@ -44,7 +69,7 @@ export function ProposalCard({ proposal }: { proposal: Proposal }) {
 
   const handleVote = (vote: "for" | "against") => {
     setUserVote(vote);
-    console.log(`Voted ${vote} on proposal ${proposal.id}`);
+    voteMutation.mutate(vote === "for");
   };
 
   return (
@@ -107,18 +132,28 @@ export function ProposalCard({ proposal }: { proposal: Proposal }) {
               variant={userVote === "for" ? "default" : "outline"}
               className="flex-1"
               onClick={() => handleVote("for")}
+              disabled={voteMutation.isPending || userVote !== null}
               data-testid={`button-vote-for-${proposal.id}`}
             >
-              <ThumbsUp className="h-4 w-4 mr-2" />
+              {voteMutation.isPending && userVote === "for" ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <ThumbsUp className="h-4 w-4 mr-2" />
+              )}
               Vote For
             </Button>
             <Button
               variant={userVote === "against" ? "destructive" : "outline"}
               className="flex-1"
               onClick={() => handleVote("against")}
+              disabled={voteMutation.isPending || userVote !== null}
               data-testid={`button-vote-against-${proposal.id}`}
             >
-              <ThumbsDown className="h-4 w-4 mr-2" />
+              {voteMutation.isPending && userVote === "against" ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <ThumbsDown className="h-4 w-4 mr-2" />
+              )}
               Vote Against
             </Button>
           </div>

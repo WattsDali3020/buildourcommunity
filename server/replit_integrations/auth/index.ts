@@ -1,1 +1,1 @@
-export { setupAuth, isAuthenticated, getUser, upsertUser } from "./replitAuth";
+export { setupAuth, isAuthenticated, isAdmin, getUser, upsertUser } from "./replitAuth";

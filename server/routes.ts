@@ -4,7 +4,8 @@ import { storage } from "./storage";
 import { insertPropertySchema, insertPropertySubmissionSchema, insertPropertyNominationSchema } from "@shared/schema";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
-import { setupAuth, isAuthenticated } from "./replit_integrations/auth";
+import { setupAuth, isAuthenticated, isAdmin } from "./replit_integrations/auth";
+import { createPaymentIntent, isStripeConfigured, verifyPaymentAndGetMetadata } from "./services/payments";
 import { 
   lookupOwnerByAddress, 
   lookupOwnerByCoordinates, 
@@ -153,12 +154,17 @@ export async function registerRoutes(
     res.json(proposal);
   });
 
-  app.post("/api/proposals/:id/vote", async (req: Request, res: Response) => {
-    const { userId, voteDirection } = req.body;
+  app.post("/api/proposals/:id/vote", isAuthenticated, async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const { voteDirection } = req.body;
     const proposalId = req.params.id;
 
-    if (!userId || voteDirection === undefined) {
-      return res.status(400).json({ error: "Missing required fields" });
+    if (voteDirection === undefined) {
+      return res.status(400).json({ error: "Missing vote direction" });
     }
 
     const proposal = await storage.getProposal(proposalId);
@@ -168,12 +174,12 @@ export async function registerRoutes(
 
     const hasVoted = await storage.hasUserVoted(userId, proposalId);
     if (hasVoted) {
-      return res.status(403).json({ error: "User has already voted on this proposal" });
+      return res.status(403).json({ error: "You have already voted on this proposal" });
     }
 
     const votingPower = await storage.calculateVotingPower(userId, proposal.offeringId);
     if (votingPower === 0) {
-      return res.status(403).json({ error: "User has no voting power for this offering" });
+      return res.status(403).json({ error: "You have no voting power for this offering" });
     }
 
     const vote = await storage.castVote(proposalId, userId, voteDirection, votingPower);
@@ -724,12 +730,12 @@ export async function registerRoutes(
   });
 
   // Admin KYC verification endpoints
-  app.get("/api/admin/kyc-pending", async (req: Request, res: Response) => {
+  app.get("/api/admin/kyc-pending", isAdmin, async (req: Request, res: Response) => {
     const users = await storage.getUsersByKYCStatus("submitted");
     res.json(users);
   });
 
-  app.post("/api/admin/kyc/:userId/approve", async (req: Request, res: Response) => {
+  app.post("/api/admin/kyc/:userId/approve", isAdmin, async (req: Request, res: Response) => {
     const { userId } = req.params;
     const user = await storage.getUser(userId);
     if (!user) {
@@ -738,11 +744,12 @@ export async function registerRoutes(
     const updatedUser = await storage.upsertUser({
       ...user,
       kycStatus: "verified",
+      kycVerifiedAt: new Date(),
     });
     res.json({ success: true, user: updatedUser });
   });
 
-  app.post("/api/admin/kyc/:userId/reject", async (req: Request, res: Response) => {
+  app.post("/api/admin/kyc/:userId/reject", isAdmin, async (req: Request, res: Response) => {
     const { userId } = req.params;
     const user = await storage.getUser(userId);
     if (!user) {
@@ -822,7 +829,7 @@ export async function registerRoutes(
     });
   });
 
-  // Token purchase endpoint
+  // Token purchase endpoint with phase enforcement
   app.post("/api/purchase", isAuthenticated, async (req: Request, res: Response) => {
     const userId = req.session.userId;
     if (!userId) {
@@ -844,6 +851,36 @@ export async function registerRoutes(
       return res.status(403).json({ error: "Wallet connection required" });
     }
 
+    const offering = await storage.getOfferingByPropertyId(propertyId);
+    if (!offering) {
+      return res.status(404).json({ error: "Property offering not found" });
+    }
+
+    if (!tokenCount || tokenCount <= 0 || !Number.isInteger(tokenCount)) {
+      return res.status(400).json({ error: "Invalid token count" });
+    }
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: "Invalid amount" });
+    }
+
+    const phases = await storage.getOfferingPhases(offering.id);
+    const activePhase = phases.find(p => p.phase === phase && p.isActive);
+    
+    if (!activePhase) {
+      return res.status(403).json({ error: `Phase '${phase}' is not currently active for this offering` });
+    }
+
+    const eligibility = await storage.canUserPurchase(userId, activePhase.id, tokenCount);
+    if (!eligibility.allowed) {
+      return res.status(403).json({ error: eligibility.reason });
+    }
+
+    const expectedPrice = parseFloat(activePhase.pricePerToken) * tokenCount;
+    const priceTolerance = 0.01;
+    if (Math.abs(expectedPrice - amount) > priceTolerance * expectedPrice) {
+      return res.status(400).json({ error: "Price mismatch. Please refresh and try again." });
+    }
+
     const VOTING_MULTIPLIERS: Record<string, number> = {
       county: 1.5,
       state: 1.25,
@@ -851,22 +888,108 @@ export async function registerRoutes(
       international: 0.75,
     };
 
+    const pricePerToken = amount / tokenCount;
     const votingPower = Math.round(tokenCount * (VOTING_MULTIPLIERS[phase] || 1));
+
+    if (paymentMethod === "card") {
+      const paymentIntent = await createPaymentIntent(amount, {
+        userId,
+        propertyId,
+        tokenCount,
+        phase,
+      });
+
+      if (!paymentIntent) {
+        return res.status(500).json({ error: "Failed to create payment" });
+      }
+
+      const purchase = await storage.createPurchase({
+        userId,
+        propertyId,
+        offeringId: offering.id,
+        tokenCount,
+        pricePerToken: pricePerToken.toFixed(2),
+        totalAmount: amount.toFixed(2),
+        paymentMethod,
+        phase,
+        votingPower,
+        status: "pending",
+      });
+
+      return res.json({ 
+        success: true, 
+        purchase,
+        paymentIntent: {
+          clientSecret: paymentIntent.clientSecret,
+          id: paymentIntent.id,
+        }
+      });
+    }
 
     const purchase = await storage.createPurchase({
       userId,
       propertyId,
-      offeringId: propertyId,
+      offeringId: offering.id,
       tokenCount,
-      pricePerToken: (amount / tokenCount).toFixed(2),
+      pricePerToken: pricePerToken.toFixed(2),
       totalAmount: amount.toFixed(2),
       paymentMethod,
       phase,
       votingPower,
-      status: "pending",
+      status: paymentMethod === "usdc" ? "pending_crypto" : "completed",
     });
 
+    if (paymentMethod !== "usdc") {
+      await storage.updateOrCreateHolding(userId, offering.id, tokenCount, pricePerToken, votingPower);
+    }
+
     res.json({ success: true, purchase });
+  });
+
+  // Confirm payment and update holdings (verifies payment with Stripe)
+  app.post("/api/purchase/confirm", isAuthenticated, async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const { paymentIntentId } = req.body;
+
+    if (!paymentIntentId) {
+      return res.status(400).json({ error: "Payment intent ID required" });
+    }
+
+    const verification = await verifyPaymentAndGetMetadata(paymentIntentId, userId);
+    
+    if (!verification.success) {
+      return res.status(400).json({ error: verification.error });
+    }
+
+    if (!verification.metadata) {
+      return res.status(400).json({ error: "Payment not configured for production mode" });
+    }
+
+    const { propertyId, tokenCount, phase } = verification.metadata;
+    const amount = verification.amount!;
+
+    const offering = await storage.getOfferingByPropertyId(propertyId);
+    if (!offering) {
+      return res.status(404).json({ error: "Property offering not found" });
+    }
+
+    const VOTING_MULTIPLIERS: Record<string, number> = {
+      county: 1.5,
+      state: 1.25,
+      national: 1.0,
+      international: 0.75,
+    };
+
+    const pricePerToken = amount / tokenCount;
+    const votingPower = Math.round(tokenCount * (VOTING_MULTIPLIERS[phase] || 1));
+
+    await storage.updateOrCreateHolding(userId, offering.id, tokenCount, pricePerToken, votingPower);
+
+    res.json({ success: true, message: "Purchase confirmed and holdings updated" });
   });
 
   // Register object storage routes for document uploads

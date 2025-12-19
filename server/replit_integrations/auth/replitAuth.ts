@@ -176,4 +176,15 @@ export const isAuthenticated: RequestHandler = (req, res, next) => {
   res.status(401).json({ error: "Unauthorized" });
 };
 
+export const isAdmin: RequestHandler = async (req, res, next) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  const user = await getUser(req.session.userId);
+  if (!user || user.role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+  next();
+};
+
 export { getUser, upsertUser } from "./storage";

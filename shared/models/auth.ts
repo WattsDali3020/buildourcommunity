@@ -1,5 +1,7 @@
-import { pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, varchar, pgEnum } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+
+export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
 
 export const users = pgTable("users", {
   id: varchar("id", { length: 255 }).primaryKey().notNull(),
@@ -11,6 +13,7 @@ export const users = pgTable("users", {
   county: text("county"),
   state: text("state"),
   country: text("country").default("USA"),
+  role: userRoleEnum("role").default("user"),
   kycStatus: text("kyc_status").default("pending"),
   kycVerifiedAt: timestamp("kyc_verified_at"),
   createdAt: timestamp("created_at").defaultNow(),

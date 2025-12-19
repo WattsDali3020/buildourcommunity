@@ -1,5 +1,7 @@
+import { useEffect, useRef } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount, useDisconnect } from "wagmi";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,11 +12,30 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Wallet, LogOut, Copy, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export function WalletButton() {
   const { address, isConnected, chain } = useAccount();
   const { disconnect } = useDisconnect();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const lastSyncedAddress = useRef<string | null>(null);
+
+  const syncWalletMutation = useMutation({
+    mutationFn: async (walletAddress: string) => {
+      return apiRequest("POST", "/api/user/wallet", { walletAddress });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+    },
+  });
+
+  useEffect(() => {
+    if (isConnected && address && address !== lastSyncedAddress.current) {
+      lastSyncedAddress.current = address;
+      syncWalletMutation.mutate(address);
+    }
+  }, [isConnected, address]);
 
   const copyAddress = () => {
     if (address) {

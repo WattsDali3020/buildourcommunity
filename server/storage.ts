@@ -58,6 +58,7 @@ export interface IStorage {
   
   getUserHoldings(userId: string): Promise<TokenHolding[]>;
   getHoldingsByOffering(offeringId: string): Promise<TokenHolding[]>;
+  updateOrCreateHolding(userId: string, offeringId: string, tokenCount: number, pricePerToken: number, votingPower: number): Promise<TokenHolding>;
   
   getProposals(offeringId?: string): Promise<Proposal[]>;
   getProposal(id: string): Promise<Proposal | undefined>;
@@ -497,6 +498,49 @@ export class MemStorage implements IStorage {
 
   async getHoldingsByOffering(offeringId: string): Promise<TokenHolding[]> {
     return Array.from(this.tokenHoldings.values()).filter(h => h.offeringId === offeringId);
+  }
+
+  async updateOrCreateHolding(
+    userId: string,
+    offeringId: string,
+    tokenCount: number,
+    pricePerToken: number,
+    votingPower: number
+  ): Promise<TokenHolding> {
+    const existingHolding = Array.from(this.tokenHoldings.values()).find(
+      h => h.userId === userId && h.offeringId === offeringId
+    );
+
+    if (existingHolding) {
+      const newTokenCount = existingHolding.tokenCount + tokenCount;
+      const existingValue = existingHolding.tokenCount * parseFloat(existingHolding.averagePurchasePrice);
+      const newValue = tokenCount * pricePerToken;
+      const newAvgPrice = ((existingValue + newValue) / newTokenCount).toFixed(2);
+      const newVotingPower = existingHolding.votingPower + votingPower;
+
+      const updated: TokenHolding = {
+        ...existingHolding,
+        tokenCount: newTokenCount,
+        averagePurchasePrice: newAvgPrice,
+        votingPower: newVotingPower,
+        updatedAt: new Date(),
+      };
+      this.tokenHoldings.set(existingHolding.id, updated);
+      return updated;
+    }
+
+    const id = randomUUID();
+    const holding: TokenHolding = {
+      id,
+      userId,
+      offeringId,
+      tokenCount,
+      averagePurchasePrice: pricePerToken.toFixed(2),
+      votingPower,
+      updatedAt: new Date(),
+    };
+    this.tokenHoldings.set(id, holding);
+    return holding;
   }
 
   async getProposals(offeringId?: string): Promise<Proposal[]> {

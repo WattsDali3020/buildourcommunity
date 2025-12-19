@@ -79,8 +79,16 @@ Preferred communication style: Simple, everyday language.
 - Session storage in PostgreSQL via connect-pg-simple
 
 ### Key API Routes
-- `POST /api/purchase` - Token purchase with KYC/wallet validation
-- `GET /api/investor-protection/:propertyId` - Calculate refund eligibility
+- `POST /api/purchase` - Token purchase with phase enforcement, KYC/wallet validation, and Stripe payment intent creation
+- `POST /api/purchase/confirm` - Verify Stripe payment and update holdings (derives data from trusted payment metadata)
+- `POST /api/proposals/:id/vote` - Cast vote on governance proposals with token-weighted voting power
+- `GET /api/investor-protection/:propertyId` - Calculate refund eligibility with 3% APR
 - `GET/POST /api/admin/kyc-pending` - Admin KYC management
 - `POST /api/user/kyc` - Submit KYC verification
 - `POST /api/user/wallet` - Link wallet address
+
+### Security Features
+- Phase enforcement: Purchases rejected if requested phase is not active
+- Price validation: Server-side check against phase pricing to prevent manipulation
+- Payment verification: Stripe payment intent metadata used as source of truth for holdings updates
+- Voting power multipliers: County (1.5x), State (1.25x), National (1.0x), International (0.75x)
