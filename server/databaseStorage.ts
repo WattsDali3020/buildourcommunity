@@ -12,10 +12,11 @@ import {
   type PropertyNomination, type InsertPropertyNomination,
   type DesiredUseVote,
   type PrivateOfferingInvite, type InsertPrivateOfferingInvite,
+  type PropertyGrant, type InsertPropertyGrant, type CapitalStackSummary,
   PHASE_CONFIG, calculatePhasePrice, getPhaseAllocation,
   users, properties, tokenOfferings, offeringPhases, tokenPurchases, 
   tokenHoldings, proposals, votes, propertySubmissions, submissionDocuments,
-  propertyNominations, desiredUseVotes, privateOfferingInvites
+  propertyNominations, desiredUseVotes, privateOfferingInvites, propertyGrants
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
@@ -662,5 +663,69 @@ export class DatabaseStorage implements IStorage {
     if (invite.status === "expired" || invite.status === "declined") return null;
     if (invite.expiresAt && invite.expiresAt < new Date()) return null;
     return invite;
+  }
+
+  async createPropertyGrant(grant: InsertPropertyGrant): Promise<PropertyGrant> {
+    const [created] = await db.insert(propertyGrants).values(grant).returning();
+    return created;
+  }
+
+  async getPropertyGrant(id: string): Promise<PropertyGrant | undefined> {
+    const [grant] = await db.select().from(propertyGrants).where(eq(propertyGrants.id, id));
+    return grant || undefined;
+  }
+
+  async getPropertyGrantsByProperty(propertyId: string): Promise<PropertyGrant[]> {
+    return db.select().from(propertyGrants).where(eq(propertyGrants.propertyId, propertyId));
+  }
+
+  async updatePropertyGrant(id: string, data: Partial<InsertPropertyGrant>): Promise<PropertyGrant | undefined> {
+    const [updated] = await db
+      .update(propertyGrants)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(propertyGrants.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deletePropertyGrant(id: string): Promise<boolean> {
+    const result = await db.delete(propertyGrants).where(eq(propertyGrants.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getCapitalStackSummary(propertyId: string): Promise<CapitalStackSummary> {
+    const [property] = await db.select().from(properties).where(eq(properties.id, propertyId));
+    const grants = await this.getPropertyGrantsByProperty(propertyId);
+    const totalProjectCost = property?.fundingGoal ? parseFloat(property.fundingGoal) : 0;
+    
+    const grantFunding = { city: 0, county: 0, state: 0, federal: 0, total: 0 };
+    const grantsByStatus = { secured: 0, pending: 0, identified: 0 };
+    
+    for (const grant of grants) {
+      const amount = parseFloat(grant.amount);
+      if (grant.grantLevel === "city") grantFunding.city += amount;
+      if (grant.grantLevel === "county") grantFunding.county += amount;
+      if (grant.grantLevel === "state") grantFunding.state += amount;
+      if (grant.grantLevel === "federal") grantFunding.federal += amount;
+      
+      if (grant.status === "awarded" || grant.status === "disbursed") {
+        grantsByStatus.secured += amount;
+      } else if (grant.status === "applied" || grant.status === "under_review") {
+        grantsByStatus.pending += amount;
+      } else if (grant.status === "identified") {
+        grantsByStatus.identified += amount;
+      }
+    }
+    
+    grantFunding.total = grantFunding.city + grantFunding.county + grantFunding.state + grantFunding.federal;
+    
+    const offerings = await db.select().from(tokenOfferings).where(eq(tokenOfferings.propertyId, propertyId));
+    const tokenFunding = offerings.reduce((sum, o) => sum + parseFloat(o.amountRaised || "0"), 0);
+    
+    const totalFunded = tokenFunding + grantsByStatus.secured;
+    const remainingToRaise = Math.max(0, totalProjectCost - totalFunded);
+    const percentFunded = totalProjectCost > 0 ? (totalFunded / totalProjectCost) * 100 : 0;
+    
+    return { totalProjectCost, tokenFunding, grantFunding, grantsByStatus, remainingToRaise, percentFunded };
   }
 }

@@ -12,10 +12,11 @@ import {
   type PropertyNomination, type InsertPropertyNomination,
   type DesiredUseVote,
   type PrivateOfferingInvite, type InsertPrivateOfferingInvite,
+  type PropertyGrant, type InsertPropertyGrant, type CapitalStackSummary,
   PHASE_CONFIG, calculatePhasePrice, getPhaseAllocation,
   users, properties, tokenOfferings, offeringPhases, tokenPurchases, 
   tokenHoldings, proposals, votes, propertySubmissions, submissionDocuments,
-  propertyNominations, desiredUseVotes, privateOfferingInvites
+  propertyNominations, desiredUseVotes, privateOfferingInvites, propertyGrants
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -120,6 +121,14 @@ export interface IStorage {
   updatePrivateOfferingInviteStatus(id: string, status: PrivateOfferingInvite["status"]): Promise<PrivateOfferingInvite | undefined>;
   validatePrivateOfferingAccess(offeringId: string, accessCode: string): Promise<boolean>;
   validateInviteCode(offeringId: string, inviteCode: string): Promise<PrivateOfferingInvite | null>;
+  
+  // Property Grants
+  createPropertyGrant(grant: InsertPropertyGrant): Promise<PropertyGrant>;
+  getPropertyGrant(id: string): Promise<PropertyGrant | undefined>;
+  getPropertyGrantsByProperty(propertyId: string): Promise<PropertyGrant[]>;
+  updatePropertyGrant(id: string, data: Partial<InsertPropertyGrant>): Promise<PropertyGrant | undefined>;
+  deletePropertyGrant(id: string): Promise<boolean>;
+  getCapitalStackSummary(propertyId: string): Promise<CapitalStackSummary>;
 }
 
 export class MemStorage implements IStorage {
@@ -136,6 +145,7 @@ export class MemStorage implements IStorage {
   private propertyNominations: Map<string, PropertyNomination>;
   private desiredUseVotes: Map<string, DesiredUseVote>;
   private privateOfferingInvites: Map<string, PrivateOfferingInvite>;
+  private propertyGrantsMap: Map<string, PropertyGrant>;
 
   constructor() {
     this.users = new Map();
@@ -151,6 +161,7 @@ export class MemStorage implements IStorage {
     this.propertyNominations = new Map();
     this.desiredUseVotes = new Map();
     this.privateOfferingInvites = new Map();
+    this.propertyGrantsMap = new Map();
     
     this.seedMockData();
   }
@@ -956,6 +967,112 @@ export class MemStorage implements IStorage {
     if (invite.status === "expired" || invite.status === "declined") return null;
     if (invite.expiresAt && invite.expiresAt < new Date()) return null;
     return invite;
+  }
+
+  async createPropertyGrant(grant: InsertPropertyGrant): Promise<PropertyGrant> {
+    const id = randomUUID();
+    const newGrant: PropertyGrant = {
+      id,
+      propertyId: grant.propertyId,
+      grantName: grant.grantName,
+      grantLevel: grant.grantLevel,
+      grantType: grant.grantType,
+      grantingAgency: grant.grantingAgency,
+      amount: grant.amount,
+      status: grant.status ?? "identified",
+      applicationDeadline: grant.applicationDeadline ?? null,
+      appliedAt: grant.appliedAt ?? null,
+      awardedAt: grant.awardedAt ?? null,
+      disbursedAt: grant.disbursedAt ?? null,
+      complianceRequirements: grant.complianceRequirements ?? null,
+      jobsRequired: grant.jobsRequired ?? null,
+      affordableUnitsRequired: grant.affordableUnitsRequired ?? null,
+      reportingFrequency: grant.reportingFrequency ?? null,
+      notes: grant.notes ?? null,
+      documentUrls: grant.documentUrls ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.propertyGrantsMap.set(id, newGrant);
+    return newGrant;
+  }
+
+  async getPropertyGrant(id: string): Promise<PropertyGrant | undefined> {
+    return this.propertyGrantsMap.get(id);
+  }
+
+  async getPropertyGrantsByProperty(propertyId: string): Promise<PropertyGrant[]> {
+    return Array.from(this.propertyGrantsMap.values()).filter(g => g.propertyId === propertyId);
+  }
+
+  async updatePropertyGrant(id: string, data: Partial<InsertPropertyGrant>): Promise<PropertyGrant | undefined> {
+    const grant = this.propertyGrantsMap.get(id);
+    if (!grant) return undefined;
+    const updated: PropertyGrant = {
+      ...grant,
+      ...data,
+      updatedAt: new Date(),
+    };
+    this.propertyGrantsMap.set(id, updated);
+    return updated;
+  }
+
+  async deletePropertyGrant(id: string): Promise<boolean> {
+    return this.propertyGrantsMap.delete(id);
+  }
+
+  async getCapitalStackSummary(propertyId: string): Promise<CapitalStackSummary> {
+    const property = this.properties.get(propertyId);
+    const grants = await this.getPropertyGrantsByProperty(propertyId);
+    const totalProjectCost = property?.fundingGoal ? parseFloat(property.fundingGoal) : 0;
+    
+    const grantFunding = {
+      city: 0,
+      county: 0,
+      state: 0,
+      federal: 0,
+      total: 0,
+    };
+    
+    const grantsByStatus = {
+      secured: 0,
+      pending: 0,
+      identified: 0,
+    };
+    
+    for (const grant of grants) {
+      const amount = parseFloat(grant.amount);
+      if (grant.grantLevel === "city") grantFunding.city += amount;
+      if (grant.grantLevel === "county") grantFunding.county += amount;
+      if (grant.grantLevel === "state") grantFunding.state += amount;
+      if (grant.grantLevel === "federal") grantFunding.federal += amount;
+      
+      if (grant.status === "awarded" || grant.status === "disbursed") {
+        grantsByStatus.secured += amount;
+      } else if (grant.status === "applied" || grant.status === "under_review") {
+        grantsByStatus.pending += amount;
+      } else if (grant.status === "identified") {
+        grantsByStatus.identified += amount;
+      }
+    }
+    
+    grantFunding.total = grantFunding.city + grantFunding.county + grantFunding.state + grantFunding.federal;
+    
+    const offerings = Array.from(this.tokenOfferings.values()).filter(o => o.propertyId === propertyId);
+    const tokenFunding = offerings.reduce((sum, o) => sum + parseFloat(o.amountRaised || "0"), 0);
+    
+    const totalFunded = tokenFunding + grantsByStatus.secured;
+    const remainingToRaise = Math.max(0, totalProjectCost - totalFunded);
+    const percentFunded = totalProjectCost > 0 ? (totalFunded / totalProjectCost) * 100 : 0;
+    
+    return {
+      totalProjectCost,
+      tokenFunding,
+      grantFunding,
+      grantsByStatus,
+      remainingToRaise,
+      percentFunded,
+    };
   }
 }
 

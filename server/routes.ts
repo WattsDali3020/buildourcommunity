@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPropertySchema, insertPropertySubmissionSchema, insertPropertyNominationSchema } from "@shared/schema";
+import { insertPropertySchema, insertPropertySubmissionSchema, insertPropertyNominationSchema, insertPropertyGrantSchema } from "@shared/schema";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replit_integrations/auth";
@@ -1188,6 +1188,70 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching offering with access:", error);
       res.status(500).json({ error: "Failed to fetch offering" });
+    }
+  });
+
+  // Property Grants API
+  app.get("/api/properties/:propertyId/grants", async (req: Request, res: Response) => {
+    try {
+      const grants = await storage.getPropertyGrantsByProperty(req.params.propertyId);
+      res.json(grants);
+    } catch (error) {
+      console.error("Error fetching grants:", error);
+      res.status(500).json({ error: "Failed to fetch grants" });
+    }
+  });
+
+  app.get("/api/properties/:propertyId/capital-stack", async (req: Request, res: Response) => {
+    try {
+      const summary = await storage.getCapitalStackSummary(req.params.propertyId);
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching capital stack:", error);
+      res.status(500).json({ error: "Failed to fetch capital stack" });
+    }
+  });
+
+  app.post("/api/properties/:propertyId/grants", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertPropertyGrantSchema.parse({
+        ...req.body,
+        propertyId: req.params.propertyId,
+      });
+      const grant = await storage.createPropertyGrant(validatedData);
+      res.status(201).json(grant);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid grant data", details: error.errors });
+      }
+      console.error("Error creating grant:", error);
+      res.status(500).json({ error: "Failed to create grant" });
+    }
+  });
+
+  app.patch("/api/grants/:grantId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const grant = await storage.updatePropertyGrant(req.params.grantId, req.body);
+      if (!grant) {
+        return res.status(404).json({ error: "Grant not found" });
+      }
+      res.json(grant);
+    } catch (error) {
+      console.error("Error updating grant:", error);
+      res.status(500).json({ error: "Failed to update grant" });
+    }
+  });
+
+  app.delete("/api/grants/:grantId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const deleted = await storage.deletePropertyGrant(req.params.grantId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Grant not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting grant:", error);
+      res.status(500).json({ error: "Failed to delete grant" });
     }
   });
 
