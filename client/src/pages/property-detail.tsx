@@ -16,128 +16,19 @@ import { Progress } from "@/components/ui/progress";
 import { 
   MapPin, Building2, Users, TrendingUp, DollarSign, 
   FileText, Calendar, ExternalLink, Share2, Heart,
-  Briefcase, Home, Leaf, CheckCircle, Lock
+  Briefcase, Home, Leaf, CheckCircle, Lock, Loader2
 } from "lucide-react";
 import { useParams, useSearch } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import riverfrontImage from "@assets/generated_images/riverfront_wellness_community_hub.png";
 import { PHASE_CONFIG } from "@shared/schema";
-import type { User } from "@shared/schema";
+import type { User, Property, TokenOffering, OfferingPhase } from "@shared/schema";
 
-// todo: remove mock functionality
-const mockProperty = {
-  id: "etowah-wellness-village",
-  name: "Etowah Riverfront Wellness Village",
-  description: `The Etowah Riverfront Wellness Village is a transformative mixed-use development project 
-  located along the scenic Etowah River in Canton, Georgia. This 15-acre site will be converted from 
-  an abandoned industrial area into a vibrant community hub featuring affordable housing, wellness 
-  facilities, retail spaces, and public riverfront access.
-  
-  The project aims to create a model for sustainable community development that prioritizes local 
-  residents and small businesses while providing attractive returns for community investors.`,
-  propertyType: "downtown",
-  status: "live",
-  streetAddress: "100 Riverfront Drive",
-  city: "Canton",
-  county: "Cherokee",
-  state: "Georgia",
-  zipCode: "30114",
-  acreage: "15.0",
-  estimatedValue: 8000000,
-  fundingGoal: 10000000,
-  fundingRaised: 4200000,
-  totalTokens: 100000,
-  tokensSold: 42000,
-  projectedROI: 8.0,
-  projectedJobs: 120,
-  projectedHousingUnits: 50,
-  communityBenefits: [
-    "50+ affordable housing units",
-    "120+ local jobs created",
-    "Riverfront trail and park access",
-    "Community wellness center",
-    "Small business retail incubator",
-    "Youth recreation programs",
-  ],
-  image: riverfrontImage,
-  tokenSymbol: "ETOWAH",
-  currentPhase: "county" as const,
-  offeringType: "public" as "public" | "private",
-};
-
-const mockPhases: Phase[] = [
-  {
-    id: "phase-1",
-    phase: "county",
-    phaseName: "County Phase",
-    description: "Cherokee County residents only",
-    basePrice: 12.50,
-    currentPrice: 12.50,
-    priceMultiplier: 1.0,
-    tokenAllocation: 25000,
-    tokensSold: 18500,
-    maxTokensPerPerson: 100,
-    eligibilityCounty: "Cherokee",
-    eligibilityState: "Georgia",
-    isActive: true,
-    isCompleted: false,
-    isLocked: false,
-    userEligible: true,
-    userTokensPurchased: 25,
-  },
-  {
-    id: "phase-2",
-    phase: "state",
-    phaseName: "State Phase",
-    description: "Georgia residents",
-    basePrice: 12.50,
-    currentPrice: 18.75,
-    priceMultiplier: 1.5,
-    tokenAllocation: 25000,
-    tokensSold: 0,
-    maxTokensPerPerson: 250,
-    eligibilityState: "Georgia",
-    isActive: false,
-    isCompleted: false,
-    isLocked: true,
-    userEligible: true,
-    userTokensPurchased: 0,
-  },
-  {
-    id: "phase-3",
-    phase: "national",
-    phaseName: "National Phase",
-    description: "All US residents",
-    basePrice: 12.50,
-    currentPrice: 28.13,
-    priceMultiplier: 2.25,
-    tokenAllocation: 25000,
-    tokensSold: 0,
-    maxTokensPerPerson: 500,
-    isActive: false,
-    isCompleted: false,
-    isLocked: true,
-    userEligible: true,
-    userTokensPurchased: 0,
-  },
-  {
-    id: "phase-4",
-    phase: "international",
-    phaseName: "International Phase",
-    description: "Global investors",
-    basePrice: 12.50,
-    currentPrice: 37.50,
-    priceMultiplier: 3.0,
-    tokenAllocation: 25000,
-    tokensSold: 0,
-    maxTokensPerPerson: 1000,
-    isActive: false,
-    isCompleted: false,
-    isLocked: true,
-    userEligible: true,
-    userTokensPurchased: 0,
-  },
-];
+interface PropertyDetailData {
+  property: Property;
+  offering: TokenOffering | null;
+  phases: OfferingPhase[];
+}
 
 export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -154,17 +45,52 @@ export default function PropertyDetail() {
     queryKey: ["/api/user"],
   });
 
+  const { data: propertyData, isLoading: isLoadingProperty } = useQuery<PropertyDetailData>({
+    queryKey: ["/api/properties", id],
+    enabled: !!id,
+  });
+
+  const property = propertyData?.property;
+  const offering = propertyData?.offering;
+  const apiPhases = propertyData?.phases || [];
+
+  const phases: Phase[] = apiPhases.map((p, index) => ({
+    id: p.id,
+    phase: p.phase,
+    phaseName: PHASE_CONFIG[p.phase]?.name || p.phase,
+    description: PHASE_CONFIG[p.phase]?.description || "",
+    basePrice: Number(p.basePrice),
+    currentPrice: Number(p.currentPrice),
+    priceMultiplier: Number(p.priceMultiplier),
+    tokenAllocation: p.tokenAllocation,
+    tokensSold: p.tokensSold || 0,
+    maxTokensPerPerson: p.maxTokensPerPerson,
+    eligibilityCounty: p.eligibilityCounty || undefined,
+    eligibilityState: p.eligibilityState || undefined,
+    isActive: p.isActive || false,
+    isCompleted: (p.tokensSold || 0) >= p.tokenAllocation,
+    isLocked: !p.isActive && index > 0,
+    userEligible: true,
+    userTokensPurchased: 0,
+  }));
+
   useEffect(() => {
     const validateAccess = async () => {
-      const offeringId = id || mockProperty.id;
-      const isPrivate = mockProperty.offeringType === "private";
+      if (!property || !offering) {
+        if (!isLoadingProperty && id) {
+          setAccessCheckComplete(true);
+        }
+        return;
+      }
+
+      const isPrivate = offering.offeringType === "private";
       
       if (!isPrivate) {
         setAccessCheckComplete(true);
         return;
       }
 
-      const storedAccess = sessionStorage.getItem(`private_access_validated_${offeringId}`);
+      const storedAccess = sessionStorage.getItem(`private_access_validated_${offering.id}`);
       if (storedAccess) {
         try {
           const parsed = JSON.parse(storedAccess);
@@ -189,7 +115,7 @@ export default function PropertyDetail() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              offeringId,
+              offeringId: offering.id,
               inviteCode: inviteCodeFromUrl || undefined,
               accessCode: accessCodeFromUrl || undefined,
             }),
@@ -198,7 +124,7 @@ export default function PropertyDetail() {
           const result = await response.json();
 
           if (result.valid) {
-            sessionStorage.setItem(`private_access_validated_${offeringId}`, JSON.stringify({
+            sessionStorage.setItem(`private_access_validated_${offering.id}`, JSON.stringify({
               validated: true,
               type: inviteCodeFromUrl ? "inviteCode" : "accessCode",
               inviteDetails: result.invite,
@@ -231,14 +157,14 @@ export default function PropertyDetail() {
     };
 
     validateAccess();
-  }, [id, searchParams, toast]);
+  }, [id, searchParams, toast, property, offering, isLoadingProperty]);
 
-  const isPrivateOffering = mockProperty.offeringType === "private";
+  const isPrivateOffering = offering?.offeringType === "private";
   const needsAccessGate = isPrivateOffering && !hasPrivateAccess && accessCheckComplete;
 
   const handleAccessGranted = (accessType: "accessCode" | "inviteCode", invite?: any) => {
-    const offeringId = id || mockProperty.id;
-    sessionStorage.setItem(`private_access_validated_${offeringId}`, JSON.stringify({
+    if (!offering) return;
+    sessionStorage.setItem(`private_access_validated_${offering.id}`, JSON.stringify({
       validated: true,
       type: accessType,
       inviteDetails: invite,
@@ -250,17 +176,54 @@ export default function PropertyDetail() {
   };
 
   const handlePurchase = (phaseId: string, tokenCount: number) => {
-    const phase = mockPhases.find(p => p.id === phaseId);
+    const phase = phases.find(p => p.id === phaseId);
     if (phase) {
       setSelectedPhase(phase);
       setPurchaseModalOpen(true);
     }
   };
 
-  const fundingPercent = Math.round((mockProperty.fundingRaised / mockProperty.fundingGoal) * 100);
-  const tokensSoldPercent = Math.round((mockProperty.tokensSold / mockProperty.totalTokens) * 100);
+  if (isLoadingProperty) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 bg-muted/30 flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="text-muted-foreground">Loading property details...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
-  const phaseStatuses = mockPhases.map(p => ({
+  if (!property) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 bg-muted/30 flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <h1 className="text-2xl font-semibold">Property Not Found</h1>
+            <p className="text-muted-foreground">The property you're looking for doesn't exist or has been removed.</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const fundingGoal = property.fundingGoal ? parseFloat(property.fundingGoal) : 0;
+  const fundingRaised = offering?.totalFundingRaised ? parseFloat(offering.totalFundingRaised) : 0;
+  const totalTokens = offering?.totalSupply || 0;
+  const tokensSold = offering?.tokensSold || 0;
+  const fundingPercent = fundingGoal > 0 ? Math.round((fundingRaised / fundingGoal) * 100) : 0;
+  const tokensSoldPercent = totalTokens > 0 ? Math.round((tokensSold / totalTokens) * 100) : 0;
+
+  const activePhase = phases.find(p => p.isActive);
+  const currentPrice = activePhase?.currentPrice || phases[0]?.currentPrice || 0;
+
+  const phaseStatuses = phases.map(p => ({
     phase: p.phase,
     isActive: p.isActive,
     isCompleted: p.isCompleted,
@@ -268,6 +231,12 @@ export default function PropertyDetail() {
     tokenAllocation: p.tokenAllocation,
     currentPrice: p.currentPrice,
   }));
+
+  const communityBenefits = property.communityBenefits 
+    ? (typeof property.communityBenefits === 'string' 
+        ? JSON.parse(property.communityBenefits) 
+        : property.communityBenefits)
+    : [];
 
   if (isPrivateOffering && (!accessCheckComplete || isValidatingAccess)) {
     return (
@@ -284,14 +253,14 @@ export default function PropertyDetail() {
     );
   }
 
-  if (needsAccessGate) {
+  if (needsAccessGate && offering) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 bg-muted/30">
           <PrivateAccessGate
-            offeringId={id || mockProperty.id}
-            propertyName={mockProperty.name}
+            offeringId={offering.id}
+            propertyName={property.name}
             onAccessGranted={handleAccessGranted}
           />
         </main>
@@ -306,16 +275,20 @@ export default function PropertyDetail() {
       <main className="flex-1">
         <div className="relative h-64 md:h-80 lg:h-96">
           <img
-            src={mockProperty.image}
-            alt={mockProperty.name}
+            src={property.imageUrl || riverfrontImage}
+            alt={property.name}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-6">
             <div className="mx-auto max-w-7xl">
               <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <Badge className="bg-chart-5 text-white">Downtown</Badge>
-                <Badge className="bg-chart-3 text-white">Phase 1 Active</Badge>
+                <Badge className="bg-chart-5 text-white">{property.propertyType || "Property"}</Badge>
+                {activePhase && (
+                  <Badge className="bg-chart-3 text-white">
+                    {PHASE_CONFIG[activePhase.phase]?.name || activePhase.phase} Active
+                  </Badge>
+                )}
                 {isPrivateOffering && (
                   <Badge variant="outline" className="bg-black/50 text-white border-white/30">
                     <Lock className="h-3 w-3 mr-1" />
@@ -324,11 +297,11 @@ export default function PropertyDetail() {
                 )}
               </div>
               <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-                {mockProperty.name}
+                {property.name}
               </h1>
               <div className="flex items-center gap-2 text-white/80">
                 <MapPin className="h-4 w-4" />
-                <span>{mockProperty.city}, {mockProperty.county} County, {mockProperty.state}</span>
+                <span>{property.city}, {property.county} County, {property.state}</span>
               </div>
             </div>
           </div>
@@ -343,26 +316,28 @@ export default function PropertyDetail() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground whitespace-pre-line">
-                    {mockProperty.description}
+                    {property.description}
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Community Benefits</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {mockProperty.communityBenefits.map((benefit, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-chart-3 shrink-0" />
-                        <span className="text-sm">{benefit}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              {communityBenefits.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Community Benefits</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {communityBenefits.map((benefit: string, index: number) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4 text-chart-3 shrink-0" />
+                          <span className="text-sm">{benefit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               <Card>
                 <CardHeader>
@@ -372,17 +347,17 @@ export default function PropertyDetail() {
                   <div className="grid grid-cols-3 gap-4">
                     <div className="text-center p-4 rounded-md bg-muted/50">
                       <Briefcase className="h-6 w-6 mx-auto mb-2 text-chart-1" />
-                      <p className="text-2xl font-bold">{mockProperty.projectedJobs}</p>
+                      <p className="text-2xl font-bold">{property.projectedJobs || 0}</p>
                       <p className="text-xs text-muted-foreground">Jobs Created</p>
                     </div>
                     <div className="text-center p-4 rounded-md bg-muted/50">
                       <Home className="h-6 w-6 mx-auto mb-2 text-chart-3" />
-                      <p className="text-2xl font-bold">{mockProperty.projectedHousingUnits}</p>
+                      <p className="text-2xl font-bold">{property.projectedHousingUnits || 0}</p>
                       <p className="text-xs text-muted-foreground">Housing Units</p>
                     </div>
                     <div className="text-center p-4 rounded-md bg-muted/50">
                       <TrendingUp className="h-6 w-6 mx-auto mb-2 text-chart-4" />
-                      <p className="text-2xl font-bold">{mockProperty.projectedROI}%</p>
+                      <p className="text-2xl font-bold">{property.projectedROI || 0}%</p>
                       <p className="text-xs text-muted-foreground">Est. Annual ROI</p>
                     </div>
                   </div>
@@ -397,16 +372,26 @@ export default function PropertyDetail() {
                 </TabsList>
                 
                 <TabsContent value="phases" className="space-y-4 mt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {mockPhases.map((phase) => (
-                      <PhaseOfferingCard
-                        key={phase.id}
-                        phase={phase}
-                        propertyName={mockProperty.name}
-                        onPurchase={handlePurchase}
-                      />
-                    ))}
-                  </div>
+                  {phases.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {phases.map((phase) => (
+                        <PhaseOfferingCard
+                          key={phase.id}
+                          phase={phase}
+                          propertyName={property.name}
+                          onPurchase={handlePurchase}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <Card>
+                      <CardContent className="p-6">
+                        <p className="text-muted-foreground text-center">
+                          Token offering phases are not yet configured for this property.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
                 </TabsContent>
                 
                 <TabsContent value="documents" className="mt-4">
@@ -441,7 +426,9 @@ export default function PropertyDetail() {
                   <div>
                     <div className="flex justify-between text-sm mb-2">
                       <span>Raised</span>
-                      <span className="font-semibold">${(mockProperty.fundingRaised / 1000000).toFixed(1)}M of ${(mockProperty.fundingGoal / 1000000).toFixed(1)}M</span>
+                      <span className="font-semibold">
+                        ${(fundingRaised / 1000000).toFixed(1)}M of ${(fundingGoal / 1000000).toFixed(1)}M
+                      </span>
                     </div>
                     <Progress value={fundingPercent} className="h-3" />
                     <p className="text-xs text-muted-foreground mt-1">{fundingPercent}% funded</p>
@@ -450,7 +437,9 @@ export default function PropertyDetail() {
                   <div>
                     <div className="flex justify-between text-sm mb-2">
                       <span>Tokens Sold</span>
-                      <span className="font-semibold">{mockProperty.tokensSold.toLocaleString()} / {mockProperty.totalTokens.toLocaleString()}</span>
+                      <span className="font-semibold">
+                        {tokensSold.toLocaleString()} / {totalTokens.toLocaleString()}
+                      </span>
                     </div>
                     <Progress value={tokensSoldPercent} className="h-3" />
                     <p className="text-xs text-muted-foreground mt-1">{tokensSoldPercent}% of tokens sold</p>
@@ -459,52 +448,53 @@ export default function PropertyDetail() {
                   <div className="pt-4 border-t space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Token Symbol</span>
-                      <span className="font-mono font-semibold">{mockProperty.tokenSymbol}</span>
+                      <span className="font-mono font-semibold">{offering?.tokenSymbol || "N/A"}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Current Phase</span>
-                      <Badge className="bg-chart-3 text-white">County</Badge>
+                      <Badge className="bg-chart-3 text-white">
+                        {activePhase ? PHASE_CONFIG[activePhase.phase]?.name : "Upcoming"}
+                      </Badge>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Current Price</span>
-                      <span className="font-semibold text-chart-3">$12.50</span>
+                      <span className="font-semibold text-chart-3">${currentPrice.toFixed(2)}</span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <TokenOfferingTimeline
-                phases={phaseStatuses}
-                propertyCounty={mockProperty.county}
-                propertyState={mockProperty.state}
-              />
+              {phases.length > 0 && (
+                <TokenOfferingTimeline
+                  phases={phaseStatuses}
+                  propertyCounty={property.county}
+                  propertyState={property.state}
+                />
+              )}
 
-              <FundingTimeline
-                offeringId={mockProperty.id}
-                fundingGoal={mockProperty.fundingGoal}
-                fundingRaised={mockProperty.fundingRaised}
-                minimumThreshold={mockProperty.fundingGoal * 0.6}
-                deadline={new Date(Date.now() + 280 * 24 * 60 * 60 * 1000)}
-                startDate={new Date(Date.now() - 85 * 24 * 60 * 60 * 1000)}
-                currentPhase={mockProperty.currentPhase}
-                status="in_progress"
-                userHoldings={{
-                  tokenCount: 25,
-                  investedAmount: 312.50,
-                  purchaseDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-                }}
-              />
+              {offering && (
+                <FundingTimeline
+                  offeringId={offering.id}
+                  fundingGoal={fundingGoal}
+                  fundingRaised={fundingRaised}
+                  minimumThreshold={offering.minimumFundingThreshold ? parseFloat(offering.minimumFundingThreshold) : fundingGoal * 0.6}
+                  deadline={offering.fundingDeadline ? new Date(offering.fundingDeadline) : new Date(Date.now() + 280 * 24 * 60 * 60 * 1000)}
+                  startDate={offering.createdAt ? new Date(offering.createdAt) : new Date()}
+                  currentPhase={activePhase?.phase || "county"}
+                  status="in_progress"
+                />
+              )}
 
-              <CapitalStackDisplay propertyId={mockProperty.id} />
+              <CapitalStackDisplay propertyId={property.id} />
 
               <Card>
                 <CardContent className="p-4">
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button variant="outline" size="sm" className="flex-1" data-testid="button-share">
                       <Share2 className="h-4 w-4 mr-1" />
                       Share
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button variant="outline" size="sm" className="flex-1" data-testid="button-save">
                       <Heart className="h-4 w-4 mr-1" />
                       Save
                     </Button>
@@ -517,16 +507,16 @@ export default function PropertyDetail() {
       </main>
       <Footer />
 
-      {selectedPhase && (
+      {selectedPhase && offering && (
         <SimplePurchaseModal
           isOpen={purchaseModalOpen}
           onClose={() => {
             setPurchaseModalOpen(false);
             setSelectedPhase(null);
           }}
-          propertyId={mockProperty.id}
-          propertyName={mockProperty.name}
-          tokenSymbol={mockProperty.tokenSymbol}
+          propertyId={property.id}
+          propertyName={property.name}
+          tokenSymbol={offering.tokenSymbol}
           currentPhase={selectedPhase.phase}
           pricePerToken={selectedPhase.currentPrice}
           maxTokensPerPerson={selectedPhase.maxTokensPerPerson}

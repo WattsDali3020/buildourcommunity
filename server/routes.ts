@@ -5,7 +5,9 @@ import { insertPropertySchema, insertPropertySubmissionSchema, insertPropertyNom
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replit_integrations/auth";
-import { createPaymentIntent, isStripeConfigured, verifyPaymentAndGetMetadata } from "./services/payments";
+import { createPaymentIntent, isStripeConfigured, verifyPaymentAndGetMetadata, constructWebhookEvent } from "./services/payments";
+import { purchaseRateLimit, voteRateLimit } from "./middleware/rateLimit";
+import { sendPurchaseConfirmation } from "./services/email";
 import { 
   lookupOwnerByAddress, 
   lookupOwnerByCoordinates, 
@@ -104,7 +106,7 @@ export async function registerRoutes(
     res.json(result);
   });
 
-  app.post("/api/purchases", async (req: Request, res: Response) => {
+  app.post("/api/purchases", purchaseRateLimit, async (req: Request, res: Response) => {
     const { userId, offeringId, phaseId, tokenCount, pricePerToken } = req.body;
 
     if (!userId || !offeringId || !phaseId || !tokenCount || !pricePerToken) {
@@ -154,7 +156,7 @@ export async function registerRoutes(
     res.json(proposal);
   });
 
-  app.post("/api/proposals/:id/vote", isAuthenticated, async (req: Request, res: Response) => {
+  app.post("/api/proposals/:id/vote", isAuthenticated, voteRateLimit, async (req: Request, res: Response) => {
     const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -717,6 +719,26 @@ export async function registerRoutes(
     res.json({ success: true, user });
   });
 
+  app.get("/api/user/purchases", isAuthenticated, async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const purchases = await storage.getUserPurchases(userId);
+    
+    const purchasesWithDetails = await Promise.all(purchases.map(async (purchase) => {
+      const offering = await storage.getTokenOffering(purchase.offeringId);
+      const property = offering ? await storage.getProperty(offering.propertyId) : null;
+      return {
+        ...purchase,
+        propertyName: property?.name || "Unknown Property",
+        tokenSymbol: offering?.tokenSymbol || "TOKEN",
+      };
+    }));
+    
+    res.json(purchasesWithDetails);
+  });
+
   // Admin submissions endpoint
   app.get("/api/submissions", async (req: Request, res: Response) => {
     const status = req.query.status as string | undefined;
@@ -830,7 +852,7 @@ export async function registerRoutes(
   });
 
   // Token purchase endpoint with phase enforcement
-  app.post("/api/purchase", isAuthenticated, async (req: Request, res: Response) => {
+  app.post("/api/purchase", isAuthenticated, purchaseRateLimit, async (req: Request, res: Response) => {
     const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -947,7 +969,7 @@ export async function registerRoutes(
   });
 
   // Confirm payment and update holdings (verifies payment with Stripe)
-  app.post("/api/purchase/confirm", isAuthenticated, async (req: Request, res: Response) => {
+  app.post("/api/purchase/confirm", isAuthenticated, purchaseRateLimit, async (req: Request, res: Response) => {
     const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -1252,6 +1274,114 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting grant:", error);
       res.status(500).json({ error: "Failed to delete grant" });
+    }
+  });
+
+  // Stripe webhook endpoint for payment confirmations
+  app.post("/api/webhooks/stripe", async (req: Request, res: Response) => {
+    const signature = req.headers["stripe-signature"] as string;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.log("[Webhook] Stripe webhook secret not configured");
+      return res.status(200).json({ received: true, processed: false });
+    }
+
+    const rawBody = (req as any).rawBody;
+    if (!rawBody) {
+      return res.status(400).json({ error: "Missing raw body" });
+    }
+
+    const event = constructWebhookEvent(rawBody, signature, webhookSecret);
+    if (!event) {
+      return res.status(400).json({ error: "Invalid webhook signature" });
+    }
+
+    try {
+      if (event.type === "payment_intent.succeeded") {
+        const paymentIntent = event.data.object;
+        const { userId, propertyId, tokenCount, phase } = paymentIntent.metadata;
+
+        // Idempotency check: verify this payment hasn't been processed already
+        const existingPurchase = await storage.getPurchaseByPaymentIntentId(paymentIntent.id);
+        if (existingPurchase) {
+          console.log(`[Webhook] Payment ${paymentIntent.id} already processed - skipping`);
+          return res.status(200).json({ received: true, processed: true, duplicate: true });
+        }
+
+        const property = await storage.getProperty(propertyId);
+        if (!property) {
+          console.error(`[Webhook] Property ${propertyId} not found`);
+          return res.status(200).json({ received: true, processed: false });
+        }
+
+        const offering = await storage.getOfferingByPropertyId(propertyId);
+        if (!offering) {
+          console.error(`[Webhook] Offering for property ${propertyId} not found`);
+          return res.status(200).json({ received: true, processed: false });
+        }
+
+        const existingHolding = await storage.getHoldingByUserAndOffering(userId, offering.id);
+        const parsedTokenCount = parseInt(tokenCount, 10);
+        const amount = paymentIntent.amount / 100;
+
+        if (existingHolding) {
+          await storage.updateHolding(existingHolding.id, {
+            tokenCount: existingHolding.tokenCount + parsedTokenCount,
+            totalInvested: String(parseFloat(existingHolding.totalInvested || "0") + amount),
+          });
+        } else {
+          await storage.createHolding({
+            userId,
+            offeringId: offering.id,
+            tokenCount: parsedTokenCount,
+            purchasePhase: phase,
+            averagePurchasePrice: String(amount / parsedTokenCount),
+            totalInvested: String(amount),
+          });
+        }
+
+        // Update offering totals
+        await storage.updateOffering(offering.id, {
+          tokensSold: (offering.tokensSold || 0) + parsedTokenCount,
+          totalFundingRaised: String(parseFloat(offering.totalFundingRaised || "0") + amount),
+        });
+
+        // Update phase tokens sold
+        const phases = await storage.getOfferingPhases(offering.id);
+        const activePhase = phases.find(p => p.phase === phase);
+        if (activePhase) {
+          await storage.updateOfferingPhase(activePhase.id, {
+            tokensSold: (activePhase.tokensSold || 0) + parsedTokenCount,
+          });
+        }
+
+        // Record purchase
+        await storage.createPurchase({
+          userId,
+          offeringId: offering.id,
+          tokenCount: parsedTokenCount,
+          phase,
+          pricePerToken: String(amount / parsedTokenCount),
+          totalAmount: String(amount),
+          paymentMethod: "card",
+          paymentIntentId: paymentIntent.id,
+          status: "completed",
+        });
+
+        // Send purchase confirmation email
+        const user = await storage.getUser(userId);
+        if (user?.email) {
+          await sendPurchaseConfirmation(user.email, property.name, parsedTokenCount, amount);
+        }
+
+        console.log(`[Webhook] Payment processed: ${parsedTokenCount} tokens for user ${userId}`);
+      }
+
+      res.status(200).json({ received: true, processed: true });
+    } catch (error) {
+      console.error("[Webhook] Error processing webhook:", error);
+      res.status(500).json({ error: "Webhook processing failed" });
     }
   });
 

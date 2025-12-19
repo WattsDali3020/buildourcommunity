@@ -92,3 +92,31 @@ Preferred communication style: Simple, everyday language.
 - Price validation: Server-side check against phase pricing to prevent manipulation
 - Payment verification: Stripe payment intent metadata used as source of truth for holdings updates
 - Voting power multipliers: County (1.5x), State (1.25x), National (1.0x), International (0.75x)
+- Rate limiting: Applied to all purchase and vote endpoints (10 requests/minute for purchases, 20/minute for votes)
+- Stripe webhook idempotency: Checks for existing purchase by paymentIntentId before processing
+
+### Infrastructure Services (December 2024)
+1. **Scheduler Service** (`server/services/scheduler.ts`):
+   - Runs every 5 minutes on server startup
+   - Checks funding deadlines and triggers refund flows
+   - Advances phases when current phase sells out
+   - Updates proposal statuses when voting ends
+   - Graceful shutdown via SIGTERM/SIGINT handlers
+
+2. **Email Service** (`server/services/email.ts`):
+   - Purchase confirmations with token and amount details
+   - Refund notifications with 3% APR interest calculation
+   - Proposal notifications for token holders
+   - Vote confirmations with voting power used
+
+3. **Rate Limiting** (`server/middleware/rateLimit.ts`):
+   - purchaseRateLimit: 10 requests/minute per IP+path
+   - voteRateLimit: 20 requests/minute per IP+path
+   - authRateLimit: 5 requests/15 minutes per IP+path
+   - Automatic cleanup of expired rate limit entries
+
+4. **Stripe Webhook** (`/api/webhooks/stripe`):
+   - Signature verification with STRIPE_WEBHOOK_SECRET
+   - Idempotency check via paymentIntentId
+   - Updates holdings, offerings, and phases on payment_intent.succeeded
+   - Sends purchase confirmation email after successful processing

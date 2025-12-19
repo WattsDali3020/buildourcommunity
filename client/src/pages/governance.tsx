@@ -88,8 +88,8 @@ export default function Governance() {
         votesFor: p.votesFor || 0,
         votesAgainst: p.votesAgainst || 0,
         totalVoters: p.totalVoters || 0,
-        deadline: p.votingEndsAt ? new Date(p.votingEndsAt) : new Date(),
-        proposer: p.proposerAddress || "Community",
+        deadline: p.endsAt ? new Date(p.endsAt) : new Date(),
+        proposer: p.proposerId || "Community",
       }))
     : mockProposals;
 

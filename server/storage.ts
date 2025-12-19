@@ -43,18 +43,21 @@ export interface IStorage {
   createOfferingPhase(phase: InsertOfferingPhase): Promise<OfferingPhase>;
   
   getUserPurchasesForPhase(userId: string, phaseId: string): Promise<TokenPurchase[]>;
+  getUserPurchases(userId: string): Promise<TokenPurchase[]>;
+  getPurchaseByPaymentIntentId(paymentIntentId: string): Promise<TokenPurchase | undefined>;
   createTokenPurchase(purchase: InsertTokenPurchase): Promise<TokenPurchase>;
   createPurchase(purchase: {
     userId: string;
-    propertyId: string;
+    propertyId?: string;
     offeringId: string;
     tokenCount: number;
     pricePerToken: string;
     totalAmount: string;
     paymentMethod: string;
     phase: string;
-    votingPower: number;
+    votingPower?: number;
     status: string;
+    paymentIntentId?: string;
   }): Promise<TokenPurchase>;
   canUserPurchase(userId: string, phaseId: string, tokenCount: number): Promise<{ allowed: boolean; reason?: string }>;
   
@@ -421,6 +424,22 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getUserPurchases(userId: string): Promise<TokenPurchase[]> {
+    return Array.from(this.tokenPurchases.values()).filter(
+      p => p.userId === userId
+    ).sort((a, b) => {
+      const dateA = a.purchasedAt ? new Date(a.purchasedAt).getTime() : 0;
+      const dateB = b.purchasedAt ? new Date(b.purchasedAt).getTime() : 0;
+      return dateB - dateA;
+    });
+  }
+
+  async getPurchaseByPaymentIntentId(paymentIntentId: string): Promise<TokenPurchase | undefined> {
+    return Array.from(this.tokenPurchases.values()).find(
+      p => p.paymentIntentId === paymentIntentId
+    );
+  }
+
   async canUserPurchase(userId: string, phaseId: string, tokenCount: number): Promise<{ allowed: boolean; reason?: string }> {
     const phase = this.offeringPhases.get(phaseId);
     if (!phase) {
@@ -490,22 +509,23 @@ export class MemStorage implements IStorage {
 
   async createPurchase(purchaseData: {
     userId: string;
-    propertyId: string;
+    propertyId?: string;
     offeringId: string;
     tokenCount: number;
     pricePerToken: string;
     totalAmount: string;
     paymentMethod: string;
     phase: string;
-    votingPower: number;
+    votingPower?: number;
     status: string;
+    paymentIntentId?: string;
   }): Promise<TokenPurchase> {
     const id = randomUUID();
     const purchase: TokenPurchase = {
       id,
       userId: purchaseData.userId,
       offeringId: purchaseData.offeringId,
-      phaseId: `${purchaseData.propertyId}-${purchaseData.phase}`,
+      phaseId: purchaseData.propertyId ? `${purchaseData.propertyId}-${purchaseData.phase}` : `unknown-${purchaseData.phase}`,
       tokenCount: purchaseData.tokenCount,
       pricePerToken: purchaseData.pricePerToken,
       totalAmount: purchaseData.totalAmount,
@@ -514,6 +534,7 @@ export class MemStorage implements IStorage {
       paymentMethod: purchaseData.paymentMethod,
       transactionHash: null,
       usdcTransactionHash: null,
+      paymentIntentId: purchaseData.paymentIntentId || null,
       status: purchaseData.status as TokenPurchase["status"],
       purchasedAt: new Date(),
     };

@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { startScheduler, stopScheduler } from "./services/scheduler";
 
 const app = express();
 const httpServer = createServer(app);
@@ -93,6 +94,25 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
+      startScheduler(5 * 60 * 1000);
     },
   );
+
+  process.on("SIGTERM", () => {
+    log("SIGTERM received, shutting down gracefully");
+    stopScheduler();
+    httpServer.close(() => {
+      log("Server closed");
+      process.exit(0);
+    });
+  });
+
+  process.on("SIGINT", () => {
+    log("SIGINT received, shutting down gracefully");
+    stopScheduler();
+    httpServer.close(() => {
+      log("Server closed");
+      process.exit(0);
+    });
+  });
 })();

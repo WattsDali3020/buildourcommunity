@@ -174,3 +174,42 @@ export async function processRefund(
 export function isStripeConfigured(): boolean {
   return stripe !== null;
 }
+
+export function getStripe(): Stripe | null {
+  return stripe;
+}
+
+export interface WebhookPayload {
+  type: string;
+  data: {
+    object: {
+      id: string;
+      metadata: {
+        userId: string;
+        propertyId: string;
+        tokenCount: string;
+        phase: string;
+      };
+      amount: number;
+      status: string;
+    };
+  };
+}
+
+export function constructWebhookEvent(
+  payload: Buffer,
+  signature: string,
+  webhookSecret: string
+): WebhookPayload | null {
+  if (!stripe) {
+    console.log("[Payments] Stripe not configured - cannot verify webhook");
+    return null;
+  }
+
+  try {
+    return stripe.webhooks.constructEvent(payload, signature, webhookSecret) as unknown as WebhookPayload;
+  } catch (error) {
+    console.error("[Payments] Webhook signature verification failed:", error);
+    return null;
+  }
+}

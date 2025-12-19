@@ -195,6 +195,7 @@ export const tokenPurchases = pgTable("token_purchases", {
   usdcAmount: decimal("usdc_amount", { precision: 18, scale: 6 }),
   usdcConversionRate: decimal("usdc_conversion_rate", { precision: 10, scale: 4 }),
   paymentMethod: text("payment_method").default("usdc"),
+  paymentIntentId: text("payment_intent_id"),
   transactionHash: text("transaction_hash"),
   usdcTransactionHash: text("usdc_transaction_hash"),
   status: purchaseStatusEnum("status").default("pending"),

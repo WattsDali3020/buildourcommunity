@@ -162,6 +162,18 @@ export class DatabaseStorage implements IStorage {
       ));
   }
 
+  async getUserPurchases(userId: string): Promise<TokenPurchase[]> {
+    return db.select().from(tokenPurchases)
+      .where(eq(tokenPurchases.userId, userId))
+      .orderBy(desc(tokenPurchases.purchasedAt));
+  }
+
+  async getPurchaseByPaymentIntentId(paymentIntentId: string): Promise<TokenPurchase | undefined> {
+    const [purchase] = await db.select().from(tokenPurchases)
+      .where(eq(tokenPurchases.paymentIntentId, paymentIntentId));
+    return purchase;
+  }
+
   async createTokenPurchase(purchase: InsertTokenPurchase): Promise<TokenPurchase> {
     const [newPurchase] = await db
       .insert(tokenPurchases)
@@ -179,17 +191,18 @@ export class DatabaseStorage implements IStorage {
 
   async createPurchase(purchaseData: {
     userId: string;
-    propertyId: string;
+    propertyId?: string;
     offeringId: string;
     tokenCount: number;
     pricePerToken: string;
     totalAmount: string;
     paymentMethod: string;
     phase: string;
-    votingPower: number;
+    votingPower?: number;
     status: string;
+    paymentIntentId?: string;
   }): Promise<TokenPurchase> {
-    const phaseId = `${purchaseData.propertyId}-${purchaseData.phase}`;
+    const phaseId = purchaseData.propertyId ? `${purchaseData.propertyId}-${purchaseData.phase}` : `unknown-${purchaseData.phase}`;
     const [newPurchase] = await db
       .insert(tokenPurchases)
       .values({
@@ -201,6 +214,7 @@ export class DatabaseStorage implements IStorage {
         pricePerToken: purchaseData.pricePerToken,
         totalAmount: purchaseData.totalAmount,
         paymentMethod: purchaseData.paymentMethod,
+        paymentIntentId: purchaseData.paymentIntentId || null,
         status: purchaseData.status as TokenPurchase["status"],
         purchasedAt: new Date(),
       })
