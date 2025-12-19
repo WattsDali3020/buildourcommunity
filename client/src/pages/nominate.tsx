@@ -14,7 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { GENERIC_PROPERTY_USES } from "@shared/schema";
-import { MapPin, Search, Building2, CheckCircle2, ArrowRight, ArrowLeft, Loader2, Users, Target, AlertCircle } from "lucide-react";
+import { MapPin, Search, Building2, CheckCircle2, ArrowRight, ArrowLeft, Loader2, Users, Target, AlertCircle, Share2 } from "lucide-react";
+import { ShareModal } from "@/components/ShareModal";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || "";
 
@@ -139,6 +140,8 @@ export default function NominateProperty() {
     );
   };
 
+  const [submittedNomination, setSubmittedNomination] = useState<{ id: string; address: string } | null>(null);
+
   const nominationMutation = useMutation({
     mutationFn: async (data: {
       propertyAddress: string;
@@ -155,15 +158,15 @@ export default function NominateProperty() {
       desiredUses: string[];
     }) => {
       const response = await apiRequest("POST", "/api/nominations", data);
-      return response;
+      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: { id: string }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/nominations"] });
-      toast({
-        title: "Property Nominated",
-        description: "Your nomination has been submitted. We'll search for the owner and notify them about community interest.",
+      setSubmittedNomination({ 
+        id: data.id, 
+        address: selectedLocation?.address || "property" 
       });
-      navigate("/community");
+      setStep(4);
     },
     onError: (error: Error) => {
       toast({
@@ -582,6 +585,64 @@ export default function NominateProperty() {
                   )}
                 </Button>
               </div>
+            </div>
+          )}
+
+          {step === 4 && submittedNomination && (
+            <div className="space-y-6">
+              <Card className="text-center">
+                <CardContent className="py-8">
+                  <div className="h-16 w-16 rounded-full bg-chart-3/10 flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle2 className="h-8 w-8 text-chart-3" />
+                  </div>
+                  <h2 className="text-2xl font-semibold mb-2">Nomination Submitted!</h2>
+                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                    Thank you for nominating {submittedNomination.address} for community revitalization. 
+                    We'll search for the owner and notify them about community interest.
+                  </p>
+
+                  <div className="bg-muted/50 rounded-lg p-6 mb-6 max-w-md mx-auto">
+                    <h3 className="font-semibold mb-2 flex items-center gap-2 justify-center">
+                      <Share2 className="h-4 w-4" />
+                      Help This Property Go Viral!
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Share your nomination to rally community support. More visibility means 
+                      higher chances the owner will see the interest!
+                    </p>
+                    <ShareModal
+                      title={submittedNomination.address}
+                      description={`I just nominated ${submittedNomination.address} for community revitalization on RevitaHub! Help bring this property back to life.`}
+                      url={`${typeof window !== "undefined" ? window.location.origin : ""}/nominations/${submittedNomination.id}`}
+                      type="nomination"
+                    >
+                      <Button className="w-full" data-testid="button-share-nomination">
+                        <Share2 className="h-4 w-4 mr-2" />
+                        Share Your Nomination
+                      </Button>
+                    </ShareModal>
+                  </div>
+
+                  <div className="flex gap-3 justify-center">
+                    <Button variant="outline" onClick={() => navigate("/community")} data-testid="button-view-community">
+                      View Community
+                    </Button>
+                    <Button variant="outline" onClick={() => {
+                      setStep(1);
+                      setSelectedLocation(null);
+                      setSelectedUses([]);
+                      setWhyThisProperty("");
+                      setCurrentCondition("");
+                      setEstimatedSize("");
+                      setSearchQuery("");
+                      setSearchResults([]);
+                      setSubmittedNomination(null);
+                    }} data-testid="button-nominate-another">
+                      Nominate Another
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
         </div>

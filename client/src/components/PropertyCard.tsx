@@ -2,8 +2,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { MapPin, Users, TrendingUp, Building } from "lucide-react";
+import { MapPin, Users, Share2 } from "lucide-react";
 import { Link } from "wouter";
+import { ShareModal } from "./ShareModal";
 
 export type PropertyType = "vacant_land" | "historic_building" | "commercial" | "downtown";
 
@@ -55,6 +56,24 @@ export function PropertyCard({ property }: { property: Property }) {
         <Badge className={`absolute top-3 left-3 ${typeColors[property.type]}`}>
           {typeLabels[property.type]}
         </Badge>
+        <div className="absolute top-2 right-2">
+          <ShareModal
+            title={property.name}
+            description={`Invest in ${property.name} - ${property.location.city}, ${property.location.state}. Token price: $${property.tokenPrice}. Projected ROI: ${property.projectedROI}%`}
+            url={`${typeof window !== "undefined" ? window.location.origin : ""}/properties/${property.id}`}
+            image={property.image}
+            type="property"
+          >
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="bg-background/70 dark:bg-background/60 backdrop-blur-sm rounded-md"
+              data-testid={`button-share-${property.id}`}
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
+          </ShareModal>
+        </div>
       </div>
       <CardContent className="p-4">
         <h3 className="font-semibold text-lg mb-1 line-clamp-1" data-testid={`text-property-name-${property.id}`}>
