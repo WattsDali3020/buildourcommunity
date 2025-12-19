@@ -538,6 +538,89 @@ export const desiredUseVotes = pgTable("desired_use_votes", {
 
 export type DesiredUseVote = typeof desiredUseVotes.$inferSelect;
 
+// Property Grants and Incentives - tracking government funding at all levels
+export const grantLevelEnum = pgEnum("grant_level", [
+  "city",
+  "county",
+  "state",
+  "federal"
+]);
+
+export const grantStatusEnum = pgEnum("grant_status", [
+  "identified",
+  "applied",
+  "under_review",
+  "awarded",
+  "disbursed",
+  "rejected",
+  "expired"
+]);
+
+export const grantTypeEnum = pgEnum("grant_type", [
+  "community_development",
+  "historic_preservation",
+  "brownfield_remediation",
+  "affordable_housing",
+  "economic_development",
+  "infrastructure",
+  "environmental",
+  "opportunity_zone",
+  "tax_credit",
+  "other"
+]);
+
+export const propertyGrants = pgTable("property_grants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  propertyId: varchar("property_id").references(() => properties.id).notNull(),
+  grantName: text("grant_name").notNull(),
+  grantLevel: grantLevelEnum("grant_level").notNull(),
+  grantType: grantTypeEnum("grant_type").notNull(),
+  grantingAgency: text("granting_agency").notNull(),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  status: grantStatusEnum("status").default("identified"),
+  applicationDeadline: timestamp("application_deadline"),
+  appliedAt: timestamp("applied_at"),
+  awardedAt: timestamp("awarded_at"),
+  disbursedAt: timestamp("disbursed_at"),
+  complianceRequirements: text("compliance_requirements"),
+  jobsRequired: integer("jobs_required"),
+  affordableUnitsRequired: integer("affordable_units_required"),
+  reportingFrequency: text("reporting_frequency"),
+  notes: text("notes"),
+  documentUrls: text("document_urls").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertPropertyGrantSchema = createInsertSchema(propertyGrants).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertPropertyGrant = z.infer<typeof insertPropertyGrantSchema>;
+export type PropertyGrant = typeof propertyGrants.$inferSelect;
+
+// Capital stack summary type for frontend use
+export interface CapitalStackSummary {
+  totalProjectCost: number;
+  tokenFunding: number;
+  grantFunding: {
+    city: number;
+    county: number;
+    state: number;
+    federal: number;
+    total: number;
+  };
+  grantsByStatus: {
+    secured: number;
+    pending: number;
+    identified: number;
+  };
+  remainingToRaise: number;
+  percentFunded: number;
+}
+
 // Owner contact attempts - tracking outreach to property owners
 export const contactMethodEnum = pgEnum("contact_method", [
   "email",
