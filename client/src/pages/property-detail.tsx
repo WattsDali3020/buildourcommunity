@@ -7,6 +7,7 @@ import { TokenOfferingTimeline } from "@/components/TokenOfferingTimeline";
 import { FundingTimeline } from "@/components/FundingTimeline";
 import { SimplePurchaseModal } from "@/components/SimplePurchaseModal";
 import { PrivateAccessGate } from "@/components/PrivateAccessGate";
+import { CapitalStackDisplay } from "@/components/CapitalStackDisplay";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -493,6 +494,8 @@ export default function PropertyDetail() {
                   purchaseDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
                 }}
               />
+
+              <CapitalStackDisplay propertyId={mockProperty.id} />
 
               <Card>
                 <CardContent className="p-4">

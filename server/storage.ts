@@ -1059,7 +1059,7 @@ export class MemStorage implements IStorage {
     grantFunding.total = grantFunding.city + grantFunding.county + grantFunding.state + grantFunding.federal;
     
     const offerings = Array.from(this.tokenOfferings.values()).filter(o => o.propertyId === propertyId);
-    const tokenFunding = offerings.reduce((sum, o) => sum + parseFloat(o.amountRaised || "0"), 0);
+    const tokenFunding = offerings.reduce((sum, o) => sum + parseFloat(o.totalFundingRaised || "0"), 0);
     
     const totalFunded = tokenFunding + grantsByStatus.secured;
     const remainingToRaise = Math.max(0, totalProjectCost - totalFunded);
