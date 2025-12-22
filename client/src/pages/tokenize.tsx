@@ -177,23 +177,7 @@ export default function Tokenize() {
 
   const nextStep = async () => {
     if (currentStep < 5) {
-      if (currentStep === 1 && !submissionId) {
-        const data = prepareSubmissionData();
-        createSubmissionMutation.mutate(data, {
-          onSuccess: () => {
-            setCurrentStep(currentStep + 1);
-          },
-        });
-      } else if (submissionId) {
-        const data = prepareSubmissionData();
-        updateSubmissionMutation.mutate({ id: submissionId, data }, {
-          onSuccess: () => {
-            setCurrentStep(currentStep + 1);
-          },
-        });
-      } else {
-        setCurrentStep(currentStep + 1);
-      }
+      setCurrentStep(currentStep + 1);
     }
   };
 
