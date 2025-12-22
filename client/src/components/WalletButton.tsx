@@ -66,7 +66,7 @@ export function WalletButton() {
         {({ openConnectModal }) => (
           <Button
             onClick={openConnectModal}
-            variant="outline"
+            variant="default"
             data-testid="button-connect-wallet"
           >
             <Wallet className="mr-2 h-4 w-4" />
