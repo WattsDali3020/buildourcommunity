@@ -4,35 +4,40 @@ import { Search, Coins, Vote, TrendingUp } from "lucide-react";
 const steps = [
   {
     icon: Search,
-    title: "Discover Properties",
-    description: "Browse verified revitalization projects across all 50 states. Each listing includes detailed financials, community impact metrics, and legal documentation.",
+    title: "Find Your Investment",
+    benefit: "Browse properties that match your goals",
+    description: "Discover verified revitalization projects in your community or across America. See exactly how your investment will transform neighborhoods.",
   },
   {
     icon: Coins,
-    title: "Invest with Tokens",
-    description: "Purchase fractional ownership tokens starting at $50. Your investment is secured on the Base blockchain with transparent, verifiable ownership.",
+    title: "Own Real Estate for $50",
+    benefit: "No mortgage, no hassle",
+    description: "Skip the traditional barriers to real estate. Buy tokens that represent real ownership, secured on the Base blockchain.",
   },
   {
     icon: Vote,
-    title: "Participate in Governance",
-    description: "Vote on key decisions about property development and community benefits. Your tokens equal your voice in shaping neighborhood revitalization.",
+    title: "Shape Your Community",
+    benefit: "Your investment, your voice",
+    description: "Vote on how properties are developed. Decide between affordable housing, green spaces, or local businesses.",
   },
   {
     icon: TrendingUp,
-    title: "Earn Returns",
-    description: "Receive quarterly dividends from property income. Track your portfolio performance and community impact in real-time through your dashboard.",
+    title: "Earn Quarterly Returns",
+    benefit: "8.2% average annual returns",
+    description: "Receive dividends from property income directly to your wallet. Watch your community thrive while your investment grows.",
   },
 ];
 
 export function HowItWorks() {
   return (
-    <section className="py-16 lg:py-24 bg-muted/30">
+    <section id="how-it-works" className="py-16 lg:py-24 bg-muted/30">
       <div className="mx-auto max-w-7xl px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-semibold mb-4">How It Works</h2>
+          <p className="text-primary font-medium mb-2">Simple 4-Step Process</p>
+          <h2 className="text-3xl font-semibold mb-4">From Investor to Owner in Minutes</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Community ownership made simple through blockchain technology. 
-            From discovery to dividends in four easy steps.
+            No real estate experience needed. No large down payments. 
+            Just pick a property, invest what you're comfortable with, and start earning.
           </p>
         </div>
 
@@ -46,7 +51,8 @@ export function HowItWorks() {
                 <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center mb-4">
                   <step.icon className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="font-semibold text-lg mb-2">{step.title}</h3>
+                <h3 className="font-semibold text-lg mb-1">{step.title}</h3>
+                <p className="text-sm text-primary font-medium mb-2">{step.benefit}</p>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {step.description}
                 </p>
