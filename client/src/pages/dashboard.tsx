@@ -153,9 +153,9 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm">
                   <div className="flex items-start gap-2">
-                    <Badge variant="outline" className="mt-0.5">60%</Badge>
+                    <Badge variant="outline" className="mt-0.5">100%</Badge>
                     <p className="text-muted-foreground">
-                      Minimum funding threshold. If not met within 1 year, you receive a full refund plus 3% APR.
+                      Full funding required for loan issuance. If not met within 1 year, you receive a full refund plus 3% APR.
                     </p>
                   </div>
                   <div className="flex items-start gap-2">

@@ -89,13 +89,13 @@ export async function initiateTokenization(
     propertyType,
     proposedUse: nomination.topVotedUse || "Community Development",
     estimatedValue: request.propertyValue.toString(),
-    fundingGoal: (request.propertyValue * 0.6).toString(), // 60% minimum threshold
+    fundingGoal: request.propertyValue.toString(), // 100% funding required for loan issuance
   });
   
   console.log(`[Orchestrator] Created property: ${property.id}`);
   
   // 3. Calculate funding parameters
-  const fundingGoal = request.propertyValue * 0.6; // 60% minimum threshold
+  const fundingGoal = request.propertyValue; // 100% funding required for loan issuance
   const fundingDeadline = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
   
   // 4. Deploy smart contract
@@ -181,7 +181,7 @@ export async function initiateTokenization(
 }
 
 /**
- * Process refunds for failed funding (< 60% raised after 1 year)
+ * Process refunds for failed funding (< 100% target reached after 1 year)
  * Implements 3% APR interest calculation for investor protection
  */
 export async function processRefunds(offeringId: string): Promise<{
@@ -209,7 +209,7 @@ export async function processRefunds(offeringId: string): Promise<{
     return { success: false, refundsProcessed: 0, totalRefundAmount: 0, refundDetails: [], error: "Funding period has not ended yet" };
   }
   
-  // Check if minimum threshold was met (60% of target)
+  // Check if 100% funding target was met
   const raised = parseFloat(offering.totalFundingRaised || "0");
   const threshold = parseFloat(offering.minimumFundingThreshold || "0");
   

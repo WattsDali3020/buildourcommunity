@@ -11,7 +11,7 @@ export interface TokenDeploymentConfig {
   tokenSymbol: string;
   totalSupply: number;
   propertyValue: number; // USD value of the property
-  fundingGoal: number; // Minimum funding threshold (60% of property value)
+  fundingGoal: number; // 100% funding target required for loan issuance
   fundingDeadline: Date; // 1-year deadline
 }
 
@@ -204,7 +204,7 @@ export async function simulateDeployment(config: TokenDeploymentConfig): Promise
   console.log(`[Blockchain] Token: ${config.tokenName} (${config.tokenSymbol})`);
   console.log(`[Blockchain] Total Supply: ${config.totalSupply}`);
   console.log(`[Blockchain] Property Value: $${config.propertyValue.toLocaleString()}`);
-  console.log(`[Blockchain] Funding Goal: $${config.fundingGoal.toLocaleString()} (60%)`);
+  console.log(`[Blockchain] Funding Goal: $${config.fundingGoal.toLocaleString()} (100% required)`);
   console.log(`[Blockchain] Network: ${ACTIVE_NETWORK.name}`);
   
   // Simulate deployment delay

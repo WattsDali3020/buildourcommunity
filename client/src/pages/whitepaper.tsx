@@ -567,7 +567,7 @@ export default function Whitepaper() {
 
                 <Subsection title="6.3 Funding Timeline">
                   <p className="leading-relaxed mb-4">
-                    Each property offering operates under a 1-year funding deadline. If the minimum funding threshold (60% of target) is not reached, the offering is cancelled and investors receive automatic refunds with 3% APR interest.
+                    Each property offering operates under a 1-year funding deadline. If 100% of the funding target is not reached, the offering is cancelled and investors receive automatic refunds with 3% APR interest on their contributions.
                   </p>
                 </Subsection>
               </Section>
@@ -823,7 +823,7 @@ export default function Whitepaper() {
                         </div>
                       </div>
                       <p className="text-sm mb-4">
-                        If a property fails to reach its 60% minimum funding threshold within the 1-year funding period, all investors receive automatic refunds with 3% APR interest calculated from their investment date.
+                        If a property fails to reach 100% of its funding target within the 1-year funding period, the offering is cancelled. All investors receive automatic refunds with 3% APR interest calculated from their investment date. Property loans are only issued once 100% funding is achieved.
                       </p>
                       <div className="bg-background/50 p-3 rounded-md font-mono text-sm">
                         Refund = Principal + (Principal × 0.03 × Days Held / 365)

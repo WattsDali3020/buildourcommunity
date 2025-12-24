@@ -669,7 +669,7 @@ export default function Tokenize() {
                     <div className="p-4 rounded-md bg-primary/5 border border-primary/20">
                       <h4 className="font-medium mb-2">Investor Protection</h4>
                       <p className="text-sm text-muted-foreground">
-                        If minimum funding (60% of goal) isn't reached within 1 year, investors can:
+                        If 100% funding isn't reached within 1 year, investors can:
                       </p>
                       <ul className="text-sm text-muted-foreground mt-2 space-y-1">
                         <li className="flex items-center gap-2">

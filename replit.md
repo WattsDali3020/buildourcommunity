@@ -2,7 +2,12 @@
 
 ## Overview
 
-RevitaHub is a community-owned real estate revitalization platform that enables fractional ownership of properties through blockchain tokenization on Base. The platform allows communities to invest in vacant land, historic buildings, and commercial properties, transforming them into thriving neighborhood assets. Users can browse properties, purchase tokens starting at $50, participate in DAO governance, and earn returns through dividends.
+RevitaHub is a community-owned real estate revitalization platform that enables fractional ownership of properties through blockchain tokenization on EVM-compatible chains. The platform allows communities to invest in any property type (vacant land, historic buildings, commercial, residential, mixed-use) without size restrictions, transforming them into thriving neighborhood assets. Users can browse properties, purchase tokens starting at $50, participate in DAO governance, and earn returns through dividends.
+
+### Funding Model
+- **100% Funding Required**: Property loans are only issued when 100% of the funding target is reached
+- **1-Year Timeline**: Each property offering has a 1-year funding deadline
+- **Investor Protection**: If funding fails, investors receive automatic refunds with 3% APR interest
 
 ## User Preferences
 
@@ -54,8 +59,9 @@ Preferred communication style: Simple, everyday language.
 - Uppy for file upload UI components
 
 ### Blockchain
-- Built for Base network (Coinbase L2)
-- Wallet connection patterns in UI (connection state managed in Header)
+- Blockchain-agnostic design (EVM-compatible chains)
+- Exploring Chainlink Build Program participation for oracles, automation, and cross-chain features
+- Wallet connection via RainbowKit + wagmi (connection state managed in Header)
 
 ### Third-Party Integrations
 - Stripe for payment processing (pending full integration)
@@ -72,7 +78,8 @@ Preferred communication style: Simple, everyday language.
 4. **Investor Dashboard**: Portfolio metrics, voting power display, KYC status, and investor protection info
 5. **Governance Voting**: API-backed proposal listing with real voting power from holdings
 6. **Admin Panel**: Property/nomination approval, KYC verification management
-7. **Investor Protection API**: 3% APR refund calculation for failed property funding
+7. **Investor Protection API**: 3% APR refund calculation for failed property funding (100% funding required)
+8. **Whitepaper**: Comprehensive 14-section whitepaper for Chainlink Build Program application (/whitepaper)
 
 ### Authentication
 - Uses Replit Auth (OAuth2/OIDC) with session-based authentication via `req.session.userId`
