@@ -11,7 +11,7 @@ const navLinks = [
   { href: "/community", label: "Community Voice" },
   { href: "/governance", label: "Governance" },
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/learn", label: "Learn" },
+  { href: "/whitepaper", label: "Whitepaper" },
   { href: "/about", label: "About" },
 ];
 

@@ -11,10 +11,10 @@ const footerLinks = {
     { href: "/submit", label: "Submit Project" },
   ],
   resources: [
+    { href: "/whitepaper", label: "Whitepaper" },
     { href: "/learn", label: "Learn" },
     { href: "/learn#tokenization", label: "Tokenization Guide" },
     { href: "/learn#compliance", label: "Legal Compliance" },
-    { href: "/learn#states", label: "State Regulations" },
   ],
   company: [
     { href: "/about", label: "About Us" },
@@ -35,7 +35,7 @@ export function Footer() {
               <span className="text-xl font-semibold">RevitaHub</span>
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs mb-4">
-              Transforming vacant properties into thriving community assets through blockchain-enabled fractional ownership on Base.
+              Transforming vacant properties into thriving community assets through blockchain-enabled fractional ownership.
             </p>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" data-testid="link-social-twitter">
@@ -104,7 +104,7 @@ export function Footer() {
 
         <div className="border-t mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            2024 RevitaHub. Built on Base.
+            2024 RevitaHub. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <Link href="/privacy" className="hover:text-foreground transition-colors" data-testid="link-privacy">

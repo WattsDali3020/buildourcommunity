@@ -18,6 +18,7 @@ import Tokenize from "@/pages/tokenize";
 import Nominate from "@/pages/nominate";
 import OwnerResponse from "@/pages/owner-response";
 import AdminPanel from "@/pages/admin";
+import Whitepaper from "@/pages/whitepaper";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/tokenize" component={Tokenize} />
       <Route path="/owner-response/:token" component={OwnerResponse} />
       <Route path="/admin" component={AdminPanel} />
+      <Route path="/whitepaper" component={Whitepaper} />
       <Route component={NotFound} />
     </Switch>
   );
