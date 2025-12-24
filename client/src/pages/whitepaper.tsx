@@ -82,7 +82,7 @@ export default function Whitepaper() {
                 Tokenizing Communities for Lasting Growth
               </p>
               <p className="text-sm text-muted-foreground mb-8">
-                Version 1.0 | December 2024
+                Version 1.0 | December 2025
               </p>
               <div className="flex items-center justify-center gap-4 print:hidden">
                 <Button onClick={handlePrint} variant="outline" data-testid="button-download-pdf">
