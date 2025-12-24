@@ -35,7 +35,7 @@ export function Footer() {
               <span className="text-xl font-semibold">RevitaHub</span>
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs mb-4">
-              Transforming vacant properties into thriving community assets through blockchain-enabled fractional ownership.
+              A Build Our Community, LLC project. Transforming vacant properties into thriving community assets through blockchain-enabled fractional ownership.
             </p>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" data-testid="link-social-twitter">
@@ -104,7 +104,7 @@ export function Footer() {
 
         <div className="border-t mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            2024 RevitaHub. All rights reserved.
+            2024 Build Our Community, LLC. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <Link href="/privacy" className="hover:text-foreground transition-colors" data-testid="link-privacy">

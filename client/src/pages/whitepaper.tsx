@@ -1295,14 +1295,37 @@ export default function Whitepaper() {
 
               <Section id="team" title="14. Team">
                 <p className="leading-relaxed mb-6">
-                  RevitaHub is built by a team of experienced professionals in real estate, blockchain technology, and community development.
+                  RevitaHub is developed by Build Our Community, LLC, a Georgia-based company dedicated to democratizing real estate investment and revitalizing communities through blockchain technology.
                 </p>
+                
+                <Card className="bg-muted/30 mb-8">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col md:flex-row items-center gap-6">
+                      <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Users className="h-12 w-12 text-primary" />
+                      </div>
+                      <div className="text-center md:text-left">
+                        <h4 className="text-xl font-semibold mb-1">Daniel Emery</h4>
+                        <p className="text-primary font-medium mb-2">Founder & CEO</p>
+                        <p className="text-muted-foreground text-sm leading-relaxed">
+                          Founder of Build Our Community, LLC, Daniel is passionate about leveraging blockchain technology to create accessible real estate investment opportunities for everyday investors. Based in Georgia, USA, he leads the vision to transform vacant properties into thriving community assets through decentralized ownership.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 <Card className="bg-muted/30">
-                  <CardContent className="p-6 text-center">
-                    <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground mb-4">Team information coming soon.</p>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Building2 className="h-6 w-6 text-primary" />
+                      <h4 className="font-semibold">Build Our Community, LLC</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Georgia, USA
+                    </p>
                     <Button variant="outline" asChild>
-                      <a href="mailto:team@revitahub.com">
+                      <a href="mailto:contact@buildourcommunity.io">
                         Contact Us
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </a>
