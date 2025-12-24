@@ -124,7 +124,7 @@ export default function Whitepaper() {
             <article className="flex-1 max-w-3xl prose prose-neutral dark:prose-invert prose-headings:scroll-mt-24">
               <Section id="abstract" title="1. Abstract">
                 <p className="text-lg leading-relaxed mb-6">
-                  RevitaHub is a decentralized protocol enabling fractional ownership of real-world real estate assets through blockchain tokenization. The platform democratizes access to property investment by allowing individuals to participate in community revitalization projects with investments starting at $50, while providing institutional-grade security, regulatory compliance, and transparent governance.
+                  RevitaHub is a decentralized protocol enabling fractional ownership of real-world real estate assets through blockchain tokenization. The platform democratizes access to property investment through an intentionally low entry price of <span className="font-bold">$12.50 per token</span> in Phase 1, designed specifically for financial inclusion of lower-income investors who are typically excluded from real estate opportunities. This enables participation in community revitalization projects while providing institutional-grade security, regulatory compliance, and transparent governance.
                 </p>
                 <p className="leading-relaxed mb-6">
                   Built on EVM-compatible blockchain infrastructure and leveraging Chainlink's decentralized oracle network for verified real-world data, RevitaHub creates a trust-minimized bridge between physical real estate assets and on-chain token ownership. The protocol implements a novel 5-phase community-first offering system that prioritizes local stakeholders while ensuring broad accessibility, combined with robust investor protection mechanisms including guaranteed returns on failed funding rounds.
@@ -255,7 +255,7 @@ export default function Whitepaper() {
                       </div>
                       <h4 className="font-semibold mb-2">Fractional Ownership</h4>
                       <p className="text-sm text-muted-foreground">
-                        Tokenize any property into divisible ERC-20 tokens enabling $50 minimum investments with full ownership rights and dividend distributions.
+                        Tokenize any property into divisible ERC-20 tokens enabling $12.50 minimum investments with full ownership rights and dividend distributions.
                       </p>
                     </CardContent>
                   </Card>
@@ -415,7 +415,7 @@ export default function Whitepaper() {
                         </tr>
                         <tr>
                           <td className="p-3 border-b font-medium">Minimum Investment</td>
-                          <td className="p-3 border-b text-muted-foreground">$50 USD equivalent</td>
+                          <td className="p-3 border-b text-muted-foreground">$12.50 per token (Phase 1 County price)</td>
                         </tr>
                         <tr>
                           <td className="p-3 border-b font-medium">Transfer Restrictions</td>
@@ -430,15 +430,66 @@ export default function Whitepaper() {
                   </div>
                 </Subsection>
 
-                <Subsection title="5.2 Token Pricing Mechanism">
+                <Subsection title="5.2 Low-Entry Token Pricing for Financial Inclusion">
                   <p className="leading-relaxed mb-4">
-                    Token prices are determined through oracle-verified property valuations combined with algorithmic phase-based pricing:
+                    RevitaHub implements an intentionally low entry price of <span className="font-bold text-primary">$12.50 per token</span> in Phase 1, designed specifically to enable participation from a wide range of investors, including those with lower incomes who are typically excluded from real estate investment opportunities.
                   </p>
-                  <div className="bg-muted/30 p-4 rounded-md font-mono text-sm mb-4">
-                    <p>Token Price = (Property Valuation / Total Supply) × Phase Multiplier</p>
+                  <Card className="bg-chart-3/10 border-chart-3/30 mb-6">
+                    <CardContent className="p-6">
+                      <h4 className="font-semibold mb-3">Democratized Ownership Through Accessible Pricing</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        By setting tokens at $12.50, even small investments (e.g., buying just a few tokens) allow everyday residents to become fractional owners, share in automated dividends from rental income, property appreciation, and community revenue streams. This fosters inclusive wealth-building tied to local development.
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        This low barrier aligns with our vision of community-driven growth, preserving open space while generating passive returns for token holders nationwide via a regulated securities framework compliant across all 50 states.
+                      </p>
+                    </CardContent>
+                  </Card>
+                  
+                  <h4 className="font-medium mb-3">Algorithmic Phase Pricing</h4>
+                  <p className="leading-relaxed mb-4">
+                    Token prices increase algorithmically across phases, calculated to reach the total funding target while rewarding early community investors:
+                  </p>
+                  <div className="overflow-x-auto mb-4">
+                    <table className="w-full text-sm border">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="text-left p-3 border-b">Phase</th>
+                          <th className="text-left p-3 border-b">Base Price</th>
+                          <th className="text-left p-3 border-b">Multiplier</th>
+                          <th className="text-left p-3 border-b">Token Price</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="p-3 border-b font-medium">County</td>
+                          <td className="p-3 border-b text-muted-foreground">$12.50</td>
+                          <td className="p-3 border-b text-muted-foreground">1.0x</td>
+                          <td className="p-3 border-b font-semibold text-chart-3">$12.50</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 border-b font-medium">State</td>
+                          <td className="p-3 border-b text-muted-foreground">$12.50</td>
+                          <td className="p-3 border-b text-muted-foreground">1.5x</td>
+                          <td className="p-3 border-b font-semibold">$18.75</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 border-b font-medium">National</td>
+                          <td className="p-3 border-b text-muted-foreground">$12.50</td>
+                          <td className="p-3 border-b text-muted-foreground">2.25x</td>
+                          <td className="p-3 border-b font-semibold">$28.13</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 font-medium">International</td>
+                          <td className="p-3 text-muted-foreground">$12.50</td>
+                          <td className="p-3 text-muted-foreground">3.0x</td>
+                          <td className="p-3 font-semibold">$37.50</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Phase multipliers reward early community investors while ensuring fair pricing for later participants. Valuations are updated quarterly via Chainlink oracle feeds incorporating multiple independent appraisals.
+                    This pricing structure ensures local community members receive the best pricing while later-phase investors pay premiums that help reach funding targets. Valuations are updated quarterly via Chainlink oracle feeds incorporating multiple independent appraisals.
                   </p>
                 </Subsection>
 

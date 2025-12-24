@@ -10,9 +10,9 @@ const steps = [
   },
   {
     icon: Coins,
-    title: "Own Real Estate for $50",
-    benefit: "No mortgage, no hassle",
-    description: "Skip the traditional barriers to real estate. Buy tokens that represent real ownership, secured on the Base blockchain.",
+    title: "Own Real Estate for $12.50",
+    benefit: "Designed for all income levels",
+    description: "Skip the traditional barriers to real estate. Buy tokens that represent real ownership, with prices starting at $12.50 for local investors.",
   },
   {
     icon: Vote,

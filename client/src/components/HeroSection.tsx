@@ -25,24 +25,24 @@ export function HeroSection() {
           </div>
 
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-            Turn $50 Into Real Estate Ownership
+            Own Real Estate Starting at $12.50
             <br />
             <span className="text-primary">And Revitalize Your Community</span>
           </h1>
 
           <p className="text-lg md:text-xl text-white/90 mb-4 leading-relaxed">
             Join thousands of everyday investors earning <span className="font-semibold text-white">8.2% average returns</span> by 
-            transforming vacant properties into thriving neighborhood assets.
+            transforming vacant properties into thriving neighborhood assets. Designed for <span className="font-semibold text-white">all income levels</span>.
           </p>
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-8 text-white/70 text-sm">
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="h-4 w-4 text-chart-3" />
-              <span>SEC-compliant tokenization</span>
+              <span>$12.50 tokens for local investors</span>
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="h-4 w-4 text-chart-3" />
-              <span>Built on Base blockchain</span>
+              <span>SEC-compliant in all 50 states</span>
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="h-4 w-4 text-chart-3" />

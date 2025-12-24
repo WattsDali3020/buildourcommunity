@@ -57,7 +57,7 @@ const learnArticles: LearnArticle[] = [
   {
     id: "smart-contracts",
     title: "Smart Contracts Explained",
-    description: "How smart contracts automate token distribution, dividend payments, and governance voting on the Base blockchain.",
+    description: "How smart contracts automate token distribution, dividend payments, and governance voting on EVM-compatible blockchains.",
     category: "Technology",
     readTime: 18,
     difficulty: "intermediate",

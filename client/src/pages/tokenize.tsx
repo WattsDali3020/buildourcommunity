@@ -305,7 +305,7 @@ export default function Tokenize() {
               </Link>
               <h1 className="text-3xl font-bold">Tokenize Your Property</h1>
               <p className="text-muted-foreground mt-2">
-                Submit your property for community-led tokenization on the Base blockchain
+                Submit your property for community-led tokenization on EVM-compatible blockchain infrastructure
               </p>
             </div>
 

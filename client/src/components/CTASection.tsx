@@ -13,7 +13,7 @@ export function CTASection() {
             </h2>
             <p className="text-primary-foreground/80 text-lg mb-2">
               2,400+ investors are already earning returns while revitalizing neighborhoods. 
-              Your $50 investment could be the start of something transformative.
+              Your $12.50 investment could be the start of something transformative.
             </p>
             <div className="flex items-center gap-2 text-primary-foreground/70 text-sm">
               <Shield className="h-4 w-4" />

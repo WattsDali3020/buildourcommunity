@@ -6,7 +6,7 @@ import { ArrowRight, CheckCircle2, Shield, DollarSign, Vote } from "lucide-react
 const keyPoints = [
   {
     icon: DollarSign,
-    text: "Start investing with just $50",
+    text: "Start investing with just $12.50",
   },
   {
     icon: Shield,

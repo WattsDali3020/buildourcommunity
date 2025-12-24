@@ -2,12 +2,17 @@
 
 ## Overview
 
-RevitaHub is a community-owned real estate revitalization platform that enables fractional ownership of properties through blockchain tokenization on EVM-compatible chains. The platform allows communities to invest in any property type (vacant land, historic buildings, commercial, residential, mixed-use) without size restrictions, transforming them into thriving neighborhood assets. Users can browse properties, purchase tokens starting at $50, participate in DAO governance, and earn returns through dividends.
+RevitaHub is a community-owned real estate revitalization platform that enables fractional ownership of properties through blockchain tokenization on EVM-compatible chains. The platform allows communities to invest in any property type (vacant land, historic buildings, commercial, residential, mixed-use) without size restrictions, transforming them into thriving neighborhood assets. Users can browse properties, purchase tokens starting at $12.50, participate in DAO governance, and earn returns through dividends.
 
 ### Funding Model
 - **100% Funding Required**: Property loans are only issued when 100% of the funding target is reached
 - **1-Year Timeline**: Each property offering has a 1-year funding deadline
 - **Investor Protection**: If funding fails, investors receive automatic refunds with 3% APR interest
+
+### Low-Entry Pricing for Financial Inclusion
+- **$12.50 Base Price**: Intentionally low token price in Phase 1 (County) to enable participation from lower-income investors
+- **Algorithmic Phase Pricing**: Prices increase across phases (County $12.50 → State $18.75 → National $28.13 → International $37.50)
+- **Target Demographic**: Designed for the ~231,000 adults in Cherokee County and similar communities typically excluded from real estate investment
 
 ## User Preferences
 

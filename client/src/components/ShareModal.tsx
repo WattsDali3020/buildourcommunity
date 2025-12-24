@@ -23,7 +23,7 @@ export function ShareModal({ title, description, url, image, type, children }: S
   const shareUrl = url || (typeof window !== "undefined" ? window.location.href : "");
   const shareText = type === "nomination" 
     ? `I just nominated "${title}" for community revitalization on RevitaHub! Help bring this property back to life.`
-    : `Check out "${title}" on RevitaHub - a community-owned revitalization project. Invest starting at $50!`;
+    : `Check out "${title}" on RevitaHub - a community-owned revitalization project. Invest starting at $12.50!`;
 
   const handleCopy = async () => {
     if (typeof navigator === "undefined" || !navigator.clipboard) {

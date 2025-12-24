@@ -48,7 +48,7 @@ export function TokenizePropertyCTA() {
             <p className="text-lg text-muted-foreground">
               Own vacant land, a historic building, or underutilized commercial space? 
               Transform it into a community-owned asset through blockchain-enabled tokenization 
-              on the Base network.
+              on EVM-compatible blockchain infrastructure.
             </p>
 
             <div className="space-y-3">
@@ -109,7 +109,7 @@ export function TokenizePropertyCTA() {
                   </li>
                   <li className="flex gap-3">
                     <span className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 text-xs font-bold">3</span>
-                    <span className="text-muted-foreground">Property is tokenized on Base blockchain with 5-phase offering</span>
+                    <span className="text-muted-foreground">Property is tokenized on blockchain with 5-phase offering</span>
                   </li>
                   <li className="flex gap-3">
                     <span className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 text-xs font-bold">4</span>
