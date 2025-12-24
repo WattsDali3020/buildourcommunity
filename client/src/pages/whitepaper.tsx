@@ -534,6 +534,9 @@ export default function Whitepaper() {
                 </p>
 
                 <Subsection title="6.1 Phase Structure">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Each investor is limited to <span className="font-semibold text-foreground">100 tokens per person</span> per property in Phase 1 (County). As phases advance, the per-person token allocation increases algorithmically to ensure 100% of the funding target can be reached. Token prices also increase with each phase to reward early community investors.
+                  </p>
                   <div className="space-y-4 mb-6">
                     <Card className="border-l-4 border-l-primary">
                       <CardContent className="p-4">
@@ -542,9 +545,10 @@ export default function Whitepaper() {
                           <span className="text-sm text-muted-foreground">1.5x Voting Power</span>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">Exclusive access for investors residing in the same county as the property.</p>
-                        <div className="flex items-center gap-4 text-xs">
+                        <div className="flex flex-wrap items-center gap-4 text-xs">
                           <span className="text-primary font-medium">Duration: 30 days</span>
-                          <span>Per-person cap: $25,000</span>
+                          <span>Token Price: $12.50</span>
+                          <span>Per-person limit: 100 tokens</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -555,9 +559,10 @@ export default function Whitepaper() {
                           <span className="text-sm text-muted-foreground">1.25x Voting Power</span>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">Opens to all investors within the same state.</p>
-                        <div className="flex items-center gap-4 text-xs">
+                        <div className="flex flex-wrap items-center gap-4 text-xs">
                           <span className="text-chart-2 font-medium">Duration: 30 days</span>
-                          <span>Per-person cap: $50,000</span>
+                          <span>Token Price: $18.75</span>
+                          <span>Per-person limit: Algorithmically increased</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -568,9 +573,10 @@ export default function Whitepaper() {
                           <span className="text-sm text-muted-foreground">1.0x Voting Power</span>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">Available to all US-based investors.</p>
-                        <div className="flex items-center gap-4 text-xs">
+                        <div className="flex flex-wrap items-center gap-4 text-xs">
                           <span className="text-chart-3 font-medium">Duration: 60 days</span>
-                          <span>Per-person cap: $100,000</span>
+                          <span>Token Price: $28.13</span>
+                          <span>Per-person limit: Algorithmically increased</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -581,9 +587,10 @@ export default function Whitepaper() {
                           <span className="text-sm text-muted-foreground">0.75x Voting Power</span>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">Global participation from eligible jurisdictions.</p>
-                        <div className="flex items-center gap-4 text-xs">
+                        <div className="flex flex-wrap items-center gap-4 text-xs">
                           <span className="text-chart-4 font-medium">Duration: 90 days</span>
-                          <span>Per-person cap: $250,000</span>
+                          <span>Token Price: $37.50</span>
+                          <span>Per-person limit: Algorithmically increased</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -594,13 +601,23 @@ export default function Whitepaper() {
                           <span className="text-sm text-muted-foreground">Custom Terms</span>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">Property owners can create invite-only offerings for specific investors or businesses via email invites and private access codes.</p>
-                        <div className="flex items-center gap-4 text-xs">
+                        <div className="flex flex-wrap items-center gap-4 text-xs">
                           <span className="text-chart-5 font-medium">Duration: Flexible</span>
-                          <span>Per-person cap: Customizable</span>
+                          <span>Token Price: Custom</span>
+                          <span>Per-person limit: Customizable</span>
                         </div>
                       </CardContent>
                     </Card>
                   </div>
+
+                  <Card className="bg-muted/30 mb-4">
+                    <CardContent className="p-4">
+                      <h4 className="font-semibold mb-2">Algorithmic Token Allocation</h4>
+                      <p className="text-sm text-muted-foreground">
+                        The per-person token limit increases with each phase to ensure 100% of funding can be achieved. The algorithm calculates remaining tokens needed divided by estimated participants in each successive phase, ensuring the property can reach full funding while maintaining fair access for community investors in early phases.
+                      </p>
+                    </CardContent>
+                  </Card>
                 </Subsection>
 
                 <Subsection title="6.2 Phase Advancement">
@@ -616,9 +633,29 @@ export default function Whitepaper() {
                   </p>
                 </Subsection>
 
-                <Subsection title="6.3 Funding Timeline">
+                <Subsection title="6.3 Funding Timeline & Investor Protection">
                   <p className="leading-relaxed mb-4">
-                    Each property offering operates under a 1-year funding deadline. If 100% of the funding target is not reached, the offering is cancelled and investors receive automatic refunds with 3% APR interest on their contributions.
+                    Each property offering operates under a <span className="font-semibold text-foreground">1-year funding deadline</span>. Property loans are only issued when <span className="font-semibold text-foreground">100% of the token funding target</span> is reached—there is no partial funding.
+                  </p>
+                  
+                  <Card className="bg-primary/5 border-primary/20 mb-4">
+                    <CardContent className="p-4">
+                      <h4 className="font-semibold mb-2 flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-primary" />
+                        USDC Escrow & Interest Protection
+                      </h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        All investor funds are held in USDC escrow during the funding period. This stablecoin holding generates <span className="font-semibold text-foreground">3% APR interest</span> that accrues to the benefit of investors.
+                      </p>
+                      <ul className="list-disc pl-6 space-y-1 text-sm text-muted-foreground">
+                        <li><span className="font-medium text-foreground">If funding succeeds (100% reached):</span> Funds are released for property acquisition and investors receive their property tokens.</li>
+                        <li><span className="font-medium text-foreground">If funding fails (target not reached in 1 year):</span> Investors receive automatic refunds with 3% APR interest on their original contribution.</li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                  
+                  <p className="text-sm text-muted-foreground">
+                    Chainlink Automation monitors funding deadlines and triggers the appropriate action—either releasing funds for property acquisition or processing investor refunds with accrued interest.
                   </p>
                 </Subsection>
               </Section>
