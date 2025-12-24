@@ -59,7 +59,7 @@ function Subsection({ title, children }: { title: string; children: React.ReactN
   );
 }
 
-export default function Whitepaper() {
+export default function Litepaper() {
   const handlePrint = () => {
     window.print();
   };
@@ -73,9 +73,9 @@ export default function Whitepaper() {
             <div className="text-center mb-12">
               <div className="flex items-center justify-center gap-2 mb-4 print:hidden">
                 <FileText className="h-8 w-8 text-primary" />
-                <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Technical Whitepaper</span>
+                <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Technical Litepaper</span>
               </div>
-              <h1 className="text-4xl lg:text-5xl font-bold mb-4" data-testid="whitepaper-title">
+              <h1 className="text-4xl lg:text-5xl font-bold mb-4" data-testid="litepaper-title">
                 Ownership in Every Acre
               </h1>
               <p className="text-xl text-muted-foreground mb-2">
@@ -1373,7 +1373,7 @@ export default function Whitepaper() {
                 <div className="mt-12 p-6 border rounded-md">
                   <h3 className="font-semibold mb-4">Disclaimer</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    This whitepaper is for informational purposes only and does not constitute an offer to sell or a solicitation of an offer to buy any securities. Investment in tokenized real estate involves significant risks, including the potential loss of principal. Past performance does not guarantee future results. Prospective investors should consult with legal, tax, and financial advisors before making investment decisions. RevitaHub makes no representations or warranties regarding the accuracy or completeness of the information contained herein.
+                    This litepaper is for informational purposes only and does not constitute an offer to sell or a solicitation of an offer to buy any securities. Investment in tokenized real estate involves significant risks, including the potential loss of principal. Past performance does not guarantee future results. Prospective investors should consult with legal, tax, and financial advisors before making investment decisions. RevitaHub makes no representations or warranties regarding the accuracy or completeness of the information contained herein.
                   </p>
                 </div>
               </Section>

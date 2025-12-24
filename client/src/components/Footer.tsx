@@ -11,7 +11,7 @@ const footerLinks = {
     { href: "/submit", label: "Submit Project" },
   ],
   resources: [
-    { href: "/whitepaper", label: "Whitepaper" },
+    { href: "/litepaper", label: "Litepaper" },
     { href: "/learn", label: "Learn" },
     { href: "/learn#tokenization", label: "Tokenization Guide" },
     { href: "/learn#compliance", label: "Legal Compliance" },
