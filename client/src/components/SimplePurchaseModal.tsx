@@ -132,7 +132,7 @@ export function SimplePurchaseModal({
               <div className="text-sm">
                 <p className="font-medium">Wallet Connection Required</p>
                 <p className="text-muted-foreground">
-                  Connect your wallet to receive tokens on the Base network.
+                  Connect your wallet to receive tokens on the blockchain.
                 </p>
               </div>
             </div>
@@ -213,7 +213,7 @@ export function SimplePurchaseModal({
                     <RadioGroupItem value="usdc" id="usdc" data-testid="radio-payment-usdc" />
                     <Label htmlFor="usdc" className="flex items-center gap-2 cursor-pointer flex-1">
                       <Wallet className="h-4 w-4" />
-                      USDC (Base Network)
+                      USDC (Crypto)
                     </Label>
                   </div>
                 </RadioGroup>

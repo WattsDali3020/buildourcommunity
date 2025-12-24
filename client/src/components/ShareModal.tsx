@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Share2, Copy, Check, ExternalLink } from "lucide-react";
+import { Share2, Copy, Check, ExternalLink, Coins } from "lucide-react";
 import { SiX, SiInstagram, SiYoutube } from "react-icons/si";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -59,7 +59,7 @@ export function ShareModal({ title, description, url, image, type, children }: S
   const shareToX = () => {
     const text = encodeURIComponent(shareText);
     const link = encodeURIComponent(shareUrl);
-    const hashtags = encodeURIComponent("RevitaHub,CommunityOwnership,RealEstate,Base");
+    const hashtags = encodeURIComponent("RevitaHub,CommunityOwnership,RealEstate,Blockchain");
     window.open(`https://twitter.com/intent/tweet?text=${text}&url=${link}&hashtags=${hashtags}`, "_blank");
   };
 
@@ -79,9 +79,9 @@ export function ShareModal({ title, description, url, image, type, children }: S
     handleCopy();
   };
 
-  const shareOnBase = () => {
+  const shareOnChain = () => {
     toast({
-      title: "Share on Base",
+      title: "Share On-Chain",
       description: "Once you own tokens, you can share your investment on-chain. Connect your wallet to get started.",
     });
   };
@@ -134,14 +134,12 @@ export function ShareModal({ title, description, url, image, type, children }: S
             </Button>
             <Button
               variant="outline"
-              className="flex items-center gap-2 bg-[#0052FF]/10 border-[#0052FF]/20 text-[#0052FF] dark:bg-[#0052FF]/20 dark:text-[#4D8EFF]"
-              onClick={shareOnBase}
-              data-testid="button-share-base"
+              className="flex items-center gap-2 bg-primary/10 border-primary/20 text-primary"
+              onClick={shareOnChain}
+              data-testid="button-share-blockchain"
             >
-              <div className="h-4 w-4 rounded-full bg-[#0052FF] flex items-center justify-center">
-                <span className="text-white text-[8px] font-bold">B</span>
-              </div>
-              Base Network
+              <Coins className="h-4 w-4" />
+              On-Chain
             </Button>
           </div>
 

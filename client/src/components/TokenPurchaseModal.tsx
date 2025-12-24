@@ -185,7 +185,7 @@ export function TokenPurchaseModal({
                     <RadioGroupItem value="usdc" id="usdc" data-testid="radio-payment-usdc" />
                     <Label htmlFor="usdc" className="flex items-center gap-2 cursor-pointer flex-1">
                       <Wallet className="h-4 w-4" />
-                      USDC (Base Network)
+                      USDC (Crypto)
                       {!isConnected && (
                         <Badge variant="outline" className="ml-auto">Connect Wallet</Badge>
                       )}
