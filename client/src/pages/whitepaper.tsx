@@ -76,10 +76,10 @@ export default function Whitepaper() {
                 <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Technical Whitepaper</span>
               </div>
               <h1 className="text-4xl lg:text-5xl font-bold mb-4" data-testid="whitepaper-title">
-                RevitaHub Protocol
+                Ownership in Every Acre
               </h1>
               <p className="text-xl text-muted-foreground mb-2">
-                Decentralized Real Estate Tokenization for Community Revitalization
+                Tokenizing Communities for Lasting Growth
               </p>
               <p className="text-sm text-muted-foreground mb-8">
                 Version 1.0 | December 2024

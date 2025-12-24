@@ -25,9 +25,9 @@ export function HeroSection() {
           </div>
 
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-            Own Real Estate Starting at $12.50
+            Revitalize Your Community:
             <br />
-            <span className="text-primary">And Revitalize Your Community</span>
+            <span className="text-primary">Vote, Build, and Own Real Estate from $12.50</span>
           </h1>
 
           <p className="text-lg md:text-xl text-white/90 mb-4 leading-relaxed">
