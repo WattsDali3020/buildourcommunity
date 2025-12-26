@@ -1,19 +1,40 @@
+import nodemailer from "nodemailer";
+
 interface EmailOptions {
   to: string;
   subject: string;
   html: string;
 }
 
-const EMAIL_ENABLED = !!process.env.SMTP_HOST;
+const EMAIL_ENABLED = !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+
+const transporter = EMAIL_ENABLED
+  ? nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || "465"),
+      secure: parseInt(process.env.SMTP_PORT || "465") === 465,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    })
+  : null;
 
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
-  if (!EMAIL_ENABLED) {
+  if (!EMAIL_ENABLED || !transporter) {
     console.log(`[Email] Would send email to ${options.to}: ${options.subject}`);
     return true;
   }
   
   try {
     console.log(`[Email] Sending email to ${options.to}: ${options.subject}`);
+    await transporter.sendMail({
+      from: `"RevitaHub" <${process.env.SMTP_USER}>`,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+    });
+    console.log(`[Email] Successfully sent to ${options.to}`);
     return true;
   } catch (error) {
     console.error("[Email] Failed to send email:", error);
