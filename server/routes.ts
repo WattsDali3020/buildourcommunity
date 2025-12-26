@@ -7,7 +7,7 @@ import { registerObjectStorageRoutes } from "./replit_integrations/object_storag
 import { setupAuth, isAuthenticated, isAdmin } from "./replit_integrations/auth";
 import { createPaymentIntent, isStripeConfigured, verifyPaymentAndGetMetadata, constructWebhookEvent } from "./services/payments";
 import { purchaseRateLimit, voteRateLimit } from "./middleware/rateLimit";
-import { sendPurchaseConfirmation } from "./services/email";
+import { sendPurchaseConfirmation, sendWaitlistNotification } from "./services/email";
 import { 
   lookupOwnerByAddress, 
   lookupOwnerByCoordinates, 
@@ -1413,6 +1413,17 @@ export async function registerRoutes(
       }
       
       const entry = await storage.addToWaitlist(email, role);
+      
+      // Send notification email to admin (non-blocking)
+      try {
+        const emailSent = await sendWaitlistNotification(email, role);
+        if (!emailSent) {
+          console.log(`[Waitlist] Admin notification email not sent for ${email}`);
+        }
+      } catch (emailError) {
+        console.error("[Waitlist] Failed to send admin notification:", emailError);
+      }
+      
       res.status(201).json({ success: true, message: "Successfully joined the waitlist!", id: entry.id });
     } catch (error) {
       console.error("Waitlist signup error:", error);

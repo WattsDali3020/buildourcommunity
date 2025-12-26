@@ -96,3 +96,29 @@ export async function sendVoteConfirmation(
     `,
   });
 }
+
+const ADMIN_EMAIL = "DEmery@buildourcommunity.co";
+
+export async function sendWaitlistNotification(
+  subscriberEmail: string,
+  role: string
+): Promise<boolean> {
+  const roleLabels: Record<string, string> = {
+    investor: "Investor",
+    property_owner: "Property Owner",
+    community_member: "Community Member",
+    other: "Other"
+  };
+  
+  return sendEmail({
+    to: ADMIN_EMAIL,
+    subject: `New Waitlist Signup - ${roleLabels[role] || role}`,
+    html: `
+      <h1>New Waitlist Signup</h1>
+      <p>Someone just joined the RevitaHub beta waitlist!</p>
+      <p><strong>Email:</strong> ${subscriberEmail}</p>
+      <p><strong>Interest:</strong> ${roleLabels[role] || role}</p>
+      <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+    `,
+  });
+}

@@ -1362,7 +1362,7 @@ export default function Litepaper() {
                       Georgia, USA
                     </p>
                     <Button variant="outline" asChild>
-                      <a href="mailto:contact@buildourcommunity.co">
+                      <a href="mailto:DEmery@buildourcommunity.co">
                         Contact Us
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </a>
