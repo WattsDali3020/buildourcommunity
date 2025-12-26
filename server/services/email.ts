@@ -120,9 +120,19 @@ export async function sendVoteConfirmation(
 
 const ADMIN_EMAIL = "DEmery@buildourcommunity.co";
 
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export async function sendWaitlistNotification(
   subscriberEmail: string,
-  role: string
+  role: string,
+  message?: string
 ): Promise<boolean> {
   const roleLabels: Record<string, string> = {
     investor: "Investor",
@@ -130,6 +140,11 @@ export async function sendWaitlistNotification(
     community_member: "Community Member",
     other: "Other"
   };
+  
+  const sanitizedMessage = message?.trim();
+  const messageSection = sanitizedMessage 
+    ? `<p><strong>Message:</strong></p><blockquote style="border-left: 3px solid #ccc; padding-left: 10px; margin: 10px 0; color: #555;">${escapeHtml(sanitizedMessage)}</blockquote>` 
+    : "";
   
   return sendEmail({
     to: ADMIN_EMAIL,
@@ -139,6 +154,7 @@ export async function sendWaitlistNotification(
       <p>Someone just joined the RevitaHub beta waitlist!</p>
       <p><strong>Email:</strong> ${subscriberEmail}</p>
       <p><strong>Interest:</strong> ${roleLabels[role] || role}</p>
+      ${messageSection}
       <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
     `,
   });

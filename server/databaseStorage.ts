@@ -744,10 +744,11 @@ export class DatabaseStorage implements IStorage {
     return { totalProjectCost, tokenFunding, grantFunding, grantsByStatus, remainingToRaise, percentFunded };
   }
 
-  async addToWaitlist(email: string, role: string): Promise<Waitlist> {
+  async addToWaitlist(email: string, role: string, message?: string): Promise<Waitlist> {
     const [entry] = await db.insert(waitlist).values({
       email,
       role: role as Waitlist["role"],
+      message: message || null,
     }).returning();
     return entry;
   }

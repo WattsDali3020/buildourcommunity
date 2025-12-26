@@ -135,7 +135,7 @@ export interface IStorage {
   getCapitalStackSummary(propertyId: string): Promise<CapitalStackSummary>;
   
   // Waitlist
-  addToWaitlist(email: string, role: string): Promise<Waitlist>;
+  addToWaitlist(email: string, role: string, message?: string): Promise<Waitlist>;
   getWaitlistByEmail(email: string): Promise<Waitlist | undefined>;
   getWaitlistEntries(): Promise<Waitlist[]>;
 }
@@ -1105,12 +1105,13 @@ export class MemStorage implements IStorage {
   // Waitlist methods - MemStorage doesn't persist, but we implement the interface
   private waitlistEntries: Map<string, Waitlist> = new Map();
   
-  async addToWaitlist(email: string, role: string): Promise<Waitlist> {
+  async addToWaitlist(email: string, role: string, message?: string): Promise<Waitlist> {
     const id = randomUUID();
     const entry: Waitlist = {
       id,
       email,
       role: role as Waitlist["role"],
+      message: message || null,
       createdAt: new Date(),
     };
     this.waitlistEntries.set(id, entry);

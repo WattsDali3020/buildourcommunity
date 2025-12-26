@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, Loader2 } from "lucide-react";
@@ -30,6 +31,7 @@ const waitlistFormSchema = z.object({
   role: z.enum(["investor", "property_owner", "community_member", "other"], {
     required_error: "Please select your interest",
   }),
+  message: z.string().max(250, "Message must be 250 characters or less").optional(),
 });
 
 type WaitlistFormValues = z.infer<typeof waitlistFormSchema>;
@@ -48,6 +50,7 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
     defaultValues: {
       email: "",
       role: "investor",
+      message: "",
     },
   });
 
@@ -180,6 +183,29 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
                     </RadioGroup>
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="message"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tell us more (optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Why are you interested in RevitaHub? Any questions for our team?"
+                      className="resize-none"
+                      maxLength={250}
+                      {...field}
+                      data-testid="input-waitlist-message"
+                    />
+                  </FormControl>
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <FormMessage />
+                    <span>{field.value?.length || 0}/250</span>
+                  </div>
                 </FormItem>
               )}
             />

@@ -1388,7 +1388,7 @@ export async function registerRoutes(
   // Waitlist signup endpoint
   app.post("/api/waitlist", async (req: Request, res: Response) => {
     try {
-      const { email, role } = req.body;
+      const { email, role, message } = req.body;
       
       if (!email || !role) {
         return res.status(400).json({ error: "Email and role are required" });
@@ -1406,17 +1406,20 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Invalid role" });
       }
       
+      // Validate message length if provided
+      const sanitizedMessage = message ? String(message).slice(0, 250) : undefined;
+      
       // Check if email already exists
       const existing = await storage.getWaitlistByEmail(email);
       if (existing) {
         return res.status(409).json({ error: "This email is already on the waitlist" });
       }
       
-      const entry = await storage.addToWaitlist(email, role);
+      const entry = await storage.addToWaitlist(email, role, sanitizedMessage);
       
       // Send notification email to admin (non-blocking)
       try {
-        const emailSent = await sendWaitlistNotification(email, role);
+        const emailSent = await sendWaitlistNotification(email, role, sanitizedMessage);
         if (!emailSent) {
           console.log(`[Waitlist] Admin notification email not sent for ${email}`);
         }

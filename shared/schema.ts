@@ -825,6 +825,7 @@ export const waitlist = pgTable("waitlist", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
   role: waitlistRoleEnum("role").notNull(),
+  message: varchar("message", { length: 250 }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
