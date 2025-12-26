@@ -1385,6 +1385,41 @@ export async function registerRoutes(
     }
   });
 
+  // Waitlist signup endpoint
+  app.post("/api/waitlist", async (req: Request, res: Response) => {
+    try {
+      const { email, role } = req.body;
+      
+      if (!email || !role) {
+        return res.status(400).json({ error: "Email and role are required" });
+      }
+      
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: "Invalid email format" });
+      }
+      
+      // Validate role
+      const validRoles = ["investor", "property_owner", "community_member", "other"];
+      if (!validRoles.includes(role)) {
+        return res.status(400).json({ error: "Invalid role" });
+      }
+      
+      // Check if email already exists
+      const existing = await storage.getWaitlistByEmail(email);
+      if (existing) {
+        return res.status(409).json({ error: "This email is already on the waitlist" });
+      }
+      
+      const entry = await storage.addToWaitlist(email, role);
+      res.status(201).json({ success: true, message: "Successfully joined the waitlist!", id: entry.id });
+    } catch (error) {
+      console.error("Waitlist signup error:", error);
+      res.status(500).json({ error: "Failed to join waitlist" });
+    }
+  });
+
   // Register object storage routes for document uploads
   registerObjectStorageRoutes(app);
 

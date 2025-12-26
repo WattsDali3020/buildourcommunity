@@ -38,8 +38,10 @@ export function Footer() {
               A Build Our Community, LLC project. Transforming vacant properties into thriving community assets through blockchain-enabled fractional ownership.
             </p>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" data-testid="link-social-twitter">
-                <SiX className="h-5 w-5" />
+              <Button variant="ghost" size="icon" asChild data-testid="link-social-twitter">
+                <a href="https://x.com/RevitaHub" target="_blank" rel="noopener noreferrer">
+                  <SiX className="h-5 w-5" />
+                </a>
               </Button>
               <Button variant="ghost" size="icon" data-testid="link-social-discord">
                 <SiDiscord className="h-5 w-5" />
@@ -102,18 +104,23 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-muted-foreground">
-            2025 Build Our Community, LLC. All rights reserved.
-          </p>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <Link href="/privacy" className="hover:text-foreground transition-colors" data-testid="link-privacy">
-              Privacy Policy
-            </Link>
-            <Link href="/terms" className="hover:text-foreground transition-colors" data-testid="link-terms">
-              Terms of Service
-            </Link>
+        <div className="border-t mt-8 pt-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
+            <p className="text-sm text-muted-foreground">
+              2025 Build Our Community, LLC (Georgia, USA). All rights reserved.
+            </p>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <Link href="/privacy" className="hover:text-foreground transition-colors" data-testid="link-privacy">
+                Privacy Policy
+              </Link>
+              <Link href="/terms" className="hover:text-foreground transition-colors" data-testid="link-terms">
+                Terms of Service
+              </Link>
+            </div>
           </div>
+          <p className="text-xs text-muted-foreground/70 text-center">
+            Beta: Platform functionality is in development. This is not an offer to sell securities.
+          </p>
         </div>
       </div>
     </footer>

@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { WalletProvider } from "@/components/WalletProvider";
+import { BetaBanner } from "@/components/BetaBanner";
 import Home from "@/pages/home";
 import Properties from "@/pages/properties";
 import PropertyDetail from "@/pages/property-detail";
@@ -49,6 +50,7 @@ function App() {
       <ThemeProvider>
         <WalletProvider>
           <TooltipProvider>
+            <BetaBanner />
             <Toaster />
             <Router />
           </TooltipProvider>
