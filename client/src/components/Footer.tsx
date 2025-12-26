@@ -37,6 +37,13 @@ export function Footer() {
             <p className="text-sm text-muted-foreground max-w-xs mb-4">
               A Build Our Community, LLC project. Transforming vacant properties into thriving community assets through blockchain-enabled fractional ownership.
             </p>
+            <a 
+              href="https://buildourcommunity.co" 
+              className="text-sm text-primary hover:underline mb-4 inline-block"
+              data-testid="link-footer-website"
+            >
+              buildourcommunity.co
+            </a>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" asChild data-testid="link-social-twitter">
                 <a href="https://x.com/RevitaHub" target="_blank" rel="noopener noreferrer">
