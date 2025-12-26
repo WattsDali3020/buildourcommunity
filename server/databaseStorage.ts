@@ -13,10 +13,11 @@ import {
   type DesiredUseVote,
   type PrivateOfferingInvite, type InsertPrivateOfferingInvite,
   type PropertyGrant, type InsertPropertyGrant, type CapitalStackSummary,
+  type Waitlist,
   PHASE_CONFIG, calculatePhasePrice, getPhaseAllocation,
   users, properties, tokenOfferings, offeringPhases, tokenPurchases, 
   tokenHoldings, proposals, votes, propertySubmissions, submissionDocuments,
-  propertyNominations, desiredUseVotes, privateOfferingInvites, propertyGrants
+  propertyNominations, desiredUseVotes, privateOfferingInvites, propertyGrants, waitlist
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
@@ -741,5 +742,22 @@ export class DatabaseStorage implements IStorage {
     const percentFunded = totalProjectCost > 0 ? (totalFunded / totalProjectCost) * 100 : 0;
     
     return { totalProjectCost, tokenFunding, grantFunding, grantsByStatus, remainingToRaise, percentFunded };
+  }
+
+  async addToWaitlist(email: string, role: string): Promise<Waitlist> {
+    const [entry] = await db.insert(waitlist).values({
+      email,
+      role: role as Waitlist["role"],
+    }).returning();
+    return entry;
+  }
+
+  async getWaitlistByEmail(email: string): Promise<Waitlist | undefined> {
+    const [entry] = await db.select().from(waitlist).where(eq(waitlist.email, email));
+    return entry || undefined;
+  }
+
+  async getWaitlistEntries(): Promise<Waitlist[]> {
+    return db.select().from(waitlist).orderBy(desc(waitlist.createdAt));
   }
 }

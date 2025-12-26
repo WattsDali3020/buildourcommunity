@@ -813,6 +813,29 @@ export const insertPrivateOfferingInviteSchema = createInsertSchema(privateOffer
 export type InsertPrivateOfferingInvite = z.infer<typeof insertPrivateOfferingInviteSchema>;
 export type PrivateOfferingInvite = typeof privateOfferingInvites.$inferSelect;
 
+// Waitlist signups for beta notifications
+export const waitlistRoleEnum = pgEnum("waitlist_role", [
+  "investor",
+  "property_owner",
+  "community_member",
+  "other"
+]);
+
+export const waitlist = pgTable("waitlist", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: text("email").notNull().unique(),
+  role: waitlistRoleEnum("role").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertWaitlistSchema = createInsertSchema(waitlist).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertWaitlist = z.infer<typeof insertWaitlistSchema>;
+export type Waitlist = typeof waitlist.$inferSelect;
+
 export const GENERIC_PROPERTY_USES = [
   { id: "affordable_housing", label: "Affordable Housing", category: "Housing" },
   { id: "mixed_use", label: "Mixed-Use Development", category: "Development" },

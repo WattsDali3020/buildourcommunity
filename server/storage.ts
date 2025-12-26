@@ -13,10 +13,11 @@ import {
   type DesiredUseVote,
   type PrivateOfferingInvite, type InsertPrivateOfferingInvite,
   type PropertyGrant, type InsertPropertyGrant, type CapitalStackSummary,
+  type Waitlist,
   PHASE_CONFIG, calculatePhasePrice, getPhaseAllocation,
   users, properties, tokenOfferings, offeringPhases, tokenPurchases, 
   tokenHoldings, proposals, votes, propertySubmissions, submissionDocuments,
-  propertyNominations, desiredUseVotes, privateOfferingInvites, propertyGrants
+  propertyNominations, desiredUseVotes, privateOfferingInvites, propertyGrants, waitlist
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -132,6 +133,11 @@ export interface IStorage {
   updatePropertyGrant(id: string, data: Partial<InsertPropertyGrant>): Promise<PropertyGrant | undefined>;
   deletePropertyGrant(id: string): Promise<boolean>;
   getCapitalStackSummary(propertyId: string): Promise<CapitalStackSummary>;
+  
+  // Waitlist
+  addToWaitlist(email: string, role: string): Promise<Waitlist>;
+  getWaitlistByEmail(email: string): Promise<Waitlist | undefined>;
+  getWaitlistEntries(): Promise<Waitlist[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -1094,6 +1100,29 @@ export class MemStorage implements IStorage {
       remainingToRaise,
       percentFunded,
     };
+  }
+
+  // Waitlist methods - MemStorage doesn't persist, but we implement the interface
+  private waitlistEntries: Map<string, Waitlist> = new Map();
+  
+  async addToWaitlist(email: string, role: string): Promise<Waitlist> {
+    const id = randomUUID();
+    const entry: Waitlist = {
+      id,
+      email,
+      role: role as Waitlist["role"],
+      createdAt: new Date(),
+    };
+    this.waitlistEntries.set(id, entry);
+    return entry;
+  }
+  
+  async getWaitlistByEmail(email: string): Promise<Waitlist | undefined> {
+    return Array.from(this.waitlistEntries.values()).find(e => e.email === email);
+  }
+  
+  async getWaitlistEntries(): Promise<Waitlist[]> {
+    return Array.from(this.waitlistEntries.values());
   }
 }
 
