@@ -1026,36 +1026,69 @@ export default function Litepaper() {
 
               <Section id="technical" title="11. Technical Architecture">
                 <Subsection title="11.1 Smart Contract Architecture">
-                  <div className="bg-muted/30 p-4 rounded-md mb-4">
-                    <pre className="text-sm overflow-x-auto">
-{`┌─────────────────────────────────────────────────────────┐
-│                    RevitaHub Protocol                    │
-├─────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │
-│  │  Property   │  │  Offering   │  │ Governance  │     │
-│  │   Token     │  │   Manager   │  │    DAO      │     │
-│  │  (ERC-20)   │  │             │  │             │     │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘     │
-│         │                │                │             │
-│         └────────────────┼────────────────┘             │
-│                          │                              │
-│                   ┌──────┴──────┐                       │
-│                   │  Treasury   │                       │
-│                   │  (Multi-Sig)│                       │
-│                   └──────┬──────┘                       │
-│                          │                              │
-├──────────────────────────┼──────────────────────────────┤
-│           Chainlink Services Layer                      │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐  │
-│  │  Data    │  │  Proof   │  │ Functions│  │  CCIP  │  │
-│  │  Feeds   │  │of Reserve│  │          │  │        │  │
-│  └──────────┘  └──────────┘  └──────────┘  └────────┘  │
-│                          │                              │
-│                   ┌──────┴──────┐                       │
-│                   │ Automation  │                       │
-│                   └─────────────┘                       │
-└─────────────────────────────────────────────────────────┘`}
-                    </pre>
+                  <div className="mb-6">
+                    <Card className="border-2 border-primary/30 mb-4">
+                      <CardContent className="p-6">
+                        <h4 className="text-center font-bold text-lg mb-6 text-primary">RevitaHub Protocol Layer</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                          <div className="p-4 rounded-md bg-primary/10 border border-primary/20 text-center">
+                            <Coins className="h-8 w-8 mx-auto mb-2 text-primary" />
+                            <h5 className="font-semibold text-sm">Property Token</h5>
+                            <p className="text-xs text-muted-foreground">ERC-20 + ERC-1400</p>
+                          </div>
+                          <div className="p-4 rounded-md bg-chart-3/10 border border-chart-3/20 text-center">
+                            <TrendingUp className="h-8 w-8 mx-auto mb-2 text-chart-3" />
+                            <h5 className="font-semibold text-sm">Offering Manager</h5>
+                            <p className="text-xs text-muted-foreground">5-Phase System</p>
+                          </div>
+                          <div className="p-4 rounded-md bg-chart-1/10 border border-chart-1/20 text-center">
+                            <Vote className="h-8 w-8 mx-auto mb-2 text-chart-1" />
+                            <h5 className="font-semibold text-sm">Governance DAO</h5>
+                            <p className="text-xs text-muted-foreground">Token-Weighted Voting</p>
+                          </div>
+                        </div>
+                        <div className="flex justify-center mb-4">
+                          <ArrowRight className="h-5 w-5 rotate-90 text-muted-foreground" />
+                        </div>
+                        <div className="max-w-xs mx-auto p-4 rounded-md bg-muted border text-center mb-6">
+                          <Lock className="h-8 w-8 mx-auto mb-2 text-foreground" />
+                          <h5 className="font-semibold text-sm">Treasury</h5>
+                          <p className="text-xs text-muted-foreground">Multi-Sig Escrow</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="border-2 border-chart-2/30">
+                      <CardContent className="p-6">
+                        <h4 className="text-center font-bold text-lg mb-6 text-chart-2">Chainlink Services Layer</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                          <div className="p-3 rounded-md bg-chart-2/10 border border-chart-2/20 text-center">
+                            <TrendingUp className="h-6 w-6 mx-auto mb-2 text-chart-2" />
+                            <h5 className="font-medium text-xs">Data Feeds</h5>
+                          </div>
+                          <div className="p-3 rounded-md bg-chart-2/10 border border-chart-2/20 text-center">
+                            <Shield className="h-6 w-6 mx-auto mb-2 text-chart-2" />
+                            <h5 className="font-medium text-xs">Proof of Reserve</h5>
+                          </div>
+                          <div className="p-3 rounded-md bg-chart-2/10 border border-chart-2/20 text-center">
+                            <Zap className="h-6 w-6 mx-auto mb-2 text-chart-2" />
+                            <h5 className="font-medium text-xs">Functions</h5>
+                          </div>
+                          <div className="p-3 rounded-md bg-chart-2/10 border border-chart-2/20 text-center">
+                            <Globe className="h-6 w-6 mx-auto mb-2 text-chart-2" />
+                            <h5 className="font-medium text-xs">CCIP</h5>
+                          </div>
+                        </div>
+                        <div className="flex justify-center">
+                          <ArrowRight className="h-5 w-5 rotate-90 text-muted-foreground" />
+                        </div>
+                        <div className="max-w-xs mx-auto p-4 rounded-md bg-chart-2/10 border border-chart-2/20 text-center mt-4">
+                          <RefreshCw className="h-6 w-6 mx-auto mb-2 text-chart-2" />
+                          <h5 className="font-semibold text-sm">Automation</h5>
+                          <p className="text-xs text-muted-foreground">Scheduled Tasks & Triggers</p>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 </Subsection>
 

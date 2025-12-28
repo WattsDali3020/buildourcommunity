@@ -12,9 +12,9 @@ const footerLinks = {
   ],
   resources: [
     { href: "/litepaper", label: "Litepaper" },
+    { href: "/how-it-works", label: "How It Works" },
+    { href: "/faq", label: "FAQ" },
     { href: "/learn", label: "Learn" },
-    { href: "/learn#tokenization", label: "Tokenization Guide" },
-    { href: "/learn#compliance", label: "Legal Compliance" },
   ],
   company: [
     { href: "/about", label: "About Us" },

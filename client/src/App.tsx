@@ -20,6 +20,8 @@ import Nominate from "@/pages/nominate";
 import OwnerResponse from "@/pages/owner-response";
 import AdminPanel from "@/pages/admin";
 import Litepaper from "@/pages/litepaper";
+import TokenizationProcess from "@/pages/tokenization-process";
+import FAQ from "@/pages/faq";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -39,6 +41,8 @@ function Router() {
       <Route path="/owner-response/:token" component={OwnerResponse} />
       <Route path="/admin" component={AdminPanel} />
       <Route path="/litepaper" component={Litepaper} />
+      <Route path="/how-it-works" component={TokenizationProcess} />
+      <Route path="/faq" component={FAQ} />
       <Route component={NotFound} />
     </Switch>
   );

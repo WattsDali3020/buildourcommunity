@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Users, Vote, Wallet, MapPin, Flag, Globe, Info, ShieldCheck } from "lucide-react";
+import { Plus, Users, Vote, Wallet, MapPin, Flag, Globe, Info, ShieldCheck, ArrowRight, FileText, CheckCircle2, Clock, MessageSquare, ThumbsUp, ThumbsDown, Zap, Calendar, ArrowDown } from "lucide-react";
 import { useState } from "react";
+import { Separator } from "@/components/ui/separator";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import type { Proposal as ProposalType, TokenHolding } from "@shared/schema";
 
@@ -155,6 +157,130 @@ export default function Governance() {
               </CardContent>
             </Card>
           </div>
+
+          <Card className="mb-8">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Vote className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">How Governance Works</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-6">
+                RevitaHub uses a Decentralized Autonomous Organization (DAO) model where token holders make all major property decisions. Here's the complete voting process:
+              </p>
+              
+              <div className="relative">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  <div className="flex flex-col items-center text-center p-4 rounded-md bg-muted/50">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                      <FileText className="h-6 w-6 text-primary" />
+                    </div>
+                    <Badge variant="outline" className="mb-2">Step 1</Badge>
+                    <h4 className="font-medium text-sm mb-1">Proposal Created</h4>
+                    <p className="text-xs text-muted-foreground">Any token holder submits a proposal for review</p>
+                  </div>
+                  
+                  <div className="hidden md:flex items-center justify-center">
+                    <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="md:hidden flex justify-center py-2">
+                    <ArrowDown className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  
+                  <div className="flex flex-col items-center text-center p-4 rounded-md bg-muted/50">
+                    <div className="h-12 w-12 rounded-full bg-chart-3/10 flex items-center justify-center mb-3">
+                      <Clock className="h-6 w-6 text-chart-3" />
+                    </div>
+                    <Badge variant="outline" className="mb-2">Step 2</Badge>
+                    <h4 className="font-medium text-sm mb-1">Voting Period</h4>
+                    <p className="text-xs text-muted-foreground">7-day window for token holders to vote</p>
+                  </div>
+                  
+                  <div className="hidden md:flex items-center justify-center">
+                    <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="md:hidden flex justify-center py-2">
+                    <ArrowDown className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  
+                  <div className="flex flex-col items-center text-center p-4 rounded-md bg-muted/50">
+                    <div className="h-12 w-12 rounded-full bg-chart-1/10 flex items-center justify-center mb-3">
+                      <Zap className="h-6 w-6 text-chart-1" />
+                    </div>
+                    <Badge variant="outline" className="mb-2">Step 3</Badge>
+                    <h4 className="font-medium text-sm mb-1">Execution</h4>
+                    <p className="text-xs text-muted-foreground">Approved proposals are implemented</p>
+                  </div>
+                </div>
+              </div>
+              
+              <Separator className="my-6" />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-medium mb-3 flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4 text-primary" />
+                    What You Can Vote On
+                  </h4>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span>Property development plans (housing, commercial, green space)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span>Contractor and vendor selection</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span>Community benefit allocations</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span>Dividend distribution percentages</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span>Property sale decisions</span>
+                    </li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-3 flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    Voting Timeline
+                  </h4>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <span className="font-medium text-foreground w-24">Day 1:</span>
+                      <span>Proposal submitted and published</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="font-medium text-foreground w-24">Days 1-7:</span>
+                      <span>Voting open - cast your vote anytime</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="font-medium text-foreground w-24">Day 7:</span>
+                      <span>Voting closes, results tallied</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="font-medium text-foreground w-24">Day 8+:</span>
+                      <span>Approved proposals begin implementation</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div className="mt-6 p-3 rounded-md bg-primary/5 border border-primary/20 flex gap-2">
+                <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">All votes are on-chain:</span> Every vote is recorded on the blockchain for complete transparency. 
+                  You can verify any voting outcome independently.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
           <Card className="mb-8">
             <CardHeader>
