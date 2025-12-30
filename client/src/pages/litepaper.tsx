@@ -21,24 +21,30 @@ import {
   CheckCircle2,
   ArrowRight,
   Zap,
-  RefreshCw
+  RefreshCw,
+  AlertTriangle,
+  BarChart3,
+  Target,
+  Code
 } from "lucide-react";
 
 const tableOfContents = [
-  { id: "abstract", title: "1. Abstract" },
+  { id: "executive", title: "1. Executive Summary" },
   { id: "problem", title: "2. Problem Statement" },
-  { id: "solution", title: "3. Solution Overview" },
-  { id: "platform", title: "4. Platform Architecture" },
-  { id: "tokenization", title: "5. Tokenization Model" },
-  { id: "offering", title: "6. Community-First Token Offering" },
-  { id: "chainlink", title: "7. Chainlink Integration" },
-  { id: "governance", title: "8. Governance & DAO" },
-  { id: "protection", title: "9. Investor Protections" },
-  { id: "compliance", title: "10. Legal & Regulatory Compliance" },
-  { id: "technical", title: "11. Technical Architecture" },
-  { id: "tokenomics", title: "12. Tokenomics" },
-  { id: "roadmap", title: "13. Roadmap" },
-  { id: "team", title: "14. Team" },
+  { id: "market", title: "3. Market Analysis" },
+  { id: "solution", title: "4. Solution Overview" },
+  { id: "architecture", title: "5. Platform Architecture" },
+  { id: "tokenization", title: "6. Tokenization Model" },
+  { id: "offering", title: "7. Community-First Offering" },
+  { id: "chainlink", title: "8. Chainlink & Canton Integration" },
+  { id: "governance", title: "9. Governance & DAO" },
+  { id: "protection", title: "10. Investor Protections" },
+  { id: "compliance", title: "11. Regulatory Compliance" },
+  { id: "technical", title: "12. Technical Architecture" },
+  { id: "tokenomics", title: "13. Tokenomics" },
+  { id: "risks", title: "14. Risk Factors" },
+  { id: "roadmap", title: "15. Roadmap" },
+  { id: "team", title: "16. Team" },
 ];
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
@@ -81,8 +87,11 @@ export default function Litepaper() {
               <p className="text-xl text-muted-foreground mb-2">
                 Tokenizing Communities for Lasting Growth
               </p>
-              <p className="text-sm text-muted-foreground mb-8">
-                Version 1.0 | December 2025
+              <p className="text-sm text-muted-foreground mb-4">
+                Version 1.1 | December 2025
+              </p>
+              <p className="text-xs text-muted-foreground mb-8">
+                Beta Prototype - Join the waitlist at buildourcommunity.co
               </p>
               <div className="flex items-center justify-center gap-4 print:hidden">
                 <Button onClick={handlePrint} variant="outline" data-testid="button-download-pdf">
@@ -122,32 +131,51 @@ export default function Litepaper() {
             </nav>
 
             <article className="flex-1 max-w-3xl prose prose-neutral dark:prose-invert prose-headings:scroll-mt-24">
-              <Section id="abstract" title="1. Abstract">
+              <Section id="executive" title="1. Executive Summary">
                 <p className="text-lg leading-relaxed mb-6">
-                  RevitaHub is a decentralized protocol enabling fractional ownership of real-world real estate assets through blockchain tokenization. The platform democratizes access to property investment through an intentionally low entry price of <span className="font-bold">$12.50 per token</span> in Phase 1, designed specifically for financial inclusion of lower-income investors who are typically excluded from real estate opportunities. This enables participation in community revitalization projects while providing institutional-grade security, regulatory compliance, and transparent governance.
+                  RevitaHub is a blockchain-powered platform revolutionizing real estate revitalization by enabling community-led fractional ownership of vacant properties. Starting at just <span className="font-bold">$12.50 per token</span>, investors gain equity, voting rights, and quarterly dividends (avg. 8.2% annual returns) in projects transforming blighted assets into thriving community developments.
                 </p>
-                <p className="leading-relaxed mb-6">
-                  Built on EVM-compatible blockchain infrastructure and leveraging Chainlink's decentralized oracle network for verified real-world data, RevitaHub creates a trust-minimized bridge between physical real estate assets and on-chain token ownership. The protocol implements a novel 4-phase community-first offering system that prioritizes local stakeholders while ensuring broad accessibility, combined with robust investor protection mechanisms including guaranteed returns on failed funding rounds.
-                </p>
-                <Card className="bg-primary/5 border-primary/20">
+                <Card className="bg-primary/5 border-primary/20 mb-6">
                   <CardContent className="p-6">
-                    <h4 className="font-semibold mb-3">Key Innovations</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                      <div>
+                        <p className="text-2xl font-bold text-primary">$12.50</p>
+                        <p className="text-xs text-muted-foreground">Min. Investment</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-primary">8.2%</p>
+                        <p className="text-xs text-muted-foreground">Target Annual Returns</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-primary">4-Phase</p>
+                        <p className="text-xs text-muted-foreground">Community-First Offering</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-primary">3% APR</p>
+                        <p className="text-xs text-muted-foreground">Refund Protection</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/30">
+                  <CardContent className="p-6">
+                    <h4 className="font-semibold mb-3">Key Differentiators</h4>
                     <ul className="space-y-2">
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span>Community-first 4-phase token distribution prioritizing local investors</span>
+                        <span>4-phase community-first distribution with local investor priority</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span>Chainlink-powered property valuations and proof of reserve verification</span>
+                        <span>Voting multipliers amplifying local influence (1.5x for county residents)</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span>DAO governance enabling token holders to shape property development</span>
+                        <span>Chainlink-powered valuations and proof of reserve verification</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span>3% APR investor protection on failed funding rounds</span>
+                        <span>100% funding threshold with 3% APR refunds on failed offerings</span>
                       </li>
                     </ul>
                   </CardContent>
@@ -159,19 +187,19 @@ export default function Litepaper() {
               <Section id="problem" title="2. Problem Statement">
                 <Subsection title="2.1 The Vacant Property Crisis">
                   <p className="leading-relaxed mb-4">
-                    Across the United States, an estimated 17 million vacant properties represent both a crisis and an opportunity. These abandoned lots, historic buildings, and commercial sites drain municipal resources through increased crime, reduced property values, and ongoing maintenance costs. Meanwhile, communities lack the capital and mechanisms to transform these liabilities into assets.
+                    Across the United States, 17+ million vacant properties represent $500B in lost value (HUD data). These abandoned lots drain municipal resources while communities lack capital mechanisms to transform them.
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-6">
                     <Card>
                       <CardContent className="p-4 text-center">
                         <p className="text-3xl font-bold text-primary">17M+</p>
-                        <p className="text-sm text-muted-foreground">Vacant Properties in US</p>
+                        <p className="text-sm text-muted-foreground">Vacant Properties</p>
                       </CardContent>
                     </Card>
                     <Card>
                       <CardContent className="p-4 text-center">
                         <p className="text-3xl font-bold text-primary">$500B</p>
-                        <p className="text-sm text-muted-foreground">Estimated Lost Value</p>
+                        <p className="text-sm text-muted-foreground">Lost Value</p>
                       </CardContent>
                     </Card>
                     <Card>
@@ -184,9 +212,6 @@ export default function Litepaper() {
                 </Subsection>
 
                 <Subsection title="2.2 Barriers to Community Investment">
-                  <p className="leading-relaxed mb-4">
-                    Traditional real estate investment mechanisms exclude the vast majority of potential participants:
-                  </p>
                   <ul className="space-y-3 mb-6">
                     <li className="flex items-start gap-3">
                       <div className="h-6 w-6 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -194,7 +219,7 @@ export default function Litepaper() {
                       </div>
                       <div>
                         <span className="font-medium">High Capital Requirements:</span>
-                        <span className="text-muted-foreground"> Minimum investments of $25,000-$100,000+ exclude 90% of Americans from direct real estate ownership.</span>
+                        <span className="text-muted-foreground"> $25K-$100K+ minimums exclude 90% of Americans.</span>
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
@@ -203,7 +228,7 @@ export default function Litepaper() {
                       </div>
                       <div>
                         <span className="font-medium">Illiquidity:</span>
-                        <span className="text-muted-foreground"> Real estate investments typically lock capital for 5-10 years with no secondary market.</span>
+                        <span className="text-muted-foreground"> 5-10 year lock-ups with no secondary market.</span>
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
@@ -211,40 +236,115 @@ export default function Litepaper() {
                         <span className="text-destructive text-sm font-medium">3</span>
                       </div>
                       <div>
-                        <span className="font-medium">Geographic Restrictions:</span>
-                        <span className="text-muted-foreground"> Investors cannot easily participate in revitalization of their own communities from afar.</span>
+                        <span className="font-medium">No Voice:</span>
+                        <span className="text-muted-foreground"> Communities lack input on development, leading to gentrification.</span>
                       </div>
                     </li>
-                    <li className="flex items-start gap-3">
-                      <div className="h-6 w-6 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-destructive text-sm font-medium">4</span>
-                      </div>
-                      <div>
-                        <span className="font-medium">No Voice in Development:</span>
-                        <span className="text-muted-foreground"> Communities have no input on how properties are developed, often leading to gentrification and displacement.</span>
-                      </div>
-                    </li>
-                  </ul>
-                </Subsection>
-
-                <Subsection title="2.3 Trust Deficits in Real Estate Investment">
-                  <p className="leading-relaxed mb-4">
-                    Current real estate investment structures suffer from opacity and centralized control:
-                  </p>
-                  <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                    <li>Property valuations rely on single appraisers with potential conflicts of interest</li>
-                    <li>Fund managers have unilateral control over investment decisions</li>
-                    <li>Distribution of returns lacks transparency and verifiability</li>
-                    <li>No on-chain proof that tokens are backed by real assets</li>
                   </ul>
                 </Subsection>
               </Section>
 
               <Separator className="my-12" />
 
-              <Section id="solution" title="3. Solution Overview">
+              <Section id="market" title="3. Market Analysis">
+                <Subsection title="3.1 RWA Market Growth">
+                  <p className="leading-relaxed mb-4">
+                    The tokenized real estate market is experiencing explosive growth, with Real World Assets (RWAs) reaching $30B in 2025 and projected to hit <span className="font-bold">$10 trillion by 2030</span> (Boston Consulting Group). ESG-focused investments are up 42% YoY, with rising demand for community-driven developments.
+                  </p>
+                  <Card className="bg-chart-2/10 border-chart-2/30 mb-6">
+                    <CardContent className="p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                        <div>
+                          <BarChart3 className="h-8 w-8 mx-auto mb-2 text-chart-2" />
+                          <p className="text-2xl font-bold">$30B</p>
+                          <p className="text-xs text-muted-foreground">RWA Market 2025</p>
+                        </div>
+                        <div>
+                          <TrendingUp className="h-8 w-8 mx-auto mb-2 text-chart-2" />
+                          <p className="text-2xl font-bold">$10T</p>
+                          <p className="text-xs text-muted-foreground">Projected by 2030</p>
+                        </div>
+                        <div>
+                          <Target className="h-8 w-8 mx-auto mb-2 text-chart-2" />
+                          <p className="text-2xl font-bold">42%</p>
+                          <p className="text-xs text-muted-foreground">ESG Growth YoY</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Subsection>
+
+                <Subsection title="3.2 Competitive Landscape">
+                  <p className="leading-relaxed mb-4">
+                    Platforms like RealT, Propy, and Lofty focus on fractional ownership but lack deep community governance. RevitaHub differentiates with:
+                  </p>
+                  <div className="overflow-x-auto mb-4">
+                    <table className="w-full text-sm border">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="text-left p-3 border-b">Feature</th>
+                          <th className="text-left p-3 border-b">RevitaHub</th>
+                          <th className="text-left p-3 border-b">Competitors</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="p-3 border-b font-medium">Min. Investment</td>
+                          <td className="p-3 border-b text-primary font-semibold">$12.50</td>
+                          <td className="p-3 border-b text-muted-foreground">$50-$100+</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 border-b font-medium">Community Governance</td>
+                          <td className="p-3 border-b text-primary font-semibold">DAO with voting multipliers</td>
+                          <td className="p-3 border-b text-muted-foreground">Limited or none</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 border-b font-medium">Local Priority</td>
+                          <td className="p-3 border-b text-primary font-semibold">4-phase system</td>
+                          <td className="p-3 border-b text-muted-foreground">First-come basis</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 font-medium">Investor Protection</td>
+                          <td className="p-3 text-primary font-semibold">3% APR refunds</td>
+                          <td className="p-3 text-muted-foreground">Varies</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </Subsection>
+
+                <Subsection title="3.3 Competitive Advantage">
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-medium">vs. Centralized REITs:</span>
+                        <span className="text-muted-foreground"> On-chain transparency, community voting, lower fees</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-medium">vs. Other RWA Platforms:</span>
+                        <span className="text-muted-foreground"> Local voting multipliers, community nomination system</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-medium">Social Impact:</span>
+                        <span className="text-muted-foreground"> Web3 REIT for the people with measurable community benefits</span>
+                      </div>
+                    </li>
+                  </ul>
+                </Subsection>
+              </Section>
+
+              <Separator className="my-12" />
+
+              <Section id="solution" title="4. Solution Overview">
                 <p className="text-lg leading-relaxed mb-6">
-                  RevitaHub addresses these challenges through a decentralized protocol that combines blockchain tokenization, oracle-verified real-world data, and community-first governance to create an accessible, transparent, and impactful real estate investment platform.
+                  RevitaHub combines blockchain tokenization, oracle-verified data, and community-first governance to create an accessible, transparent real estate investment platform.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -255,7 +355,7 @@ export default function Litepaper() {
                       </div>
                       <h4 className="font-semibold mb-2">Fractional Ownership</h4>
                       <p className="text-sm text-muted-foreground">
-                        Tokenize any property into divisible ERC-1155 tokens enabling $12.50 minimum investments with full ownership rights and dividend distributions.
+                        ERC-1155 tokens with $12.50 minimum, full ownership rights and quarterly dividends.
                       </p>
                     </CardContent>
                   </Card>
@@ -264,9 +364,9 @@ export default function Litepaper() {
                       <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center mb-4">
                         <Link2 className="h-6 w-6 text-primary" />
                       </div>
-                      <h4 className="font-semibold mb-2">Oracle-Verified Data</h4>
+                      <h4 className="font-semibold mb-2">Oracle Verification</h4>
                       <p className="text-sm text-muted-foreground">
-                        Chainlink oracles provide tamper-proof property valuations, ownership verification, and automated dividend calculations.
+                        Chainlink provides tamper-proof valuations and automated dividend calculations.
                       </p>
                     </CardContent>
                   </Card>
@@ -277,7 +377,7 @@ export default function Litepaper() {
                       </div>
                       <h4 className="font-semibold mb-2">DAO Governance</h4>
                       <p className="text-sm text-muted-foreground">
-                        Token holders vote on property development decisions, ensuring communities shape revitalization outcomes.
+                        Token holders vote on development with community multipliers amplifying local voices.
                       </p>
                     </CardContent>
                   </Card>
@@ -288,40 +388,40 @@ export default function Litepaper() {
                       </div>
                       <h4 className="font-semibold mb-2">Investor Protection</h4>
                       <p className="text-sm text-muted-foreground">
-                        Failed funding rounds trigger automatic refunds with 3% APR interest, protecting investor capital.
+                        Failed funding triggers automatic 3% APR refunds from USDC escrow.
                       </p>
                     </CardContent>
                   </Card>
                 </div>
 
-                <Subsection title="3.1 How It Works">
+                <Subsection title="4.1 How It Works">
                   <ol className="space-y-4">
                     <li className="flex items-start gap-4">
                       <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold flex-shrink-0">1</div>
                       <div>
-                        <p className="font-medium">Property Nomination & Verification</p>
-                        <p className="text-sm text-muted-foreground">Community members nominate vacant or underutilized properties. Chainlink oracles verify ownership records and property data from county registries.</p>
+                        <p className="font-medium">Nomination & Verification</p>
+                        <p className="text-sm text-muted-foreground">Community nominates properties; Chainlink verifies ownership from county registries.</p>
                       </div>
                     </li>
                     <li className="flex items-start gap-4">
                       <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold flex-shrink-0">2</div>
                       <div>
-                        <p className="font-medium">Tokenization & Offering</p>
-                        <p className="text-sm text-muted-foreground">Approved properties are tokenized into ERC-1155 tokens. A 4-phase offering prioritizes local community investors before opening to broader participation.</p>
+                        <p className="font-medium">Tokenization & Phased Offering</p>
+                        <p className="text-sm text-muted-foreground">ERC-1155 tokens created with 4-phase offering prioritizing local investors.</p>
                       </div>
                     </li>
                     <li className="flex items-start gap-4">
                       <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold flex-shrink-0">3</div>
                       <div>
-                        <p className="font-medium">DAO Governance</p>
-                        <p className="text-sm text-muted-foreground">Token holders vote on development plans, contractor selection, and community benefit allocations through on-chain governance.</p>
+                        <p className="font-medium">Governance</p>
+                        <p className="text-sm text-muted-foreground">Token holders vote on development plans with phase-based voting multipliers.</p>
                       </div>
                     </li>
                     <li className="flex items-start gap-4">
                       <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold flex-shrink-0">4</div>
                       <div>
                         <p className="font-medium">Development & Returns</p>
-                        <p className="text-sm text-muted-foreground">Properties are developed according to community votes. Rental income and appreciation are distributed as quarterly dividends to token holders.</p>
+                        <p className="text-sm text-muted-foreground">Properties developed per community votes; quarterly dividends distributed automatically.</p>
                       </div>
                     </li>
                   </ol>
@@ -330,59 +430,75 @@ export default function Litepaper() {
 
               <Separator className="my-12" />
 
-              <Section id="platform" title="4. Platform Architecture">
+              <Section id="architecture" title="5. Platform Architecture">
                 <p className="leading-relaxed mb-6">
-                  RevitaHub implements a hybrid architecture combining on-chain smart contracts for tokenization and governance with off-chain systems for property management and regulatory compliance.
+                  Hybrid on-chain/off-chain architecture combining smart contracts with traditional infrastructure for regulatory compliance.
                 </p>
 
-                <Subsection title="4.1 On-Chain Components">
+                <Subsection title="5.1 On-Chain Components">
                   <ul className="space-y-3 mb-6">
                     <li className="flex items-start gap-3">
                       <Database className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-medium">Property Token Contracts:</span>
-                        <span className="text-muted-foreground"> ERC-1155 tokens representing fractional ownership with built-in dividend distribution and transfer restrictions for compliance.</span>
+                        <span className="font-medium">ERC-1155 Property Tokens:</span>
+                        <span className="text-muted-foreground"> Fractional ownership with dividend distribution and transfer restrictions.</span>
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
                       <Vote className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="font-medium">Governance Contracts:</span>
-                        <span className="text-muted-foreground"> Token-weighted voting with phase-based multipliers ensuring local stakeholders maintain influence.</span>
+                        <span className="text-muted-foreground"> Token-weighted voting with phase-based multipliers.</span>
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
-                      <Coins className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <Lock className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-medium">Treasury Contracts:</span>
-                        <span className="text-muted-foreground"> Multi-sig escrow holding property acquisition funds with automated release based on milestone completion.</span>
+                        <span className="font-medium">Multi-Sig Treasuries:</span>
+                        <span className="text-muted-foreground"> Escrow holding acquisition funds with milestone-based release.</span>
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
                       <RefreshCw className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-medium">Dividend Distribution:</span>
-                        <span className="text-muted-foreground"> Automated quarterly distributions triggered by Chainlink Automation based on verified income reports.</span>
+                        <span className="font-medium">Dividend Automation:</span>
+                        <span className="text-muted-foreground"> Quarterly distributions via Chainlink Automation.</span>
                       </div>
                     </li>
                   </ul>
                 </Subsection>
 
-                <Subsection title="4.2 Blockchain Infrastructure">
-                  <p className="leading-relaxed mb-4">
-                    RevitaHub is designed for deployment on EVM-compatible blockchains, with infrastructure selection based on the following criteria:
-                  </p>
-                  <ul className="list-disc pl-6 space-y-2 text-muted-foreground mb-4">
-                    <li>Low transaction costs for retail investor accessibility</li>
-                    <li>High throughput for governance voting and dividend distributions</li>
-                    <li>Strong Chainlink oracle support and service availability</li>
-                    <li>Regulatory clarity and institutional acceptance</li>
-                    <li>Cross-chain interoperability via Chainlink CCIP</li>
+                <Subsection title="5.2 Off-Chain Infrastructure">
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <Database className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-medium">PostgreSQL:</span>
+                        <span className="text-muted-foreground"> Property metadata, documents, images.</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <Users className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-medium">KYC APIs:</span>
+                        <span className="text-muted-foreground"> Identity verification with licensed providers.</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <Globe className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-medium">RESTful Gateway:</span>
+                        <span className="text-muted-foreground"> API serving property data and user dashboards.</span>
+                      </div>
+                    </li>
                   </ul>
+                </Subsection>
+
+                <Subsection title="5.3 Multi-Chain Strategy">
                   <Card className="bg-muted/50">
                     <CardContent className="p-4">
                       <p className="text-sm">
-                        <span className="font-medium">Multi-Chain Strategy:</span> Initial deployment will target a primary EVM chain with cross-chain expansion enabled by Chainlink CCIP, allowing token holders on different networks to participate in unified governance and receive dividends.
+                        Deploy on <span className="font-medium">Base</span> (low fees) with Chainlink CCIP for cross-chain expansion. Canton Network integration enables institutional-grade privacy for enterprise partnerships.
                       </p>
                     </CardContent>
                   </Card>
@@ -391,12 +507,9 @@ export default function Litepaper() {
 
               <Separator className="my-12" />
 
-              <Section id="tokenization" title="5. Tokenization Model">
-                <Subsection title="5.1 Property Token Structure">
-                  <p className="leading-relaxed mb-4">
-                    Each property on RevitaHub is represented by a unique ERC-1155 token contract with the following characteristics:
-                  </p>
-                  <div className="overflow-x-auto">
+              <Section id="tokenization" title="6. Tokenization Model">
+                <Subsection title="6.1 Property Token Structure">
+                  <div className="overflow-x-auto mb-4">
                     <table className="w-full text-sm border">
                       <thead>
                         <tr className="bg-muted/50">
@@ -406,58 +519,38 @@ export default function Litepaper() {
                       </thead>
                       <tbody>
                         <tr>
-                          <td className="p-3 border-b font-medium">Token Standard</td>
-                          <td className="p-3 border-b text-muted-foreground">ERC-1155 multi-token with ERC-1400 security extensions</td>
+                          <td className="p-3 border-b font-medium">Standard</td>
+                          <td className="p-3 border-b text-muted-foreground">ERC-1155 with ERC-1400 security extensions</td>
                         </tr>
                         <tr>
-                          <td className="p-3 border-b font-medium">Total Supply</td>
-                          <td className="p-3 border-b text-muted-foreground">Fixed at issuance based on property valuation</td>
+                          <td className="p-3 border-b font-medium">Supply</td>
+                          <td className="p-3 border-b text-muted-foreground">Fixed per property valuation</td>
                         </tr>
                         <tr>
-                          <td className="p-3 border-b font-medium">Minimum Investment</td>
-                          <td className="p-3 border-b text-muted-foreground">$12.50 per token (Phase 1 County price)</td>
+                          <td className="p-3 border-b font-medium">Min. Investment</td>
+                          <td className="p-3 border-b text-muted-foreground">$12.50 (Phase 1)</td>
                         </tr>
                         <tr>
-                          <td className="p-3 border-b font-medium">Transfer Restrictions</td>
-                          <td className="p-3 border-b text-muted-foreground">KYC/AML verification required for all holders</td>
-                        </tr>
-                        <tr>
-                          <td className="p-3 font-medium">Dividend Rights</td>
-                          <td className="p-3 text-muted-foreground">Pro-rata distribution of property income</td>
+                          <td className="p-3 font-medium">Restrictions</td>
+                          <td className="p-3 text-muted-foreground">KYC-gated transfers, whitelist-only</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
                 </Subsection>
 
-                <Subsection title="5.2 Low-Entry Token Pricing for Financial Inclusion">
+                <Subsection title="6.2 Pricing for Financial Inclusion">
                   <p className="leading-relaxed mb-4">
-                    RevitaHub implements an intentionally low entry price of <span className="font-bold text-primary">$12.50 per token</span> in Phase 1, designed specifically to enable participation from a wide range of investors, including those with lower incomes who are typically excluded from real estate investment opportunities.
-                  </p>
-                  <Card className="bg-chart-3/10 border-chart-3/30 mb-6">
-                    <CardContent className="p-6">
-                      <h4 className="font-semibold mb-3">Democratized Ownership Through Accessible Pricing</h4>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        By setting tokens at $12.50, even small investments (e.g., buying just a few tokens) allow everyday residents to become fractional owners, share in automated dividends from rental income, property appreciation, and community revenue streams. This fosters inclusive wealth-building tied to local development.
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        This low barrier aligns with our vision of community-driven growth, preserving open space while generating passive returns for token holders nationwide via a regulated securities framework compliant across all 50 states.
-                      </p>
-                    </CardContent>
-                  </Card>
-                  
-                  <h4 className="font-medium mb-3">Algorithmic Phase Pricing</h4>
-                  <p className="leading-relaxed mb-4">
-                    Token prices increase algorithmically across phases, calculated to reach the total funding target while rewarding early community investors:
+                    $12.50 base price rewards early community risk. Phases markup 50% progressively:
                   </p>
                   <div className="overflow-x-auto mb-4">
                     <table className="w-full text-sm border">
                       <thead>
                         <tr className="bg-muted/50">
                           <th className="text-left p-3 border-b">Phase</th>
-                          <th className="text-left p-3 border-b">Base Price</th>
+                          <th className="text-left p-3 border-b">Base</th>
                           <th className="text-left p-3 border-b">Multiplier</th>
-                          <th className="text-left p-3 border-b">Token Price</th>
+                          <th className="text-left p-3 border-b">Price</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -465,7 +558,7 @@ export default function Litepaper() {
                           <td className="p-3 border-b font-medium">County</td>
                           <td className="p-3 border-b text-muted-foreground">$12.50</td>
                           <td className="p-3 border-b text-muted-foreground">1.0x</td>
-                          <td className="p-3 border-b font-semibold text-chart-3">$12.50</td>
+                          <td className="p-3 border-b font-semibold text-primary">$12.50</td>
                         </tr>
                         <tr>
                           <td className="p-3 border-b font-medium">State</td>
@@ -488,15 +581,16 @@ export default function Litepaper() {
                       </tbody>
                     </table>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    This pricing structure ensures local community members receive the best pricing while later-phase investors pay premiums that help reach funding targets. Valuations are updated quarterly via Chainlink oracle feeds incorporating multiple independent appraisals.
-                  </p>
+                  <Card className="bg-muted/30">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-medium text-foreground">Example:</span> A $500K property creates ~21,767 tokens at weighted average price of $22.97.
+                      </p>
+                    </CardContent>
+                  </Card>
                 </Subsection>
 
-                <Subsection title="5.3 Property Types">
-                  <p className="leading-relaxed mb-4">
-                    RevitaHub supports tokenization of diverse property types without restrictions on size or category:
-                  </p>
+                <Subsection title="6.3 Property Types">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Card>
                       <CardContent className="p-4 text-center">
@@ -513,7 +607,7 @@ export default function Litepaper() {
                     <Card>
                       <CardContent className="p-4 text-center">
                         <Building2 className="h-8 w-8 mx-auto mb-2 text-primary" />
-                        <p className="text-sm font-medium">Commercial Sites</p>
+                        <p className="text-sm font-medium">Commercial</p>
                       </CardContent>
                     </Card>
                     <Card>
@@ -528,285 +622,194 @@ export default function Litepaper() {
 
               <Separator className="my-12" />
 
-              <Section id="offering" title="6. Community-First Token Offering">
-                <p className="leading-relaxed mb-6">
-                  RevitaHub implements a novel 4-phase offering system designed to prioritize community stakeholders while enabling broad participation. This structure ensures that those most affected by property development have first access to investment opportunities.
-                </p>
+              <Section id="offering" title="7. Community-First Token Offering">
+                <Subsection title="7.1 Phase Structure">
+                  <div className="overflow-x-auto mb-6">
+                    <table className="w-full text-sm border">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="text-left p-3 border-b">Phase</th>
+                          <th className="text-left p-3 border-b">Price</th>
+                          <th className="text-left p-3 border-b">Limit/Person</th>
+                          <th className="text-left p-3 border-b">Voting Power</th>
+                          <th className="text-left p-3 border-b">Duration</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="bg-primary/5">
+                          <td className="p-3 border-b font-medium">County</td>
+                          <td className="p-3 border-b">$12.50</td>
+                          <td className="p-3 border-b">100</td>
+                          <td className="p-3 border-b text-primary font-semibold">1.5x</td>
+                          <td className="p-3 border-b">30 days</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 border-b font-medium">State</td>
+                          <td className="p-3 border-b">$18.75</td>
+                          <td className="p-3 border-b">250</td>
+                          <td className="p-3 border-b">1.25x</td>
+                          <td className="p-3 border-b">30 days</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 border-b font-medium">National</td>
+                          <td className="p-3 border-b">$28.13</td>
+                          <td className="p-3 border-b">500</td>
+                          <td className="p-3 border-b">1.0x</td>
+                          <td className="p-3 border-b">60 days</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 font-medium">International</td>
+                          <td className="p-3">$37.50</td>
+                          <td className="p-3">1,000</td>
+                          <td className="p-3">0.75x</td>
+                          <td className="p-3">90 days</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
 
-                <Subsection title="6.1 Phase Structure">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Each investor is limited to <span className="font-semibold text-foreground">100 tokens per person</span> per property in Phase 1 (County). As phases advance, the per-person token allocation increases algorithmically to ensure 100% of the funding target can be reached. Token prices also increase with each phase to reward early community investors.
-                  </p>
-                  <div className="space-y-4 mb-6">
-                    <Card className="border-l-4 border-l-primary">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold">Phase 1: County</h4>
-                          <span className="text-sm text-muted-foreground">1.5x Voting Power</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">Exclusive access for investors residing in the same county as the property.</p>
-                        <div className="flex flex-wrap items-center gap-4 text-xs">
-                          <span className="text-primary font-medium">Duration: 30 days</span>
-                          <span>Token Price: $12.50</span>
-                          <span>Per-person limit: 100 tokens</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card className="border-l-4 border-l-chart-2">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold">Phase 2: State</h4>
-                          <span className="text-sm text-muted-foreground">1.25x Voting Power</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">Opens to all investors within the same state.</p>
-                        <div className="flex flex-wrap items-center gap-4 text-xs">
-                          <span className="text-chart-2 font-medium">Duration: 30 days</span>
-                          <span>Token Price: $18.75</span>
-                          <span>Per-person limit: 250 tokens</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card className="border-l-4 border-l-chart-3">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold">Phase 3: National</h4>
-                          <span className="text-sm text-muted-foreground">1.0x Voting Power</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">Available to all US-based investors.</p>
-                        <div className="flex flex-wrap items-center gap-4 text-xs">
-                          <span className="text-chart-3 font-medium">Duration: 60 days</span>
-                          <span>Token Price: $28.13</span>
-                          <span>Per-person limit: 500 tokens</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card className="border-l-4 border-l-chart-4">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold">Phase 4: International</h4>
-                          <span className="text-sm text-muted-foreground">0.75x Voting Power</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">Global participation from eligible jurisdictions.</p>
-                        <div className="flex flex-wrap items-center gap-4 text-xs">
-                          <span className="text-chart-4 font-medium">Duration: 90 days</span>
-                          <span>Token Price: $37.50</span>
-                          <span>Per-person limit: 1,000 tokens</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    </div>
-
-                  <Card className="bg-muted/30 mb-4">
-                    <CardContent className="p-4">
-                      <h4 className="font-semibold mb-2">Per-Person Token Limits</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Each phase has fixed per-person limits to ensure broad community participation: County (100 tokens), State (250 tokens), National (500 tokens), and International (1,000 tokens). This prevents large investors from dominating early phases while allowing increased participation as offerings expand geographically.
-                      </p>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-chart-5/10 border-chart-5/30 mb-4">
+                  <Card className="bg-chart-5/10 border-chart-5/30 mb-6">
                     <CardContent className="p-4">
                       <h4 className="font-semibold mb-2 flex items-center gap-2">
                         <Users className="h-4 w-4 text-chart-5" />
-                        Private Offering Mode (Separate from Public Phases)
+                        Private Offering Mode
                       </h4>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        In addition to the 4-phase public offering, property owners can create invite-only private offerings for specific investors or businesses via email invites and private access codes.
+                      <p className="text-sm text-muted-foreground">
+                        Separate from public phases, property owners can create invite-only offerings with custom terms via email invites and access codes.
                       </p>
-                      <div className="flex flex-wrap items-center gap-4 text-xs">
-                        <span className="text-chart-5 font-medium">Duration: Flexible</span>
-                        <span>Token Price: Custom</span>
-                        <span>Per-person limit: Customizable</span>
-                      </div>
                     </CardContent>
                   </Card>
                 </Subsection>
 
-                <Subsection title="6.2 Phase Advancement">
+                <Subsection title="7.2 Phase Advancement">
                   <p className="leading-relaxed mb-4">
-                    Phases advance automatically when either condition is met:
+                    Chainlink Automation triggers phase advancement when:
                   </p>
                   <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                    <li>Current phase token allocation is fully subscribed</li>
+                    <li>Current phase allocation fully subscribed</li>
                     <li>Phase time limit expires</li>
                   </ul>
-                  <p className="text-sm text-muted-foreground mt-4">
-                    Chainlink Automation monitors phase conditions and triggers advancement, ensuring trustless execution of the offering timeline.
-                  </p>
                 </Subsection>
 
-                <Subsection title="6.3 Funding Timeline & Investor Protection">
-                  <p className="leading-relaxed mb-4">
-                    Each property offering operates under a <span className="font-semibold text-foreground">1-year funding deadline</span>. Property loans are only issued when <span className="font-semibold text-foreground">100% of the token funding target</span> is reached—there is no partial funding.
-                  </p>
-                  
+                <Subsection title="7.3 Funding & Investor Protection">
                   <Card className="bg-primary/5 border-primary/20 mb-4">
                     <CardContent className="p-4">
                       <h4 className="font-semibold mb-2 flex items-center gap-2">
                         <Shield className="h-4 w-4 text-primary" />
-                        USDC Escrow & Interest Protection
+                        100% Funding Threshold
                       </h4>
                       <p className="text-sm text-muted-foreground mb-3">
-                        All investor funds are held in USDC escrow during the funding period. This stablecoin holding generates <span className="font-semibold text-foreground">3% APR interest</span> that accrues to the benefit of investors.
+                        1-year deadline. Loans only issued when 100% target reached—no dilution guarantee.
                       </p>
+                      <div className="bg-background p-4 rounded-md mb-3">
+                        <p className="text-sm font-mono text-center">
+                          Refund = P + (P × 0.03 × D/365)
+                        </p>
+                      </div>
                       <ul className="list-disc pl-6 space-y-1 text-sm text-muted-foreground">
-                        <li><span className="font-medium text-foreground">If funding succeeds (100% reached):</span> Funds are released for property acquisition and investors receive their property tokens.</li>
-                        <li><span className="font-medium text-foreground">If funding fails (target not reached in 1 year):</span> Investors receive automatic refunds with 3% APR interest on their original contribution.</li>
+                        <li><span className="font-medium text-foreground">Success:</span> Funds released, investors receive property tokens</li>
+                        <li><span className="font-medium text-foreground">Failure:</span> Automatic refunds with 3% APR interest</li>
                       </ul>
                     </CardContent>
                   </Card>
-                  
-                  <p className="text-sm text-muted-foreground">
-                    Chainlink Automation monitors funding deadlines and triggers the appropriate action—either releasing funds for property acquisition or processing investor refunds with accrued interest.
-                  </p>
                 </Subsection>
               </Section>
 
               <Separator className="my-12" />
 
-              <Section id="chainlink" title="7. Chainlink Integration">
-                <p className="text-lg leading-relaxed mb-6">
-                  RevitaHub leverages multiple Chainlink services to create a secure, transparent, and automated real estate tokenization platform. This deep integration with Chainlink's decentralized oracle network is fundamental to our trust-minimized architecture.
-                </p>
-
+              <Section id="chainlink" title="8. Chainlink & Canton Integration">
                 <Card className="bg-primary/5 border-primary/20 mb-8">
                   <CardContent className="p-6">
                     <h4 className="font-semibold mb-3 flex items-center gap-2">
                       <Link2 className="h-5 w-5 text-primary" />
-                      Chainlink Build Program Participation
+                      Chainlink Build Program
                     </h4>
                     <p className="text-sm text-muted-foreground mb-4">
-                      RevitaHub is committed to the Chainlink ecosystem and intends to participate in the Chainlink Build Program, allocating a percentage of protocol revenue and token supply to Chainlink service providers and LINK stakers.
+                      RevitaHub allocates 3% token supply and 10% network fees to Chainlink ecosystem.
                     </p>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="text-center p-3 bg-background rounded-md">
                         <p className="text-2xl font-bold text-primary">3%</p>
-                        <p className="text-xs text-muted-foreground">Token Supply to Chainlink Ecosystem</p>
+                        <p className="text-xs text-muted-foreground">Token Supply</p>
                       </div>
                       <div className="text-center p-3 bg-background rounded-md">
                         <p className="text-2xl font-bold text-primary">10%</p>
-                        <p className="text-xs text-muted-foreground">Network Fees to Service Providers</p>
+                        <p className="text-xs text-muted-foreground">Network Fees</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Subsection title="7.1 Chainlink Data Feeds">
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <TrendingUp className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium mb-2">Real-Time Property Valuations</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Chainlink Data Feeds aggregate property valuations from multiple independent appraisers, real estate data providers, and market indices to provide tamper-proof on-chain valuations. This eliminates single points of failure and conflicts of interest in property pricing.
-                      </p>
-                    </div>
+                <Subsection title="8.1 Chainlink Services">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <Card>
+                      <CardContent className="p-4">
+                        <TrendingUp className="h-6 w-6 text-primary mb-2" />
+                        <h4 className="font-medium mb-1">Data Feeds</h4>
+                        <p className="text-sm text-muted-foreground">Real-time property valuations from 3+ independent sources</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <Shield className="h-6 w-6 text-primary mb-2" />
+                        <h4 className="font-medium mb-1">Proof of Reserve</h4>
+                        <p className="text-sm text-muted-foreground">Cryptographic verification of asset backing</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <Zap className="h-6 w-6 text-primary mb-2" />
+                        <h4 className="font-medium mb-1">Functions</h4>
+                        <p className="text-sm text-muted-foreground">Secure off-chain data from county registries</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <RefreshCw className="h-6 w-6 text-primary mb-2" />
+                        <h4 className="font-medium mb-1">Automation</h4>
+                        <p className="text-sm text-muted-foreground">Dividends, phase advancement, refund triggers</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="md:col-span-2">
+                      <CardContent className="p-4">
+                        <Globe className="h-6 w-6 text-primary mb-2" />
+                        <h4 className="font-medium mb-1">CCIP</h4>
+                        <p className="text-sm text-muted-foreground">Cross-chain token transfers and unified governance across networks</p>
+                      </CardContent>
+                    </Card>
                   </div>
-                  <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground">
-                    <li>Aggregated data from 3+ independent appraisal sources</li>
-                    <li>Quarterly valuation updates with deviation thresholds</li>
-                    <li>Integration with commercial real estate indices</li>
-                  </ul>
                 </Subsection>
 
-                <Subsection title="7.2 Chainlink Proof of Reserve">
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Shield className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium mb-2">Asset Backing Verification</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Chainlink Proof of Reserve provides cryptographic verification that property tokens are backed by real-world assets. This includes verification of property ownership records, title insurance, and escrow balances.
+                <Subsection title="8.2 Canton Network Integration">
+                  <Card className="bg-chart-2/10 border-chart-2/30">
+                    <CardContent className="p-4">
+                      <h4 className="font-semibold mb-2">Institutional-Grade Privacy</h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Canton Network enables enterprise partnerships with privacy-preserving workflows:
                       </p>
-                    </div>
-                  </div>
-                  <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground">
-                    <li>On-chain attestation of property deed registration</li>
-                    <li>Real-time escrow balance verification</li>
-                    <li>Automated alerts for collateralization ratio changes</li>
-                  </ul>
-                </Subsection>
-
-                <Subsection title="7.3 Chainlink Functions">
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Zap className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium mb-2">Off-Chain Property Data</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Chainlink Functions enables secure retrieval of property data from county registries, title companies, and property management systems without exposing sensitive APIs on-chain.
-                      </p>
-                    </div>
-                  </div>
-                  <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground">
-                    <li>County registry ownership verification</li>
-                    <li>Property tax status and lien checks</li>
-                    <li>Rental income and occupancy data retrieval</li>
-                    <li>Insurance policy verification</li>
-                  </ul>
-                </Subsection>
-
-                <Subsection title="7.4 Chainlink Automation">
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <RefreshCw className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium mb-2">Automated Protocol Operations</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Chainlink Automation powers trustless execution of critical protocol functions, removing the need for centralized operators.
-                      </p>
-                    </div>
-                  </div>
-                  <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground">
-                    <li>Quarterly dividend distributions to all token holders</li>
-                    <li>Phase advancement when conditions are met</li>
-                    <li>Funding deadline enforcement and refund triggers</li>
-                    <li>Governance proposal execution after voting periods</li>
-                  </ul>
-                </Subsection>
-
-                <Subsection title="7.5 Chainlink CCIP">
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Globe className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium mb-2">Cross-Chain Interoperability</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Chainlink CCIP (Cross-Chain Interoperability Protocol) enables property tokens to be held and traded across multiple blockchain networks while maintaining unified governance.
-                      </p>
-                    </div>
-                  </div>
-                  <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground">
-                    <li>Cross-chain token transfers with unified ownership records</li>
-                    <li>Multi-chain governance voting aggregation</li>
-                    <li>Dividend distribution to holders on any supported chain</li>
-                    <li>Future expansion to additional EVM chains without token fragmentation</li>
-                  </ul>
+                      <ul className="list-disc pl-6 space-y-1 text-sm text-muted-foreground">
+                        <li>Daml contracts for confidential multi-party workflows</li>
+                        <li>Global Synchronizer for atomic settlements</li>
+                        <li>Confidential data sharing for appraisals and audits</li>
+                        <li>Cross-network governance and dividend distribution</li>
+                      </ul>
+                    </CardContent>
+                  </Card>
                 </Subsection>
               </Section>
 
               <Separator className="my-12" />
 
-              <Section id="governance" title="8. Governance & DAO">
-                <p className="leading-relaxed mb-6">
-                  RevitaHub implements property-level DAO governance, giving token holders direct control over development decisions while ensuring local community voices are amplified.
-                </p>
-
-                <Subsection title="8.1 Voting Power">
+              <Section id="governance" title="9. Governance & DAO">
+                <Subsection title="9.1 Voting Power">
                   <p className="leading-relaxed mb-4">
-                    Voting power is calculated based on token holdings multiplied by phase-based multipliers:
+                    Voting power = Token Holdings × Phase Multiplier
                   </p>
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto mb-4">
                     <table className="w-full text-sm border">
                       <thead>
                         <tr className="bg-muted/50">
-                          <th className="text-left p-3 border-b">Purchase Phase</th>
+                          <th className="text-left p-3 border-b">Phase</th>
                           <th className="text-left p-3 border-b">Multiplier</th>
                           <th className="text-left p-3 border-b">Rationale</th>
                         </tr>
@@ -814,13 +817,13 @@ export default function Litepaper() {
                       <tbody>
                         <tr>
                           <td className="p-3 border-b font-medium">County</td>
-                          <td className="p-3 border-b text-primary">1.5x</td>
-                          <td className="p-3 border-b text-muted-foreground">Local stakeholders have outsized impact</td>
+                          <td className="p-3 border-b text-primary font-semibold">1.5x</td>
+                          <td className="p-3 border-b text-muted-foreground">Local stakeholders shape outcomes</td>
                         </tr>
                         <tr>
                           <td className="p-3 border-b font-medium">State</td>
                           <td className="p-3 border-b text-primary">1.25x</td>
-                          <td className="p-3 border-b text-muted-foreground">Regional investors understand local context</td>
+                          <td className="p-3 border-b text-muted-foreground">Regional context understanding</td>
                         </tr>
                         <tr>
                           <td className="p-3 border-b font-medium">National</td>
@@ -830,138 +833,110 @@ export default function Litepaper() {
                         <tr>
                           <td className="p-3 font-medium">International</td>
                           <td className="p-3">0.75x</td>
-                          <td className="p-3 text-muted-foreground">Remote investors defer to local expertise</td>
+                          <td className="p-3 text-muted-foreground">Defers to local expertise</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
+                  <Card className="bg-muted/30">
+                    <CardContent className="p-4">
+                      <p className="text-sm">
+                        <span className="font-medium">Example:</span> Alice (county resident) with 100 tokens = 150 voting power. Bob (international) with 100 tokens = 75 voting power. Local voices are amplified.
+                      </p>
+                    </CardContent>
+                  </Card>
                 </Subsection>
 
-                <Subsection title="8.2 Proposal Types">
+                <Subsection title="9.2 Proposal Types">
                   <ul className="space-y-3">
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="font-medium">Development Plans:</span>
-                        <span className="text-muted-foreground"> Vote on proposed uses - affordable housing, commercial space, green space, etc.</span>
+                        <span className="text-muted-foreground"> Affordable housing, commercial, green space</span>
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="font-medium">Contractor Selection:</span>
-                        <span className="text-muted-foreground"> Choose from vetted developers and construction firms.</span>
+                        <span className="text-muted-foreground"> Choose from vetted developers</span>
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="font-medium">Dividend Policy:</span>
-                        <span className="text-muted-foreground"> Determine reinvestment vs. distribution ratios.</span>
+                        <span className="text-muted-foreground"> Reinvestment vs. distribution ratios</span>
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="font-medium">Property Sale:</span>
-                        <span className="text-muted-foreground"> Supermajority (67%) required to approve exit events.</span>
+                        <span className="text-muted-foreground"> Major decisions requiring supermajority</span>
                       </div>
                     </li>
                   </ul>
                 </Subsection>
 
-                <Subsection title="8.3 Proposal Lifecycle">
-                  <ol className="space-y-2 text-sm">
-                    <li className="flex items-center gap-3">
-                      <span className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">1</span>
-                      <span>Proposal submitted with 1% token threshold</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <span className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">2</span>
-                      <span>7-day discussion period</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <span className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">3</span>
-                      <span>7-day voting period</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <span className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">4</span>
-                      <span>2-day timelock before execution</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <span className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">5</span>
-                      <span>Chainlink Automation executes approved proposals</span>
-                    </li>
-                  </ol>
-                </Subsection>
-              </Section>
-
-              <Separator className="my-12" />
-
-              <Section id="protection" title="9. Investor Protections">
-                <p className="leading-relaxed mb-6">
-                  RevitaHub implements multiple layers of investor protection to ensure participant security and confidence in the platform.
-                </p>
-
-                <Subsection title="9.1 Funding Guarantee">
-                  <Card className="bg-chart-3/10 border-chart-3/30">
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-3 mb-4">
-                        <Shield className="h-8 w-8 text-chart-3" />
-                        <div>
-                          <h4 className="font-semibold">3% APR Refund Protection</h4>
-                          <p className="text-sm text-muted-foreground">Your investment is protected if funding fails</p>
-                        </div>
+                <Subsection title="9.3 Smart Contract Pseudocode">
+                  <Card className="bg-muted/30">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Code className="h-5 w-5 text-primary" />
+                        <h4 className="font-semibold">GovernanceDAO.sol</h4>
                       </div>
-                      <p className="text-sm mb-4">
-                        If a property fails to reach 100% of its funding target within the 1-year funding period, the offering is cancelled. All investors receive automatic refunds with 3% APR interest calculated from their investment date. Property loans are only issued once 100% funding is achieved.
-                      </p>
-                      <div className="bg-background/50 p-3 rounded-md font-mono text-sm">
-                        Refund = Principal + (Principal × 0.03 × Days Held / 365)
-                      </div>
+                      <pre className="text-xs bg-background p-4 rounded-md overflow-x-auto">
+{`function castVote(uint256 proposalId, bool support) external {
+    require(proposals[proposalId].deadline > block.timestamp);
+    uint256 tokens = balanceOf(msg.sender, proposalId);
+    uint256 multiplier = getPhaseMultiplier(msg.sender);
+    uint256 votingPower = tokens * multiplier / 100;
+    
+    if (support) {
+        proposals[proposalId].forVotes += votingPower;
+    } else {
+        proposals[proposalId].againstVotes += votingPower;
+    }
+    emit VoteCast(msg.sender, proposalId, support, votingPower);
+}`}
+                      </pre>
                     </CardContent>
                   </Card>
                 </Subsection>
+              </Section>
 
-                <Subsection title="9.2 Share Transfer Option">
+              <Separator className="my-12" />
+
+              <Section id="protection" title="10. Investor Protections">
+                <Subsection title="10.1 Refund Guarantee">
                   <p className="leading-relaxed mb-4">
-                    If a property fails to reach 100% funding within the 1-year deadline, investors have the following options:
+                    If 100% funding target not reached within 1 year:
                   </p>
-                  <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                    <li>Receive a full refund with 3% APR interest (automatic default), OR</li>
-                    <li>Opt to transfer their investment to a follow-on offering for the same or similar property if one becomes available</li>
+                  <ul className="list-disc pl-6 space-y-2 text-muted-foreground mb-4">
+                    <li>Automatic refunds with 3% APR from USDC escrow</li>
+                    <li>Option to transfer to follow-on offerings</li>
                   </ul>
                 </Subsection>
 
-                <Subsection title="9.3 Security Measures">
+                <Subsection title="10.2 Security Measures">
                   <ul className="space-y-3">
                     <li className="flex items-start gap-3">
                       <Lock className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-medium">Multi-Sig Treasury:</span>
-                        <span className="text-muted-foreground"> Property acquisition funds held in multi-signature escrow requiring 3-of-5 approval.</span>
-                      </div>
+                      <span className="text-muted-foreground">Multi-signature cold storage for all assets</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <Lock className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-medium">Audited Smart Contracts:</span>
-                        <span className="text-muted-foreground"> All protocol contracts audited by leading blockchain security firms.</span>
-                      </div>
+                      <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="text-muted-foreground">Third-party smart contract audits</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <Lock className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-medium">Insurance Coverage:</span>
-                        <span className="text-muted-foreground"> Protocol-level coverage for smart contract vulnerabilities.</span>
-                      </div>
+                      <Link2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="text-muted-foreground">Chainlink Proof of Reserve verification</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <Lock className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-medium">Chainlink Proof of Reserve:</span>
-                        <span className="text-muted-foreground"> Real-time verification that tokens are backed by real assets.</span>
-                      </div>
+                      <Coins className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="text-muted-foreground">Buyback reserve for market stability</span>
                     </li>
                   </ul>
                 </Subsection>
@@ -969,182 +944,135 @@ export default function Litepaper() {
 
               <Separator className="my-12" />
 
-              <Section id="compliance" title="10. Legal & Regulatory Compliance">
-                <Subsection title="10.1 Securities Compliance">
-                  <p className="leading-relaxed mb-4">
-                    RevitaHub property tokens are structured as securities under US law and comply with applicable regulations:
-                  </p>
+              <Section id="compliance" title="11. Regulatory Compliance">
+                <Subsection title="11.1 Securities Framework">
                   <ul className="space-y-3 mb-4">
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-5 w-5 text-chart-3 flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="font-medium">Regulation D (506c):</span>
-                        <span className="text-muted-foreground"> Offerings to accredited investors with general solicitation permitted.</span>
+                        <span className="text-muted-foreground"> Accredited investors, general solicitation permitted</span>
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-5 w-5 text-chart-3 flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="font-medium">Regulation A+ (Tier 2):</span>
-                        <span className="text-muted-foreground"> Qualified offerings up to $75M annually open to non-accredited investors.</span>
+                        <span className="text-muted-foreground"> Up to $75M annually, non-accredited investors welcome</span>
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-5 w-5 text-chart-3 flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="font-medium">Regulation CF:</span>
-                        <span className="text-muted-foreground"> Crowdfunding offerings for smaller properties up to $5M.</span>
+                        <span className="text-muted-foreground"> Crowdfunding via Republic Crypto up to $5M</span>
                       </div>
                     </li>
                   </ul>
                 </Subsection>
 
-                <Subsection title="10.2 KYC/AML Requirements">
-                  <p className="leading-relaxed mb-4">
-                    All platform participants must complete identity verification before investing:
-                  </p>
+                <Subsection title="11.2 KYC/AML Requirements">
                   <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                     <li>Government-issued ID verification</li>
                     <li>Address verification (determines phase eligibility)</li>
-                    <li>Accreditation verification (for Reg D offerings)</li>
+                    <li>Accreditation verification (for Reg D)</li>
                     <li>OFAC sanctions screening</li>
-                    <li>Ongoing transaction monitoring</li>
                   </ul>
                 </Subsection>
 
-                <Subsection title="10.3 Transfer Restrictions">
-                  <p className="leading-relaxed mb-4">
-                    Property tokens may only be transferred to verified addresses that have completed KYC. Smart contracts enforce:
-                  </p>
+                <Subsection title="11.3 Transfer Restrictions">
                   <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                    <li>Whitelist-only transfers</li>
-                    <li>Holding period requirements (1 year for Reg D)</li>
+                    <li>Whitelist-only transfers to verified addresses</li>
+                    <li>1-year holding period for Reg D</li>
                     <li>Per-investor ownership limits</li>
-                    <li>Geographic restrictions where required</li>
                   </ul>
                 </Subsection>
               </Section>
 
               <Separator className="my-12" />
 
-              <Section id="technical" title="11. Technical Architecture">
-                <Subsection title="11.1 Smart Contract Architecture">
-                  <div className="mb-6">
-                    <Card className="border-2 border-primary/30 mb-4">
-                      <CardContent className="p-6">
-                        <h4 className="text-center font-bold text-lg mb-6 text-primary">RevitaHub Protocol Layer</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                          <div className="p-4 rounded-md bg-primary/10 border border-primary/20 text-center">
-                            <Coins className="h-8 w-8 mx-auto mb-2 text-primary" />
-                            <h5 className="font-semibold text-sm">Property Token</h5>
-                            <p className="text-xs text-muted-foreground">ERC-1155</p>
-                          </div>
-                          <div className="p-4 rounded-md bg-chart-3/10 border border-chart-3/20 text-center">
-                            <TrendingUp className="h-8 w-8 mx-auto mb-2 text-chart-3" />
-                            <h5 className="font-semibold text-sm">Offering Manager</h5>
-                            <p className="text-xs text-muted-foreground">4-Phase System</p>
-                          </div>
-                          <div className="p-4 rounded-md bg-chart-1/10 border border-chart-1/20 text-center">
-                            <Vote className="h-8 w-8 mx-auto mb-2 text-chart-1" />
-                            <h5 className="font-semibold text-sm">Governance DAO</h5>
-                            <p className="text-xs text-muted-foreground">Token-Weighted Voting</p>
-                          </div>
+              <Section id="technical" title="12. Technical Architecture">
+                <Subsection title="12.1 Smart Contract System">
+                  <Card className="border-2 border-primary/30 mb-6">
+                    <CardContent className="p-6">
+                      <h4 className="text-center font-bold text-lg mb-6 text-primary">Core Contracts</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="p-4 rounded-md bg-primary/10 border border-primary/20 text-center">
+                          <Coins className="h-8 w-8 mx-auto mb-2 text-primary" />
+                          <h5 className="font-semibold text-sm">PropertyTokenFactory</h5>
+                          <p className="text-xs text-muted-foreground">ERC-1155 minting</p>
                         </div>
-                        <div className="flex justify-center mb-4">
-                          <ArrowRight className="h-5 w-5 rotate-90 text-muted-foreground" />
+                        <div className="p-4 rounded-md bg-chart-3/10 border border-chart-3/20 text-center">
+                          <Lock className="h-8 w-8 mx-auto mb-2 text-chart-3" />
+                          <h5 className="font-semibold text-sm">FundingEscrow</h5>
+                          <p className="text-xs text-muted-foreground">USDC refunds</p>
                         </div>
-                        <div className="max-w-xs mx-auto p-4 rounded-md bg-muted border text-center mb-6">
-                          <Lock className="h-8 w-8 mx-auto mb-2 text-foreground" />
-                          <h5 className="font-semibold text-sm">Treasury</h5>
-                          <p className="text-xs text-muted-foreground">Multi-Sig Escrow</p>
+                        <div className="p-4 rounded-md bg-chart-1/10 border border-chart-1/20 text-center">
+                          <Vote className="h-8 w-8 mx-auto mb-2 text-chart-1" />
+                          <h5 className="font-semibold text-sm">GovernanceDAO</h5>
+                          <p className="text-xs text-muted-foreground">Token-weighted voting</p>
                         </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card className="border-2 border-chart-2/30">
-                      <CardContent className="p-6">
-                        <h4 className="text-center font-bold text-lg mb-6 text-chart-2">Chainlink Services Layer</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                          <div className="p-3 rounded-md bg-chart-2/10 border border-chart-2/20 text-center">
-                            <TrendingUp className="h-6 w-6 mx-auto mb-2 text-chart-2" />
-                            <h5 className="font-medium text-xs">Data Feeds</h5>
-                          </div>
-                          <div className="p-3 rounded-md bg-chart-2/10 border border-chart-2/20 text-center">
-                            <Shield className="h-6 w-6 mx-auto mb-2 text-chart-2" />
-                            <h5 className="font-medium text-xs">Proof of Reserve</h5>
-                          </div>
-                          <div className="p-3 rounded-md bg-chart-2/10 border border-chart-2/20 text-center">
-                            <Zap className="h-6 w-6 mx-auto mb-2 text-chart-2" />
-                            <h5 className="font-medium text-xs">Functions</h5>
-                          </div>
-                          <div className="p-3 rounded-md bg-chart-2/10 border border-chart-2/20 text-center">
-                            <Globe className="h-6 w-6 mx-auto mb-2 text-chart-2" />
-                            <h5 className="font-medium text-xs">CCIP</h5>
-                          </div>
-                        </div>
-                        <div className="flex justify-center">
-                          <ArrowRight className="h-5 w-5 rotate-90 text-muted-foreground" />
-                        </div>
-                        <div className="max-w-xs mx-auto p-4 rounded-md bg-chart-2/10 border border-chart-2/20 text-center mt-4">
-                          <RefreshCw className="h-6 w-6 mx-auto mb-2 text-chart-2" />
-                          <h5 className="font-semibold text-sm">Automation</h5>
-                          <p className="text-xs text-muted-foreground">Scheduled Tasks & Triggers</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </Subsection>
 
-                <Subsection title="11.2 Off-Chain Infrastructure">
-                  <ul className="space-y-3">
-                    <li className="flex items-start gap-3">
-                      <Database className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-medium">Property Database:</span>
-                        <span className="text-muted-foreground"> PostgreSQL database storing property metadata, documents, and images.</span>
+                <Subsection title="12.2 Escrow Pseudocode">
+                  <Card className="bg-muted/30">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Code className="h-5 w-5 text-primary" />
+                        <h4 className="font-semibold">FundingEscrow.sol</h4>
                       </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <Users className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-medium">Identity Service:</span>
-                        <span className="text-muted-foreground"> KYC/AML verification integrated with licensed identity providers.</span>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <Globe className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-medium">API Gateway:</span>
-                        <span className="text-muted-foreground"> RESTful API serving property data and user dashboards.</span>
-                      </div>
-                    </li>
-                  </ul>
+                      <pre className="text-xs bg-background p-4 rounded-md overflow-x-auto">
+{`function invest(uint256 propertyId, uint256 amount) external {
+    require(USDC.transferFrom(msg.sender, address(this), amount));
+    investments[propertyId][msg.sender] += amount;
+    totalFunding[propertyId] += amount;
+    
+    if (totalFunding[propertyId] >= fundingTarget[propertyId]) {
+        _releaseFunds(propertyId);
+    }
+    emit Investment(msg.sender, propertyId, amount);
+}
+
+function claimRefund(uint256 propertyId) external {
+    require(block.timestamp > deadline[propertyId]);
+    require(totalFunding[propertyId] < fundingTarget[propertyId]);
+    
+    uint256 principal = investments[propertyId][msg.sender];
+    uint256 interest = principal * 3 * daysHeld / 36500;
+    USDC.transfer(msg.sender, principal + interest);
+}`}
+                      </pre>
+                    </CardContent>
+                  </Card>
                 </Subsection>
 
-                <Subsection title="11.3 Security Practices">
+                <Subsection title="12.3 Security Practices">
                   <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                    <li>Multi-party computation for private key management</li>
-                    <li>Regular third-party security audits</li>
-                    <li>Bug bounty program with rewards up to $100,000</li>
-                    <li>Formal verification of critical contract logic</li>
-                    <li>Incident response plan with 24/7 monitoring</li>
+                    <li>Multi-party computation for key management</li>
+                    <li>Third-party security audits</li>
+                    <li>Bug bounty program (up to $100,000)</li>
+                    <li>Formal verification of critical logic</li>
+                    <li>24/7 monitoring and incident response</li>
                   </ul>
                 </Subsection>
               </Section>
 
               <Separator className="my-12" />
 
-              <Section id="tokenomics" title="12. Tokenomics">
-                <Subsection title="12.1 RVTA Governance Token">
+              <Section id="tokenomics" title="13. Tokenomics">
+                <Subsection title="13.1 RVTA Governance Token">
                   <p className="leading-relaxed mb-4">
-                    In addition to property-specific tokens, RevitaHub will issue a platform governance token (RVTA) for protocol-level decisions:
+                    Total Supply: <span className="font-bold">100,000,000 RVTA</span> (fixed, no inflation)
                   </p>
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto mb-4">
                     <table className="w-full text-sm border">
                       <thead>
                         <tr className="bg-muted/50">
                           <th className="text-left p-3 border-b">Allocation</th>
-                          <th className="text-left p-3 border-b">Percentage</th>
+                          <th className="text-left p-3 border-b">%</th>
                           <th className="text-left p-3 border-b">Vesting</th>
                         </tr>
                       </thead>
@@ -1152,65 +1080,65 @@ export default function Litepaper() {
                         <tr>
                           <td className="p-3 border-b font-medium">Community Treasury</td>
                           <td className="p-3 border-b">40%</td>
-                          <td className="p-3 border-b text-muted-foreground">DAO-controlled distribution</td>
+                          <td className="p-3 border-b text-muted-foreground">DAO-controlled</td>
                         </tr>
                         <tr>
-                          <td className="p-3 border-b font-medium">Property Investors (Airdrop)</td>
+                          <td className="p-3 border-b font-medium">Investor Airdrop</td>
                           <td className="p-3 border-b">20%</td>
                           <td className="p-3 border-b text-muted-foreground">Based on investment history</td>
                         </tr>
                         <tr>
                           <td className="p-3 border-b font-medium">Team & Advisors</td>
                           <td className="p-3 border-b">15%</td>
-                          <td className="p-3 border-b text-muted-foreground">4-year vesting, 1-year cliff</td>
+                          <td className="p-3 border-b text-muted-foreground">4-year, 1-year cliff</td>
                         </tr>
                         <tr>
                           <td className="p-3 border-b font-medium">Development Fund</td>
                           <td className="p-3 border-b">12%</td>
-                          <td className="p-3 border-b text-muted-foreground">Milestone-based release</td>
+                          <td className="p-3 border-b text-muted-foreground">Milestone-based</td>
                         </tr>
                         <tr>
-                          <td className="p-3 border-b font-medium">Chainlink Ecosystem</td>
-                          <td className="p-3 border-b">3%</td>
-                          <td className="p-3 border-b text-muted-foreground">Build Program commitment</td>
+                          <td className="p-3 border-b font-medium">Chainlink/Canton</td>
+                          <td className="p-3 border-b">5%</td>
+                          <td className="p-3 border-b text-muted-foreground">Ecosystem incentives</td>
                         </tr>
                         <tr>
-                          <td className="p-3 font-medium">Liquidity & Market Making</td>
-                          <td className="p-3">10%</td>
-                          <td className="p-3 text-muted-foreground">DEX liquidity provision</td>
+                          <td className="p-3 font-medium">Liquidity</td>
+                          <td className="p-3">8%</td>
+                          <td className="p-3 text-muted-foreground">DEX provision</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
                 </Subsection>
 
-                <Subsection title="12.2 Token Utility">
+                <Subsection title="13.2 Token Utility">
                   <ul className="space-y-3">
                     <li className="flex items-start gap-3">
                       <Vote className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="font-medium">Protocol Governance:</span>
-                        <span className="text-muted-foreground"> Vote on platform upgrades, fee structures, and new features.</span>
+                        <span className="text-muted-foreground"> Vote on upgrades, fees, features</span>
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
                       <Coins className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="font-medium">Fee Discounts:</span>
-                        <span className="text-muted-foreground"> RVTA stakers receive reduced platform fees on property investments.</span>
+                        <span className="text-muted-foreground"> Stakers receive reduced platform fees</span>
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
                       <TrendingUp className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="font-medium">Revenue Sharing:</span>
-                        <span className="text-muted-foreground"> Staked RVTA earns a share of protocol fees.</span>
+                        <span className="text-muted-foreground"> Share of protocol fees for stakers</span>
                       </div>
                     </li>
                   </ul>
                 </Subsection>
 
-                <Subsection title="12.3 Fee Structure">
+                <Subsection title="13.3 Fee Structure">
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm border">
                       <thead>
@@ -1224,7 +1152,7 @@ export default function Litepaper() {
                         <tr>
                           <td className="p-3 border-b font-medium">Primary Investment</td>
                           <td className="p-3 border-b">2.5%</td>
-                          <td className="p-3 border-b text-muted-foreground">Protocol treasury + stakers</td>
+                          <td className="p-3 border-b text-muted-foreground">Treasury + stakers</td>
                         </tr>
                         <tr>
                           <td className="p-3 border-b font-medium">Secondary Trading</td>
@@ -1233,41 +1161,106 @@ export default function Litepaper() {
                         </tr>
                         <tr>
                           <td className="p-3 font-medium">Asset Management</td>
-                          <td className="p-3">1.5% annually</td>
-                          <td className="p-3 text-muted-foreground">Property operations fund</td>
+                          <td className="p-3">1.5%/year</td>
+                          <td className="p-3 text-muted-foreground">Property operations</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
                 </Subsection>
+
+                <Subsection title="13.4 Deflationary Mechanics">
+                  <Card className="bg-muted/30">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-medium text-foreground">Buyback & Burn:</span> 25% of platform fees used to buy back and burn RVTA, creating deflationary pressure aligned with platform growth.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Subsection>
               </Section>
 
               <Separator className="my-12" />
 
-              <Section id="roadmap" title="13. Roadmap">
+              <Section id="risks" title="14. Risk Factors">
+                <Card className="bg-destructive/5 border-destructive/20 mb-6">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <AlertTriangle className="h-6 w-6 text-destructive" />
+                      <h4 className="font-semibold">Important Disclosures</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Prospective investors should carefully consider the following risks. Consult financial and legal advisors before investing.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <div className="space-y-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <h4 className="font-semibold mb-2">Market Risk</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Real estate values may fluctuate; token prices may not reflect underlying asset value. Economic downturns could impact rental income and property valuations.
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <h4 className="font-semibold mb-2">Regulatory Risk</h4>
+                      <p className="text-sm text-muted-foreground">
+                        SEC rules may change; jurisdictional bans possible. Securities regulations evolve and could affect token trading or platform operations.
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <h4 className="font-semibold mb-2">Technical Risk</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Smart contract bugs possible despite audits. Blockchain network congestion or failures could affect operations.
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <h4 className="font-semibold mb-2">Liquidity Risk</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Secondary markets may develop slowly; tokens may be difficult to sell. Transfer restrictions limit trading options.
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <h4 className="font-semibold mb-2">Operational Risk</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Development delays; property management challenges; low adoption. Platform depends on continued team execution.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </Section>
+
+              <Separator className="my-12" />
+
+              <Section id="roadmap" title="15. Roadmap">
                 <div className="space-y-6">
                   <Card className="border-l-4 border-l-chart-3">
                     <CardContent className="p-6">
                       <div className="flex items-center gap-3 mb-3">
                         <Calendar className="h-5 w-5 text-chart-3" />
-                        <h4 className="font-semibold">Phase 1: Foundation (Q1 2025)</h4>
+                        <h4 className="font-semibold">Q1 2026: MVP Launch</h4>
                       </div>
                       <ul className="space-y-2 text-sm text-muted-foreground">
                         <li className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-chart-3" />
-                          Platform MVP launch with property nomination system
+                          <Target className="h-4 w-4 text-chart-3" />
+                          Launch MVP with Republic Crypto raise ($1M target)
                         </li>
                         <li className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-chart-3" />
-                          KYC/AML integration
+                          <Target className="h-4 w-4 text-chart-3" />
+                          First Canton Network pilot with 1 institutional partner
                         </li>
                         <li className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-chart-3" />
-                          Chainlink Data Feed integration for property valuations
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-chart-3" />
-                          First pilot property tokenization
+                          <Target className="h-4 w-4 text-chart-3" />
+                          5 pilot properties tokenized across 3 Georgia counties
                         </li>
                       </ul>
                     </CardContent>
@@ -1277,28 +1270,20 @@ export default function Litepaper() {
                     <CardContent className="p-6">
                       <div className="flex items-center gap-3 mb-3">
                         <Calendar className="h-5 w-5 text-primary" />
-                        <h4 className="font-semibold">Phase 2: Expansion (Q2-Q3 2025)</h4>
+                        <h4 className="font-semibold">Q2-Q3 2026: Expansion</h4>
                       </div>
                       <ul className="space-y-2 text-sm text-muted-foreground">
                         <li className="flex items-center gap-2">
-                          <ArrowRight className="h-4 w-4" />
-                          4-phase offering system deployment
+                          <Target className="h-4 w-4" />
+                          50 properties across 10 states; $25M tokenized
                         </li>
                         <li className="flex items-center gap-2">
-                          <ArrowRight className="h-4 w-4" />
-                          DAO governance implementation
+                          <Target className="h-4 w-4" />
+                          RVTA governance token launch
                         </li>
                         <li className="flex items-center gap-2">
-                          <ArrowRight className="h-4 w-4" />
-                          Chainlink Automation for dividends
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <ArrowRight className="h-4 w-4" />
-                          10+ properties across 5 states
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <ArrowRight className="h-4 w-4" />
-                          Chainlink Build Program application
+                          <Target className="h-4 w-4" />
+                          Partner with 10 municipalities for property nominations
                         </li>
                       </ul>
                     </CardContent>
@@ -1308,28 +1293,20 @@ export default function Litepaper() {
                     <CardContent className="p-6">
                       <div className="flex items-center gap-3 mb-3">
                         <Calendar className="h-5 w-5 text-chart-2" />
-                        <h4 className="font-semibold">Phase 3: Scale (Q4 2025 - Q1 2026)</h4>
+                        <h4 className="font-semibold">Q4 2026: Scale</h4>
                       </div>
                       <ul className="space-y-2 text-sm text-muted-foreground">
                         <li className="flex items-center gap-2">
-                          <ArrowRight className="h-4 w-4" />
-                          RVTA governance token launch
+                          <Target className="h-4 w-4" />
+                          Cross-chain deployment via Chainlink CCIP
                         </li>
                         <li className="flex items-center gap-2">
-                          <ArrowRight className="h-4 w-4" />
-                          Chainlink CCIP cross-chain deployment
+                          <Target className="h-4 w-4" />
+                          $100M in tokenized real estate
                         </li>
                         <li className="flex items-center gap-2">
-                          <ArrowRight className="h-4 w-4" />
-                          Secondary market trading platform
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <ArrowRight className="h-4 w-4" />
-                          50+ properties nationwide
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <ArrowRight className="h-4 w-4" />
-                          Institutional investor onboarding
+                          <Target className="h-4 w-4" />
+                          Secondary trading platform live
                         </li>
                       </ul>
                     </CardContent>
@@ -1339,24 +1316,20 @@ export default function Litepaper() {
                     <CardContent className="p-6">
                       <div className="flex items-center gap-3 mb-3">
                         <Calendar className="h-5 w-5 text-chart-4" />
-                        <h4 className="font-semibold">Phase 4: Global (2026+)</h4>
+                        <h4 className="font-semibold">2027+: Global</h4>
                       </div>
                       <ul className="space-y-2 text-sm text-muted-foreground">
                         <li className="flex items-center gap-2">
-                          <ArrowRight className="h-4 w-4" />
-                          International expansion to EU/APAC markets
+                          <Target className="h-4 w-4" />
+                          International expansion to EU/APAC
                         </li>
                         <li className="flex items-center gap-2">
-                          <ArrowRight className="h-4 w-4" />
+                          <Target className="h-4 w-4" />
                           Multi-chain presence via CCIP
                         </li>
                         <li className="flex items-center gap-2">
-                          <ArrowRight className="h-4 w-4" />
-                          Integration with traditional financial systems
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <ArrowRight className="h-4 w-4" />
-                          $100M+ in tokenized real estate
+                          <Target className="h-4 w-4" />
+                          Traditional finance integrations
                         </li>
                       </ul>
                     </CardContent>
@@ -1366,11 +1339,7 @@ export default function Litepaper() {
 
               <Separator className="my-12" />
 
-              <Section id="team" title="14. Team">
-                <p className="leading-relaxed mb-6">
-                  RevitaHub is developed by Build Our Community, LLC, a Georgia-based company dedicated to democratizing real estate investment and revitalizing communities through blockchain technology.
-                </p>
-                
+              <Section id="team" title="16. Team">
                 <Card className="bg-muted/30 mb-8">
                   <CardContent className="p-6">
                     <div className="flex flex-col md:flex-row items-center gap-6">
@@ -1381,8 +1350,24 @@ export default function Litepaper() {
                         <h4 className="text-xl font-semibold mb-1">Daniel Emery</h4>
                         <p className="text-primary font-medium mb-2">Founder & CEO</p>
                         <p className="text-muted-foreground text-sm leading-relaxed">
-                          Founder of Build Our Community, LLC, Daniel is passionate about leveraging blockchain technology to create accessible real estate investment opportunities for everyday investors. Based in Georgia, USA, he leads the vision to transform vacant properties into thriving community assets through decentralized ownership.
+                          Georgia-based entrepreneur with blockchain and real estate expertise. Founder of Build Our Community, LLC. Passionate about leveraging technology to create accessible investment opportunities for underserved communities.
                         </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-muted/30 mb-8">
+                  <CardContent className="p-6">
+                    <h4 className="font-semibold mb-4">Advisory Positions (Seeking)</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-md bg-background">
+                        <p className="font-medium">Blockchain Advisor</p>
+                        <p className="text-sm text-muted-foreground">Chainlink ecosystem expertise</p>
+                      </div>
+                      <div className="p-4 rounded-md bg-background">
+                        <p className="font-medium">Legal Advisor</p>
+                        <p className="text-sm text-muted-foreground">Securities & real estate law</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1398,96 +1383,57 @@ export default function Litepaper() {
                       Georgia, USA
                     </p>
                     <Button variant="outline" asChild>
-                      <a href="mailto:DEmery@buildourcommunity.co">
+                      <a href="mailto:info@buildourcommunity.co">
+                        <ExternalLink className="mr-2 h-4 w-4" />
                         Contact Us
-                        <ArrowRight className="ml-2 h-4 w-4" />
                       </a>
                     </Button>
                   </CardContent>
                 </Card>
-
-                <div className="mt-12 p-6 border rounded-md">
-                  <h3 className="font-semibold mb-4">Disclaimer</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    This litepaper is for informational purposes only and does not constitute an offer to sell or a solicitation of an offer to buy any securities. Investment in tokenized real estate involves significant risks, including the potential loss of principal. Past performance does not guarantee future results. Prospective investors should consult with legal, tax, and financial advisors before making investment decisions. RevitaHub makes no representations or warranties regarding the accuracy or completeness of the information contained herein.
-                  </p>
-                </div>
               </Section>
+
+              <Separator className="my-12" />
+
+              <section className="mb-16">
+                <h2 className="text-2xl lg:text-3xl font-bold mb-6">Disclaimer</h2>
+                <Card className="bg-muted/50">
+                  <CardContent className="p-6">
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                      This litepaper is for informational purposes only and does not constitute an offer to sell or solicitation to buy securities. RevitaHub property tokens are securities subject to applicable laws. Investments are speculative, illiquid, and involve significant risk of loss. Past performance does not guarantee future results.
+                    </p>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                      All forward-looking statements involve risks and uncertainties. Actual results may differ materially from projections. Token prices may not reflect underlying asset values. Investors should review all risk factors and consult financial and legal advisors before investing.
+                    </p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      RevitaHub is not available in jurisdictions where prohibited. Geographic and regulatory restrictions apply. Build Our Community, LLC reserves the right to modify this document.
+                    </p>
+                  </CardContent>
+                </Card>
+              </section>
+
+              <Card className="bg-primary/5 border-primary/20 text-center">
+                <CardContent className="p-8">
+                  <h3 className="text-2xl font-bold mb-4">Join the Revitalization Movement</h3>
+                  <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
+                    Be part of the community transforming vacant properties into thriving neighborhood assets.
+                  </p>
+                  <div className="flex items-center justify-center gap-4 flex-wrap">
+                    <Button asChild data-testid="button-explore-properties">
+                      <a href="/properties">Explore Properties</a>
+                    </Button>
+                    <Button variant="outline" asChild>
+                      <a href="https://buildourcommunity.co" target="_blank" rel="noopener noreferrer">
+                        Join Waitlist
+                      </a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </article>
           </div>
         </div>
       </main>
       <Footer />
-
-      <style>{`
-        @media print {
-          .print\\:hidden {
-            display: none !important;
-          }
-          .print\\:py-8 {
-            padding-top: 2rem !important;
-            padding-bottom: 2rem !important;
-          }
-          .print\\:bg-white {
-            background-color: white !important;
-          }
-          body {
-            font-size: 11pt;
-            line-height: 1.5;
-            color: #000 !important;
-            background: #fff !important;
-          }
-          * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          header, footer, nav {
-            display: none !important;
-          }
-          section {
-            page-break-inside: avoid;
-          }
-          h1 {
-            font-size: 24pt;
-            page-break-after: avoid;
-          }
-          h2 {
-            font-size: 18pt;
-            page-break-after: avoid;
-            margin-top: 1.5rem;
-          }
-          h3 {
-            font-size: 14pt;
-            page-break-after: avoid;
-          }
-          h4 {
-            font-size: 12pt;
-            page-break-after: avoid;
-          }
-          table {
-            page-break-inside: avoid;
-          }
-          pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            font-size: 9pt;
-          }
-          a {
-            text-decoration: none;
-            color: inherit !important;
-          }
-          .bg-primary\\/5,
-          .bg-muted\\/30,
-          .bg-muted\\/50,
-          .bg-chart-3\\/10 {
-            background-color: #f5f5f5 !important;
-          }
-          @page {
-            margin: 0.75in;
-            size: letter;
-          }
-        }
-      `}</style>
     </div>
   );
 }
