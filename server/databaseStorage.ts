@@ -155,6 +155,24 @@ export class DatabaseStorage implements IStorage {
     return newPhase;
   }
 
+  async updateOffering(id: string, data: Partial<{ tokensSold: number; totalFundingRaised: string }>): Promise<TokenOffering | undefined> {
+    const [updated] = await db
+      .update(tokenOfferings)
+      .set(data)
+      .where(eq(tokenOfferings.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async updateOfferingPhase(id: string, data: Partial<{ tokensSold: number }>): Promise<OfferingPhase | undefined> {
+    const [updated] = await db
+      .update(offeringPhases)
+      .set(data)
+      .where(eq(offeringPhases.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
   async getUserPurchasesForPhase(userId: string, phaseId: string): Promise<TokenPurchase[]> {
     return db.select().from(tokenPurchases)
       .where(and(
@@ -183,11 +201,24 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     
-    await this.updateHoldings(purchase.userId, purchase.offeringId, purchase.tokenCount);
+    const phase = this.extractPhaseFromPhaseId(purchase.phaseId);
+    
+    await this.updateHoldings(purchase.userId, purchase.offeringId, purchase.tokenCount, phase);
     await this.updatePhaseTokensSold(purchase.phaseId, purchase.tokenCount);
     await this.updateOfferingTotals(purchase.offeringId, purchase.tokenCount, purchase.totalAmount);
     
     return newPurchase;
+  }
+  
+  private extractPhaseFromPhaseId(phaseId: string): string {
+    const validPhases = ["county", "state", "national", "international"];
+    const parts = phaseId.toLowerCase().split("-");
+    for (const part of parts.reverse()) {
+      if (validPhases.includes(part)) {
+        return part;
+      }
+    }
+    return "international";
   }
 
   async createPurchase(purchaseData: {
@@ -224,18 +255,33 @@ export class DatabaseStorage implements IStorage {
     return newPurchase;
   }
 
-  private async updateHoldings(userId: string, offeringId: string, addedTokenCount: number): Promise<void> {
+  async updatePurchaseStatus(id: string, status: TokenPurchase["status"]): Promise<TokenPurchase | undefined> {
+    const [updated] = await db
+      .update(tokenPurchases)
+      .set({ status })
+      .where(eq(tokenPurchases.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  private async updateHoldings(userId: string, offeringId: string, addedTokenCount: number, phase?: string): Promise<void> {
     const [existing] = await db.select().from(tokenHoldings)
       .where(and(
         eq(tokenHoldings.userId, userId),
         eq(tokenHoldings.offeringId, offeringId)
       ));
     
+    const multiplier = phase === "county" ? 1.5 
+      : phase === "state" ? 1.25 
+      : phase === "national" ? 1.0 
+      : 0.75;
+    const addedVotingPower = Math.floor(addedTokenCount * multiplier);
+    
     if (existing) {
       await db.update(tokenHoldings)
         .set({ 
           tokenCount: existing.tokenCount + addedTokenCount,
-          votingPower: existing.tokenCount + addedTokenCount,
+          votingPower: (existing.votingPower || 0) + addedVotingPower,
           updatedAt: new Date()
         })
         .where(eq(tokenHoldings.id, existing.id));
@@ -245,7 +291,7 @@ export class DatabaseStorage implements IStorage {
         offeringId,
         tokenCount: addedTokenCount,
         averagePurchasePrice: "0",
-        votingPower: addedTokenCount,
+        votingPower: addedVotingPower,
       });
     }
   }
@@ -307,6 +353,49 @@ export class DatabaseStorage implements IStorage {
 
   async getHoldingsByOffering(offeringId: string): Promise<TokenHolding[]> {
     return db.select().from(tokenHoldings).where(eq(tokenHoldings.offeringId, offeringId));
+  }
+
+  async getHoldingByUserAndOffering(userId: string, offeringId: string): Promise<TokenHolding | undefined> {
+    const [holding] = await db.select().from(tokenHoldings)
+      .where(and(
+        eq(tokenHoldings.userId, userId),
+        eq(tokenHoldings.offeringId, offeringId)
+      ));
+    return holding || undefined;
+  }
+
+  async updateHolding(id: string, data: Partial<{ tokenCount: number }>): Promise<TokenHolding | undefined> {
+    const updateData: any = { updatedAt: new Date() };
+    if (data.tokenCount !== undefined) updateData.tokenCount = data.tokenCount;
+    
+    const [updated] = await db
+      .update(tokenHoldings)
+      .set(updateData)
+      .where(eq(tokenHoldings.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async createHolding(data: { userId: string; offeringId: string; tokenCount: number; purchasePhase: string; averagePurchasePrice: string }): Promise<TokenHolding> {
+    const multiplier = data.purchasePhase === "county" ? 1.5 
+      : data.purchasePhase === "state" ? 1.25 
+      : data.purchasePhase === "national" ? 1.0 
+      : 0.75;
+    const votingPower = Math.floor(data.tokenCount * multiplier);
+    
+    const [holding] = await db
+      .insert(tokenHoldings)
+      .values({
+        id: randomUUID(),
+        userId: data.userId,
+        offeringId: data.offeringId,
+        tokenCount: data.tokenCount,
+        averagePurchasePrice: data.averagePurchasePrice,
+        votingPower,
+        updatedAt: new Date(),
+      })
+      .returning();
+    return holding;
   }
 
   async updateOrCreateHolding(
@@ -424,9 +513,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async calculateVotingPower(userId: string, offeringId: string): Promise<number> {
-    const holdings = await this.getUserHoldings(userId);
-    const holding = holdings.find(h => h.offeringId === offeringId);
-    return holding?.tokenCount || 0;
+    // Get all confirmed purchases for this user and offering
+    const purchases = await db.select()
+      .from(tokenPurchases)
+      .where(and(
+        eq(tokenPurchases.userId, userId),
+        eq(tokenPurchases.offeringId, offeringId),
+        eq(tokenPurchases.status, "confirmed")
+      ));
+    
+    let totalVotingPower = 0;
+    
+    for (const purchase of purchases) {
+      // Get the phase to determine the multiplier
+      const [phase] = await db.select()
+        .from(offeringPhases)
+        .where(eq(offeringPhases.id, purchase.phaseId));
+      
+      if (phase) {
+        // Apply phase-based voting multipliers (Community-First model)
+        // County: 1.5x, State: 1.25x, National: 1.0x, International: 0.75x
+        const multiplier = phase.phase === "county" ? 1.5 
+          : phase.phase === "state" ? 1.25 
+          : phase.phase === "national" ? 1.0 
+          : 0.75;
+        totalVotingPower += Math.floor(purchase.tokenCount * multiplier);
+      }
+    }
+    
+    return totalVotingPower;
   }
 
   async createPropertySubmission(submission: InsertPropertySubmission): Promise<PropertySubmission> {

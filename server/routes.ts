@@ -936,6 +936,7 @@ export async function registerRoutes(
         phase,
         votingPower,
         status: "pending",
+        paymentIntentId: paymentIntent.id,
       });
 
       return res.json({ 
@@ -1304,8 +1305,8 @@ export async function registerRoutes(
 
         // Idempotency check: verify this payment hasn't been processed already
         const existingPurchase = await storage.getPurchaseByPaymentIntentId(paymentIntent.id);
-        if (existingPurchase) {
-          console.log(`[Webhook] Payment ${paymentIntent.id} already processed - skipping`);
+        if (existingPurchase && existingPurchase.status === "completed") {
+          console.log(`[Webhook] Payment ${paymentIntent.id} already completed - skipping`);
           return res.status(200).json({ received: true, processed: true, duplicate: true });
         }
 
@@ -1321,25 +1322,24 @@ export async function registerRoutes(
           return res.status(200).json({ received: true, processed: false });
         }
 
-        const existingHolding = await storage.getHoldingByUserAndOffering(userId, offering.id);
         const parsedTokenCount = parseInt(tokenCount, 10);
         const amount = paymentIntent.amount / 100;
+        
+        // Apply voting power multipliers
+        const multiplier = phase === "county" ? 1.5 
+          : phase === "state" ? 1.25 
+          : phase === "national" ? 1.0 
+          : 0.75;
+        const addedVotingPower = Math.floor(parsedTokenCount * multiplier);
 
-        if (existingHolding) {
-          await storage.updateHolding(existingHolding.id, {
-            tokenCount: existingHolding.tokenCount + parsedTokenCount,
-            totalInvested: String(parseFloat(existingHolding.totalInvested || "0") + amount),
-          });
-        } else {
-          await storage.createHolding({
-            userId,
-            offeringId: offering.id,
-            tokenCount: parsedTokenCount,
-            purchasePhase: phase,
-            averagePurchasePrice: String(amount / parsedTokenCount),
-            totalInvested: String(amount),
-          });
-        }
+        // Update holdings with proper voting power
+        await storage.updateOrCreateHolding(
+          userId,
+          offering.id,
+          parsedTokenCount,
+          amount / parsedTokenCount,
+          addedVotingPower
+        );
 
         // Update offering totals
         await storage.updateOffering(offering.id, {
@@ -1356,18 +1356,24 @@ export async function registerRoutes(
           });
         }
 
-        // Record purchase
-        await storage.createPurchase({
-          userId,
-          offeringId: offering.id,
-          tokenCount: parsedTokenCount,
-          phase,
-          pricePerToken: String(amount / parsedTokenCount),
-          totalAmount: String(amount),
-          paymentMethod: "card",
-          paymentIntentId: paymentIntent.id,
-          status: "completed",
-        });
+        // Update existing purchase status or create completed record
+        if (existingPurchase && existingPurchase.status === "pending") {
+          // Update purchase status to completed (existing pending purchase from /api/purchase)
+          await storage.updatePurchaseStatus(existingPurchase.id, "completed");
+        } else if (!existingPurchase) {
+          // Create new purchase record if none exists (shouldn't happen normally, but handle edge case)
+          await storage.createPurchase({
+            userId,
+            offeringId: offering.id,
+            tokenCount: parsedTokenCount,
+            phase,
+            pricePerToken: String(amount / parsedTokenCount),
+            totalAmount: String(amount),
+            paymentMethod: "card",
+            paymentIntentId: paymentIntent.id,
+            status: "completed",
+          });
+        }
 
         // Send purchase confirmation email
         const user = await storage.getUser(userId);

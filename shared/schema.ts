@@ -272,6 +272,8 @@ export const shareTransfers = pgTable("share_transfers", {
 export type ShareTransfer = typeof shareTransfers.$inferSelect;
 
 // Funding timeline configuration - 1 year distribution algo
+// CRITICAL: 100% funding is required for loan issuance
+// If funding target is not met within 1 year, investors receive refunds with 3% APR
 export const FUNDING_TIMELINE_CONFIG = {
   totalDurationDays: 365,
   phaseDurations: {
@@ -280,7 +282,8 @@ export const FUNDING_TIMELINE_CONFIG = {
     national: { daysMin: 60, daysMax: 120, targetPercent: 75 },
     international: { daysMin: 30, daysMax: 35, targetPercent: 100 },
   },
-  minimumFundingPercent: 60,
+  // 100% funding required - no partial funding allowed per investor protection model
+  minimumFundingPercent: 100,
   gracePeriodDays: 30,
   refundInterestRate: 3.0,
 } as const;

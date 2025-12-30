@@ -38,10 +38,12 @@ export interface IStorage {
   getOfferingByPropertyId(propertyId: string): Promise<TokenOffering | undefined>;
   getTokenOfferingsByProperty(propertyId: string): Promise<TokenOffering[]>;
   createTokenOffering(offering: InsertTokenOffering): Promise<TokenOffering>;
+  updateOffering(id: string, data: Partial<{ tokensSold: number; totalFundingRaised: string }>): Promise<TokenOffering | undefined>;
   
   getOfferingPhases(offeringId: string): Promise<OfferingPhase[]>;
   getActivePhase(offeringId: string): Promise<OfferingPhase | undefined>;
   createOfferingPhase(phase: InsertOfferingPhase): Promise<OfferingPhase>;
+  updateOfferingPhase(id: string, data: Partial<{ tokensSold: number }>): Promise<OfferingPhase | undefined>;
   
   getUserPurchasesForPhase(userId: string, phaseId: string): Promise<TokenPurchase[]>;
   getUserPurchases(userId: string): Promise<TokenPurchase[]>;
@@ -60,11 +62,15 @@ export interface IStorage {
     status: string;
     paymentIntentId?: string;
   }): Promise<TokenPurchase>;
+  updatePurchaseStatus(id: string, status: TokenPurchase["status"]): Promise<TokenPurchase | undefined>;
   canUserPurchase(userId: string, phaseId: string, tokenCount: number): Promise<{ allowed: boolean; reason?: string }>;
   
   getUserHoldings(userId: string): Promise<TokenHolding[]>;
   getHoldingsByOffering(offeringId: string): Promise<TokenHolding[]>;
+  getHoldingByUserAndOffering(userId: string, offeringId: string): Promise<TokenHolding | undefined>;
   updateOrCreateHolding(userId: string, offeringId: string, tokenCount: number, pricePerToken: number, votingPower: number): Promise<TokenHolding>;
+  updateHolding(id: string, data: Partial<{ tokenCount: number }>): Promise<TokenHolding | undefined>;
+  createHolding(data: { userId: string; offeringId: string; tokenCount: number; purchasePhase: string; averagePurchasePrice: string }): Promise<TokenHolding>;
   
   getProposals(offeringId?: string): Promise<Proposal[]>;
   getProposal(id: string): Promise<Proposal | undefined>;
@@ -424,6 +430,31 @@ export class MemStorage implements IStorage {
     return phase;
   }
 
+  async updateOffering(id: string, data: Partial<{ tokensSold: number; totalFundingRaised: string }>): Promise<TokenOffering | undefined> {
+    const offering = this.tokenOfferings.get(id);
+    if (!offering) return undefined;
+    
+    const updated: TokenOffering = {
+      ...offering,
+      tokensSold: data.tokensSold ?? offering.tokensSold,
+      totalFundingRaised: data.totalFundingRaised ?? offering.totalFundingRaised,
+    };
+    this.tokenOfferings.set(id, updated);
+    return updated;
+  }
+
+  async updateOfferingPhase(id: string, data: Partial<{ tokensSold: number }>): Promise<OfferingPhase | undefined> {
+    const phase = this.offeringPhases.get(id);
+    if (!phase) return undefined;
+    
+    const updated: OfferingPhase = {
+      ...phase,
+      tokensSold: data.tokensSold ?? phase.tokensSold,
+    };
+    this.offeringPhases.set(id, updated);
+    return updated;
+  }
+
   async getUserPurchasesForPhase(userId: string, phaseId: string): Promise<TokenPurchase[]> {
     return Array.from(this.tokenPurchases.values()).filter(
       p => p.userId === userId && p.phaseId === phaseId && p.status === "confirmed"
@@ -504,13 +535,42 @@ export class MemStorage implements IStorage {
       usdcAmount: insertPurchase.usdcAmount ?? null,
       usdcConversionRate: insertPurchase.usdcConversionRate ?? null,
       paymentMethod: insertPurchase.paymentMethod ?? "usdc",
+      paymentIntentId: insertPurchase.paymentIntentId ?? null,
       transactionHash: null,
       usdcTransactionHash: null,
       status: "pending",
       purchasedAt: new Date(),
     };
     this.tokenPurchases.set(id, purchase);
+    
+    const phase = this.extractPhaseFromPhaseId(insertPurchase.phaseId);
+    const pricePerToken = parseFloat(insertPurchase.pricePerToken);
+    const multiplier = phase === "county" ? 1.5 
+      : phase === "state" ? 1.25 
+      : phase === "national" ? 1.0 
+      : 0.75;
+    const votingPower = Math.floor(insertPurchase.tokenCount * multiplier);
+    
+    await this.updateOrCreateHolding(
+      insertPurchase.userId,
+      insertPurchase.offeringId,
+      insertPurchase.tokenCount,
+      pricePerToken,
+      votingPower
+    );
+    
     return purchase;
+  }
+  
+  private extractPhaseFromPhaseId(phaseId: string): string {
+    const validPhases = ["county", "state", "national", "international"];
+    const parts = phaseId.toLowerCase().split("-");
+    for (const part of parts.reverse()) {
+      if (validPhases.includes(part)) {
+        return part;
+      }
+    }
+    return "international";
   }
 
   async createPurchase(purchaseData: {
@@ -548,12 +608,64 @@ export class MemStorage implements IStorage {
     return purchase;
   }
 
+  async updatePurchaseStatus(id: string, status: TokenPurchase["status"]): Promise<TokenPurchase | undefined> {
+    const purchase = this.tokenPurchases.get(id);
+    if (!purchase) return undefined;
+    
+    const updated: TokenPurchase = {
+      ...purchase,
+      status,
+    };
+    this.tokenPurchases.set(id, updated);
+    return updated;
+  }
+
   async getUserHoldings(userId: string): Promise<TokenHolding[]> {
     return Array.from(this.tokenHoldings.values()).filter(h => h.userId === userId);
   }
 
   async getHoldingsByOffering(offeringId: string): Promise<TokenHolding[]> {
     return Array.from(this.tokenHoldings.values()).filter(h => h.offeringId === offeringId);
+  }
+
+  async getHoldingByUserAndOffering(userId: string, offeringId: string): Promise<TokenHolding | undefined> {
+    return Array.from(this.tokenHoldings.values()).find(
+      h => h.userId === userId && h.offeringId === offeringId
+    );
+  }
+
+  async updateHolding(id: string, data: Partial<{ tokenCount: number }>): Promise<TokenHolding | undefined> {
+    const holding = this.tokenHoldings.get(id);
+    if (!holding) return undefined;
+    
+    const updated: TokenHolding = {
+      ...holding,
+      tokenCount: data.tokenCount ?? holding.tokenCount,
+      updatedAt: new Date(),
+    };
+    this.tokenHoldings.set(id, updated);
+    return updated;
+  }
+
+  async createHolding(data: { userId: string; offeringId: string; tokenCount: number; purchasePhase: string; averagePurchasePrice: string }): Promise<TokenHolding> {
+    const id = randomUUID();
+    const multiplier = data.purchasePhase === "county" ? 1.5 
+      : data.purchasePhase === "state" ? 1.25 
+      : data.purchasePhase === "national" ? 1.0 
+      : 0.75;
+    const votingPower = Math.floor(data.tokenCount * multiplier);
+    
+    const holding: TokenHolding = {
+      id,
+      userId: data.userId,
+      offeringId: data.offeringId,
+      tokenCount: data.tokenCount,
+      averagePurchasePrice: data.averagePurchasePrice,
+      votingPower,
+      updatedAt: new Date(),
+    };
+    this.tokenHoldings.set(id, holding);
+    return holding;
   }
 
   async updateOrCreateHolding(

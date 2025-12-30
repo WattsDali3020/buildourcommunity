@@ -150,15 +150,15 @@ export default function TokenizationProcess() {
     {
       number: 4,
       title: "Launch",
-      description: "5-phase community-first token offering",
+      description: "4-phase community-first token offering",
       icon: <Rocket className="h-6 w-6 text-white" />,
       color: "bg-primary",
       details: [
         "Phase 1 (County): Local residents at $12.50/token, 100 tokens/person limit",
-        "Phase 2 (State): State residents at $18.75/token, 150 tokens/person limit",
-        "Phase 3 (National): US investors at $28.13/token, 200 tokens/person limit",
-        "Phase 4 (International): Global at $37.50/token, 250 tokens/person limit",
-        "Phase 5 (Private): Property owners direct offering if applicable",
+        "Phase 2 (State): State residents at $18.75/token, 250 tokens/person limit",
+        "Phase 3 (National): US investors at $28.13/token, 500 tokens/person limit",
+        "Phase 4 (International): Global at $37.50/token, 1000 tokens/person limit",
+        "Voting power multipliers: County 1.5x, State 1.25x, National 1.0x, International 0.75x",
       ],
     },
     {
