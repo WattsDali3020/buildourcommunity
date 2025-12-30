@@ -140,7 +140,7 @@ export default function TokenizationProcess() {
       icon: <Coins className="h-6 w-6 text-white" />,
       color: "bg-primary",
       details: [
-        "Deploy ERC-20 token contract with ERC-1400 security extensions",
+        "Deploy ERC-1155 multi-token contract with ERC-1400 security extensions",
         "Implement transfer restrictions for KYC/AML compliance",
         "Configure dividend distribution mechanisms",
         "Set up governance voting power multipliers by phase",

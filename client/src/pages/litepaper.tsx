@@ -127,7 +127,7 @@ export default function Litepaper() {
                   RevitaHub is a decentralized protocol enabling fractional ownership of real-world real estate assets through blockchain tokenization. The platform democratizes access to property investment through an intentionally low entry price of <span className="font-bold">$12.50 per token</span> in Phase 1, designed specifically for financial inclusion of lower-income investors who are typically excluded from real estate opportunities. This enables participation in community revitalization projects while providing institutional-grade security, regulatory compliance, and transparent governance.
                 </p>
                 <p className="leading-relaxed mb-6">
-                  Built on EVM-compatible blockchain infrastructure and leveraging Chainlink's decentralized oracle network for verified real-world data, RevitaHub creates a trust-minimized bridge between physical real estate assets and on-chain token ownership. The protocol implements a novel 5-phase community-first offering system that prioritizes local stakeholders while ensuring broad accessibility, combined with robust investor protection mechanisms including guaranteed returns on failed funding rounds.
+                  Built on EVM-compatible blockchain infrastructure and leveraging Chainlink's decentralized oracle network for verified real-world data, RevitaHub creates a trust-minimized bridge between physical real estate assets and on-chain token ownership. The protocol implements a novel 4-phase community-first offering system that prioritizes local stakeholders while ensuring broad accessibility, combined with robust investor protection mechanisms including guaranteed returns on failed funding rounds.
                 </p>
                 <Card className="bg-primary/5 border-primary/20">
                   <CardContent className="p-6">
@@ -135,7 +135,7 @@ export default function Litepaper() {
                     <ul className="space-y-2">
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span>Community-first 5-phase token distribution prioritizing local investors</span>
+                        <span>Community-first 4-phase token distribution prioritizing local investors</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -255,7 +255,7 @@ export default function Litepaper() {
                       </div>
                       <h4 className="font-semibold mb-2">Fractional Ownership</h4>
                       <p className="text-sm text-muted-foreground">
-                        Tokenize any property into divisible ERC-20 tokens enabling $12.50 minimum investments with full ownership rights and dividend distributions.
+                        Tokenize any property into divisible ERC-1155 tokens enabling $12.50 minimum investments with full ownership rights and dividend distributions.
                       </p>
                     </CardContent>
                   </Card>
@@ -307,7 +307,7 @@ export default function Litepaper() {
                       <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold flex-shrink-0">2</div>
                       <div>
                         <p className="font-medium">Tokenization & Offering</p>
-                        <p className="text-sm text-muted-foreground">Approved properties are tokenized into ERC-20 tokens. A 5-phase offering prioritizes local community investors before opening to broader participation.</p>
+                        <p className="text-sm text-muted-foreground">Approved properties are tokenized into ERC-1155 tokens. A 4-phase offering prioritizes local community investors before opening to broader participation.</p>
                       </div>
                     </li>
                     <li className="flex items-start gap-4">
@@ -341,7 +341,7 @@ export default function Litepaper() {
                       <Database className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="font-medium">Property Token Contracts:</span>
-                        <span className="text-muted-foreground"> ERC-20 tokens representing fractional ownership with built-in dividend distribution and transfer restrictions for compliance.</span>
+                        <span className="text-muted-foreground"> ERC-1155 tokens representing fractional ownership with built-in dividend distribution and transfer restrictions for compliance.</span>
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
@@ -394,7 +394,7 @@ export default function Litepaper() {
               <Section id="tokenization" title="5. Tokenization Model">
                 <Subsection title="5.1 Property Token Structure">
                   <p className="leading-relaxed mb-4">
-                    Each property on RevitaHub is represented by a unique ERC-20 token contract with the following characteristics:
+                    Each property on RevitaHub is represented by a unique ERC-1155 token contract with the following characteristics:
                   </p>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm border">
@@ -407,7 +407,7 @@ export default function Litepaper() {
                       <tbody>
                         <tr>
                           <td className="p-3 border-b font-medium">Token Standard</td>
-                          <td className="p-3 border-b text-muted-foreground">ERC-20 with ERC-1400 security token extensions</td>
+                          <td className="p-3 border-b text-muted-foreground">ERC-1155 multi-token with ERC-1400 security extensions</td>
                         </tr>
                         <tr>
                           <td className="p-3 border-b font-medium">Total Supply</td>
@@ -530,7 +530,7 @@ export default function Litepaper() {
 
               <Section id="offering" title="6. Community-First Token Offering">
                 <p className="leading-relaxed mb-6">
-                  RevitaHub implements a novel 5-phase offering system designed to prioritize community stakeholders while enabling broad participation. This structure ensures that those most affected by property development have first access to investment opportunities.
+                  RevitaHub implements a novel 4-phase offering system designed to prioritize community stakeholders while enabling broad participation. This structure ensures that those most affected by property development have first access to investment opportunities.
                 </p>
 
                 <Subsection title="6.1 Phase Structure">
@@ -562,7 +562,7 @@ export default function Litepaper() {
                         <div className="flex flex-wrap items-center gap-4 text-xs">
                           <span className="text-chart-2 font-medium">Duration: 30 days</span>
                           <span>Token Price: $18.75</span>
-                          <span>Per-person limit: Algorithmically increased</span>
+                          <span>Per-person limit: 250 tokens</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -576,7 +576,7 @@ export default function Litepaper() {
                         <div className="flex flex-wrap items-center gap-4 text-xs">
                           <span className="text-chart-3 font-medium">Duration: 60 days</span>
                           <span>Token Price: $28.13</span>
-                          <span>Per-person limit: Algorithmically increased</span>
+                          <span>Per-person limit: 500 tokens</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -590,32 +590,35 @@ export default function Litepaper() {
                         <div className="flex flex-wrap items-center gap-4 text-xs">
                           <span className="text-chart-4 font-medium">Duration: 90 days</span>
                           <span>Token Price: $37.50</span>
-                          <span>Per-person limit: Algorithmically increased</span>
+                          <span>Per-person limit: 1,000 tokens</span>
                         </div>
                       </CardContent>
                     </Card>
-                    <Card className="border-l-4 border-l-chart-5">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold">Phase 5: Private Offering</h4>
-                          <span className="text-sm text-muted-foreground">Custom Terms</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">Property owners can create invite-only offerings for specific investors or businesses via email invites and private access codes.</p>
-                        <div className="flex flex-wrap items-center gap-4 text-xs">
-                          <span className="text-chart-5 font-medium">Duration: Flexible</span>
-                          <span>Token Price: Custom</span>
-                          <span>Per-person limit: Customizable</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                    </div>
 
                   <Card className="bg-muted/30 mb-4">
                     <CardContent className="p-4">
-                      <h4 className="font-semibold mb-2">Algorithmic Token Allocation</h4>
+                      <h4 className="font-semibold mb-2">Per-Person Token Limits</h4>
                       <p className="text-sm text-muted-foreground">
-                        The per-person token limit increases with each phase to ensure 100% of funding can be achieved. The algorithm calculates remaining tokens needed divided by estimated participants in each successive phase, ensuring the property can reach full funding while maintaining fair access for community investors in early phases.
+                        Each phase has fixed per-person limits to ensure broad community participation: County (100 tokens), State (250 tokens), National (500 tokens), and International (1,000 tokens). This prevents large investors from dominating early phases while allowing increased participation as offerings expand geographically.
                       </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-chart-5/10 border-chart-5/30 mb-4">
+                    <CardContent className="p-4">
+                      <h4 className="font-semibold mb-2 flex items-center gap-2">
+                        <Users className="h-4 w-4 text-chart-5" />
+                        Private Offering Mode (Separate from Public Phases)
+                      </h4>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        In addition to the 4-phase public offering, property owners can create invite-only private offerings for specific investors or businesses via email invites and private access codes.
+                      </p>
+                      <div className="flex flex-wrap items-center gap-4 text-xs">
+                        <span className="text-chart-5 font-medium">Duration: Flexible</span>
+                        <span>Token Price: Custom</span>
+                        <span>Per-person limit: Customizable</span>
+                      </div>
                     </CardContent>
                   </Card>
                 </Subsection>
@@ -920,13 +923,13 @@ export default function Litepaper() {
                   </Card>
                 </Subsection>
 
-                <Subsection title="9.2 Alternative Exit: Share Transfer">
+                <Subsection title="9.2 Share Transfer Option">
                   <p className="leading-relaxed mb-4">
-                    If a property reaches between 60-100% of its funding target but cannot proceed to development, investors may opt to:
+                    If a property fails to reach 100% funding within the 1-year deadline, investors have the following options:
                   </p>
                   <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                    <li>Receive a full refund with 3% APR interest, OR</li>
-                    <li>Transfer shares to a follow-on offering for the same or similar property</li>
+                    <li>Receive a full refund with 3% APR interest (automatic default), OR</li>
+                    <li>Opt to transfer their investment to a follow-on offering for the same or similar property if one becomes available</li>
                   </ul>
                 </Subsection>
 
@@ -1034,12 +1037,12 @@ export default function Litepaper() {
                           <div className="p-4 rounded-md bg-primary/10 border border-primary/20 text-center">
                             <Coins className="h-8 w-8 mx-auto mb-2 text-primary" />
                             <h5 className="font-semibold text-sm">Property Token</h5>
-                            <p className="text-xs text-muted-foreground">ERC-20 + ERC-1400</p>
+                            <p className="text-xs text-muted-foreground">ERC-1155</p>
                           </div>
                           <div className="p-4 rounded-md bg-chart-3/10 border border-chart-3/20 text-center">
                             <TrendingUp className="h-8 w-8 mx-auto mb-2 text-chart-3" />
                             <h5 className="font-semibold text-sm">Offering Manager</h5>
-                            <p className="text-xs text-muted-foreground">5-Phase System</p>
+                            <p className="text-xs text-muted-foreground">4-Phase System</p>
                           </div>
                           <div className="p-4 rounded-md bg-chart-1/10 border border-chart-1/20 text-center">
                             <Vote className="h-8 w-8 mx-auto mb-2 text-chart-1" />
@@ -1279,7 +1282,7 @@ export default function Litepaper() {
                       <ul className="space-y-2 text-sm text-muted-foreground">
                         <li className="flex items-center gap-2">
                           <ArrowRight className="h-4 w-4" />
-                          5-phase offering system deployment
+                          4-phase offering system deployment
                         </li>
                         <li className="flex items-center gap-2">
                           <ArrowRight className="h-4 w-4" />
