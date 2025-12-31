@@ -25,7 +25,11 @@ import {
   AlertTriangle,
   BarChart3,
   Target,
-  Code
+  Code,
+  Brain,
+  Lightbulb,
+  Activity,
+  Eye
 } from "lucide-react";
 
 const tableOfContents = [
@@ -33,18 +37,19 @@ const tableOfContents = [
   { id: "problem", title: "2. Problem Statement" },
   { id: "market", title: "3. Market Analysis" },
   { id: "solution", title: "4. Solution Overview" },
-  { id: "architecture", title: "5. Platform Architecture" },
-  { id: "tokenization", title: "6. Tokenization Model" },
-  { id: "offering", title: "7. Community-First Offering" },
-  { id: "chainlink", title: "8. Chainlink & Canton Integration" },
-  { id: "governance", title: "9. Governance & DAO" },
-  { id: "protection", title: "10. Investor Protections" },
-  { id: "compliance", title: "11. Regulatory Compliance" },
-  { id: "technical", title: "12. Technical Architecture" },
-  { id: "tokenomics", title: "13. Tokenomics" },
-  { id: "risks", title: "14. Risk Factors" },
-  { id: "roadmap", title: "15. Roadmap" },
-  { id: "team", title: "16. Team" },
+  { id: "ai-governance", title: "5. AI-Nudged Governance" },
+  { id: "architecture", title: "6. Platform Architecture" },
+  { id: "tokenization", title: "7. Tokenization Model" },
+  { id: "offering", title: "8. Community-First Offering" },
+  { id: "chainlink", title: "9. Chainlink & Canton Integration" },
+  { id: "governance", title: "10. Governance & DAO" },
+  { id: "protection", title: "11. Investor Protections" },
+  { id: "compliance", title: "12. Regulatory Compliance" },
+  { id: "technical", title: "13. Technical Architecture" },
+  { id: "tokenomics", title: "14. Tokenomics" },
+  { id: "risks", title: "15. Risk Factors" },
+  { id: "roadmap", title: "16. Roadmap" },
+  { id: "team", title: "17. Team" },
 ];
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
@@ -430,12 +435,165 @@ export default function Litepaper() {
 
               <Separator className="my-12" />
 
-              <Section id="architecture" title="5. Platform Architecture">
+              <Section id="ai-governance" title="5. AI-Nudged Governance">
+                <p className="text-lg leading-relaxed mb-6">
+                  RevitaHub pioneers the integration of AI with DAO governance—creating an "AI-Nudged RevitalDAO" that detects bias, prevents whale manipulation, and optimizes community engagement through behavioral economics.
+                </p>
+
+                <Card className="bg-primary/5 border-primary/20 mb-8">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Brain className="h-8 w-8 text-primary" />
+                      <div>
+                        <h4 className="font-semibold">Novel AI + DAO Combination</h4>
+                        <p className="text-sm text-muted-foreground">First real estate platform combining AI governance with community tokenization</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Subsection title="5.1 Theoretical Framework">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Brain className="h-5 w-5 text-primary" />
+                          <h4 className="font-semibold">Boden Combination</h4>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          AI + DAO creates novel governance structures. AI moderates voting to detect biases and suggests balanced options—a new combination in real estate investment.
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Lightbulb className="h-5 w-5 text-chart-2" />
+                          <h4 className="font-semibold">Behavioral Economics</h4>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Nudges like "Vote to earn bonus APR" fix herding behavior and overconfidence. Gentle prompts increase participation without manipulation.
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Activity className="h-5 w-5 text-chart-3" />
+                          <h4 className="font-semibold">Complexity Theory</h4>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          AI balances the system at the "edge of chaos"—enough structure for stability, enough flexibility for innovation and community-driven adaptation.
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <TrendingUp className="h-5 w-5 text-chart-4" />
+                          <h4 className="font-semibold">Tipping Point Acceleration</h4>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Nudges accelerate adoption past critical thresholds. Once participation reaches tipping points, network effects compound community growth.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </Subsection>
+
+                <Subsection title="5.2 AI Bias Detection">
+                  <p className="leading-relaxed mb-4">
+                    The AI governance engine continuously monitors voting patterns to identify and mitigate biases:
+                  </p>
+                  <ul className="space-y-3 mb-6">
+                    <li className="flex items-start gap-3">
+                      <Eye className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-medium">Herding Detection:</span>
+                        <span className="text-muted-foreground"> Identifies when early votes disproportionately influence later voters</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-medium">Whale Prediction:</span>
+                        <span className="text-muted-foreground"> AI monitors concentration risk and potential manipulation attempts</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <Vote className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-medium">Balanced Options:</span>
+                        <span className="text-muted-foreground"> Suggests alternative proposals when voting shows extreme polarization</span>
+                      </div>
+                    </li>
+                  </ul>
+                </Subsection>
+
+                <Subsection title="5.3 Behavioral Nudges">
+                  <p className="leading-relaxed mb-4">
+                    Strategic prompts increase participation while respecting user autonomy:
+                  </p>
+                  <div className="overflow-x-auto mb-4">
+                    <table className="w-full text-sm border">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="text-left p-3 border-b">Nudge Type</th>
+                          <th className="text-left p-3 border-b">Trigger</th>
+                          <th className="text-left p-3 border-b">Expected Impact</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="p-3 border-b font-medium">Vote-to-Earn</td>
+                          <td className="p-3 border-b text-muted-foreground">Active proposal, user hasn't voted</td>
+                          <td className="p-3 border-b text-primary font-semibold">+0.5% bonus APR</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 border-b font-medium">Milestone Alert</td>
+                          <td className="p-3 border-b text-muted-foreground">Near quorum threshold</td>
+                          <td className="p-3 border-b text-primary font-semibold">+52% participation</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 border-b font-medium">Phase Closing</td>
+                          <td className="p-3 border-b text-muted-foreground">3 days before phase ends</td>
+                          <td className="p-3 border-b text-primary font-semibold">+34% investment</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 font-medium">Community Bonus</td>
+                          <td className="p-3 text-muted-foreground">Monthly active participation</td>
+                          <td className="p-3 text-primary font-semibold">+1.2% APR</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </Subsection>
+
+                <Subsection title="5.4 Dynamic Phase Advancement">
+                  <p className="leading-relaxed mb-4">
+                    Unlike fixed timelines, phases advance based on real engagement metrics:
+                  </p>
+                  <Card className="bg-muted/30">
+                    <CardContent className="p-4">
+                      <p className="text-sm mb-3">
+                        <span className="font-medium">Engagement Threshold:</span> Phase advances when 75% of token holders have participated in governance OR allocation is fully subscribed.
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        This data-driven approach ensures phases advance when communities are ready, not on arbitrary timelines. High-engagement properties move faster; slower properties get additional nudge support.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Subsection>
+              </Section>
+
+              <Separator className="my-12" />
+
+              <Section id="architecture" title="6. Platform Architecture">
                 <p className="leading-relaxed mb-6">
                   Hybrid on-chain/off-chain architecture combining smart contracts with traditional infrastructure for regulatory compliance.
                 </p>
 
-                <Subsection title="5.1 On-Chain Components">
+                <Subsection title="6.1 On-Chain Components">
                   <ul className="space-y-3 mb-6">
                     <li className="flex items-start gap-3">
                       <Database className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -468,7 +626,7 @@ export default function Litepaper() {
                   </ul>
                 </Subsection>
 
-                <Subsection title="5.2 Off-Chain Infrastructure">
+                <Subsection title="6.2 Off-Chain Infrastructure">
                   <ul className="space-y-3">
                     <li className="flex items-start gap-3">
                       <Database className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -494,7 +652,7 @@ export default function Litepaper() {
                   </ul>
                 </Subsection>
 
-                <Subsection title="5.3 Multi-Chain Strategy">
+                <Subsection title="6.3 Multi-Chain Strategy">
                   <Card className="bg-muted/50">
                     <CardContent className="p-4">
                       <p className="text-sm">
@@ -507,8 +665,8 @@ export default function Litepaper() {
 
               <Separator className="my-12" />
 
-              <Section id="tokenization" title="6. Tokenization Model">
-                <Subsection title="6.1 Property Token Structure">
+              <Section id="tokenization" title="7. Tokenization Model">
+                <Subsection title="7.1 Property Token Structure">
                   <div className="overflow-x-auto mb-4">
                     <table className="w-full text-sm border">
                       <thead>
@@ -539,7 +697,7 @@ export default function Litepaper() {
                   </div>
                 </Subsection>
 
-                <Subsection title="6.2 Pricing for Financial Inclusion">
+                <Subsection title="7.2 Pricing for Financial Inclusion">
                   <p className="leading-relaxed mb-4">
                     $12.50 base price rewards early community risk. Phases markup 50% progressively:
                   </p>
@@ -590,7 +748,7 @@ export default function Litepaper() {
                   </Card>
                 </Subsection>
 
-                <Subsection title="6.3 Property Types">
+                <Subsection title="7.3 Property Types">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Card>
                       <CardContent className="p-4 text-center">
@@ -622,8 +780,8 @@ export default function Litepaper() {
 
               <Separator className="my-12" />
 
-              <Section id="offering" title="7. Community-First Token Offering">
-                <Subsection title="7.1 Phase Structure">
+              <Section id="offering" title="8. Community-First Token Offering">
+                <Subsection title="8.1 Phase Structure">
                   <div className="overflow-x-auto mb-6">
                     <table className="w-full text-sm border">
                       <thead>
@@ -681,7 +839,7 @@ export default function Litepaper() {
                   </Card>
                 </Subsection>
 
-                <Subsection title="7.2 Phase Advancement">
+                <Subsection title="8.2 Phase Advancement">
                   <p className="leading-relaxed mb-4">
                     Chainlink Automation triggers phase advancement when:
                   </p>
@@ -691,7 +849,7 @@ export default function Litepaper() {
                   </ul>
                 </Subsection>
 
-                <Subsection title="7.3 Funding & Investor Protection">
+                <Subsection title="8.3 Funding & Investor Protection">
                   <Card className="bg-primary/5 border-primary/20 mb-4">
                     <CardContent className="p-4">
                       <h4 className="font-semibold mb-2 flex items-center gap-2">
@@ -717,7 +875,7 @@ export default function Litepaper() {
 
               <Separator className="my-12" />
 
-              <Section id="chainlink" title="8. Chainlink & Canton Integration">
+              <Section id="chainlink" title="9. Chainlink & Canton Integration">
                 <Card className="bg-primary/5 border-primary/20 mb-8">
                   <CardContent className="p-6">
                     <h4 className="font-semibold mb-3 flex items-center gap-2">
@@ -740,7 +898,7 @@ export default function Litepaper() {
                   </CardContent>
                 </Card>
 
-                <Subsection title="8.1 Chainlink Services">
+                <Subsection title="9.1 Chainlink Services">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <Card>
                       <CardContent className="p-4">
@@ -780,7 +938,7 @@ export default function Litepaper() {
                   </div>
                 </Subsection>
 
-                <Subsection title="8.2 Canton Network Integration">
+                <Subsection title="9.2 Canton Network Integration">
                   <Card className="bg-chart-2/10 border-chart-2/30">
                     <CardContent className="p-4">
                       <h4 className="font-semibold mb-2">Institutional-Grade Privacy</h4>
@@ -800,8 +958,8 @@ export default function Litepaper() {
 
               <Separator className="my-12" />
 
-              <Section id="governance" title="9. Governance & DAO">
-                <Subsection title="9.1 Voting Power">
+              <Section id="governance" title="10. Governance & DAO">
+                <Subsection title="10.1 Voting Power">
                   <p className="leading-relaxed mb-4">
                     Voting power = Token Holdings × Phase Multiplier
                   </p>
@@ -847,7 +1005,7 @@ export default function Litepaper() {
                   </Card>
                 </Subsection>
 
-                <Subsection title="9.2 Proposal Types">
+                <Subsection title="10.2 Proposal Types">
                   <ul className="space-y-3">
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -880,7 +1038,7 @@ export default function Litepaper() {
                   </ul>
                 </Subsection>
 
-                <Subsection title="9.3 Smart Contract Pseudocode">
+                <Subsection title="10.3 Smart Contract Pseudocode">
                   <Card className="bg-muted/30">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 mb-3">
@@ -909,8 +1067,8 @@ export default function Litepaper() {
 
               <Separator className="my-12" />
 
-              <Section id="protection" title="10. Investor Protections">
-                <Subsection title="10.1 Refund Guarantee">
+              <Section id="protection" title="11. Investor Protections">
+                <Subsection title="11.1 Refund Guarantee">
                   <p className="leading-relaxed mb-4">
                     If 100% funding target not reached within 1 year:
                   </p>
@@ -920,7 +1078,7 @@ export default function Litepaper() {
                   </ul>
                 </Subsection>
 
-                <Subsection title="10.2 Security Measures">
+                <Subsection title="11.2 Security Measures">
                   <ul className="space-y-3">
                     <li className="flex items-start gap-3">
                       <Lock className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -944,8 +1102,8 @@ export default function Litepaper() {
 
               <Separator className="my-12" />
 
-              <Section id="compliance" title="11. Regulatory Compliance">
-                <Subsection title="11.1 Securities Framework">
+              <Section id="compliance" title="12. Regulatory Compliance">
+                <Subsection title="12.1 Securities Framework">
                   <ul className="space-y-3 mb-4">
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-5 w-5 text-chart-3 flex-shrink-0 mt-0.5" />
@@ -971,7 +1129,7 @@ export default function Litepaper() {
                   </ul>
                 </Subsection>
 
-                <Subsection title="11.2 KYC/AML Requirements">
+                <Subsection title="12.2 KYC/AML Requirements">
                   <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                     <li>Government-issued ID verification</li>
                     <li>Address verification (determines phase eligibility)</li>
@@ -980,7 +1138,7 @@ export default function Litepaper() {
                   </ul>
                 </Subsection>
 
-                <Subsection title="11.3 Transfer Restrictions">
+                <Subsection title="12.3 Transfer Restrictions">
                   <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                     <li>Whitelist-only transfers to verified addresses</li>
                     <li>1-year holding period for Reg D</li>
@@ -991,8 +1149,8 @@ export default function Litepaper() {
 
               <Separator className="my-12" />
 
-              <Section id="technical" title="12. Technical Architecture">
-                <Subsection title="12.1 Smart Contract System">
+              <Section id="technical" title="13. Technical Architecture">
+                <Subsection title="13.1 Smart Contract System">
                   <Card className="border-2 border-primary/30 mb-6">
                     <CardContent className="p-6">
                       <h4 className="text-center font-bold text-lg mb-6 text-primary">Core Contracts</h4>
@@ -1017,7 +1175,7 @@ export default function Litepaper() {
                   </Card>
                 </Subsection>
 
-                <Subsection title="12.2 Escrow Pseudocode">
+                <Subsection title="13.2 Escrow Pseudocode">
                   <Card className="bg-muted/30">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 mb-3">
@@ -1049,7 +1207,7 @@ function claimRefund(uint256 propertyId) external {
                   </Card>
                 </Subsection>
 
-                <Subsection title="12.3 Security Practices">
+                <Subsection title="13.3 Security Practices">
                   <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                     <li>Multi-party computation for key management</li>
                     <li>Third-party security audits</li>
@@ -1062,8 +1220,8 @@ function claimRefund(uint256 propertyId) external {
 
               <Separator className="my-12" />
 
-              <Section id="tokenomics" title="13. Tokenomics">
-                <Subsection title="13.1 RVTA Governance Token">
+              <Section id="tokenomics" title="14. Tokenomics">
+                <Subsection title="14.1 RVTA Governance Token">
                   <p className="leading-relaxed mb-4">
                     Total Supply: <span className="font-bold">100,000,000 RVTA</span> (fixed, no inflation)
                   </p>
@@ -1112,7 +1270,7 @@ function claimRefund(uint256 propertyId) external {
                   </div>
                 </Subsection>
 
-                <Subsection title="13.2 Token Utility">
+                <Subsection title="14.2 Token Utility">
                   <ul className="space-y-3">
                     <li className="flex items-start gap-3">
                       <Vote className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -1138,7 +1296,7 @@ function claimRefund(uint256 propertyId) external {
                   </ul>
                 </Subsection>
 
-                <Subsection title="13.3 Fee Structure">
+                <Subsection title="14.3 Fee Structure">
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm border">
                       <thead>
@@ -1169,7 +1327,7 @@ function claimRefund(uint256 propertyId) external {
                   </div>
                 </Subsection>
 
-                <Subsection title="13.4 Deflationary Mechanics">
+                <Subsection title="14.4 Deflationary Mechanics">
                   <Card className="bg-muted/30">
                     <CardContent className="p-4">
                       <p className="text-sm text-muted-foreground">
@@ -1182,7 +1340,7 @@ function claimRefund(uint256 propertyId) external {
 
               <Separator className="my-12" />
 
-              <Section id="risks" title="14. Risk Factors">
+              <Section id="risks" title="15. Risk Factors">
                 <Card className="bg-destructive/5 border-destructive/20 mb-6">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-3 mb-4">
@@ -1241,7 +1399,7 @@ function claimRefund(uint256 propertyId) external {
 
               <Separator className="my-12" />
 
-              <Section id="roadmap" title="15. Roadmap">
+              <Section id="roadmap" title="16. Roadmap">
                 <div className="space-y-6">
                   <Card className="border-l-4 border-l-chart-3">
                     <CardContent className="p-6">
@@ -1339,7 +1497,7 @@ function claimRefund(uint256 propertyId) external {
 
               <Separator className="my-12" />
 
-              <Section id="team" title="16. Team">
+              <Section id="team" title="17. Team">
                 <Card className="bg-muted/30 mb-8">
                   <CardContent className="p-6">
                     <div className="flex flex-col md:flex-row items-center gap-6">

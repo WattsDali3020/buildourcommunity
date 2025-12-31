@@ -1,27 +1,19 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
-import { WalletButton } from "./WalletButton";
-import { Building2, Menu, X, Brain, FileText } from "lucide-react";
+import { Building2, Menu, X, LogIn } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 
 const publicNavLinks = [
   { href: "/", label: "Home" },
-  { href: "/properties", label: "Properties" },
+  { href: "/properties", label: "Explore" },
   { href: "/how-it-works", label: "How It Works" },
-  { href: "/governance", label: "Governance" },
-  { href: "/litepaper", label: "Litepaper" },
+  { href: "/litepaper", label: "Learn" },
 ];
 
-const authenticatedNavLinks = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/ai-insights", label: "AI Insights", icon: Brain },
-  { href: "/business", label: "Business", icon: FileText },
-];
-
-export function Header() {
+export function SimpleHeader() {
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
@@ -29,42 +21,48 @@ export function Header() {
     queryKey: ["/api/auth/user"],
   });
 
-  const allLinks = user 
-    ? [...publicNavLinks, ...authenticatedNavLinks]
-    : publicNavLinks;
-
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto max-w-7xl px-4">
         <div className="flex h-16 items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2" data-testid="link-home">
-            <Building2 className="h-8 w-8 text-primary" />
-            <span className="text-xl font-semibold">RevitaHub</span>
+            <Building2 className="h-7 w-7 text-primary" />
+            <span className="text-lg font-semibold tracking-tight">RevitaHub</span>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-1">
-            {allLinks.map((link) => (
+          <nav className="hidden md:flex items-center gap-6">
+            {publicNavLinks.map((link) => (
               <Link key={link.href} href={link.href}>
-                <Button
-                  variant={location === link.href ? "secondary" : "ghost"}
-                  size="sm"
+                <span
+                  className={`text-sm font-medium transition-colors hover:text-primary ${
+                    location === link.href ? "text-primary" : "text-muted-foreground"
+                  }`}
                   data-testid={`link-nav-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
                 >
                   {link.label}
-                </Button>
+                </span>
               </Link>
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <ThemeToggle />
-            <div className="hidden sm:block">
-              <WalletButton />
-            </div>
+            {user ? (
+              <Button asChild size="sm" data-testid="button-dashboard">
+                <Link href="/dashboard">Dashboard</Link>
+              </Button>
+            ) : (
+              <Button asChild size="sm" data-testid="button-get-started">
+                <Link href="/dashboard">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Get Started
+                </Link>
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
+              className="md:hidden"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               data-testid="button-mobile-menu"
             >
@@ -74,9 +72,9 @@ export function Header() {
         </div>
 
         {mobileMenuOpen && (
-          <nav className="lg:hidden py-4 border-t">
-            <div className="flex flex-col gap-2">
-              {allLinks.map((link) => (
+          <nav className="md:hidden py-4 border-t border-border/50">
+            <div className="flex flex-col gap-1">
+              {publicNavLinks.map((link) => (
                 <Link key={link.href} href={link.href}>
                   <Button
                     variant={location === link.href ? "secondary" : "ghost"}
@@ -88,9 +86,6 @@ export function Header() {
                   </Button>
                 </Link>
               ))}
-              <div className="pt-2">
-                <WalletButton />
-              </div>
             </div>
           </nav>
         )}

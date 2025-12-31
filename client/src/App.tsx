@@ -22,6 +22,8 @@ import AdminPanel from "@/pages/admin";
 import Litepaper from "@/pages/litepaper";
 import TokenizationProcess from "@/pages/tokenization-process";
 import FAQ from "@/pages/faq";
+import AIInsights from "@/pages/ai-insights";
+import BusinessLayer from "@/pages/business-layer";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -43,6 +45,8 @@ function Router() {
       <Route path="/litepaper" component={Litepaper} />
       <Route path="/how-it-works" component={TokenizationProcess} />
       <Route path="/faq" component={FAQ} />
+      <Route path="/ai-insights" component={AIInsights} />
+      <Route path="/business" component={BusinessLayer} />
       <Route component={NotFound} />
     </Switch>
   );
