@@ -1,0 +1,365 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
+
+interface IPropertyToken {
+    enum Phase { County, State, National, International }
+    
+    function advancePhase(uint256 propertyId) external;
+    function getProperty(uint256 propertyId) external view returns (
+        uint256 id,
+        string memory name,
+        string memory uri,
+        uint256 totalSupply,
+        uint256 mintedSupply,
+        uint256 fundingTarget,
+        uint256 fundingDeadline,
+        uint8 currentPhase,
+        bool isActive,
+        bool isFunded
+    );
+    function phaseAllocations(uint256 propertyId, uint8 phase) external view returns (uint256);
+    function phaseMinted(uint256 propertyId, uint8 phase) external view returns (uint256);
+}
+
+interface IGovernance {
+    function proposalCount() external view returns (uint256);
+    function getProposal(uint256 proposalId) external view returns (
+        uint256 id,
+        uint256 propertyId,
+        address proposer,
+        uint8 proposalType,
+        string memory title,
+        string memory description,
+        string memory ipfsHash,
+        uint256 votesFor,
+        uint256 votesAgainst,
+        uint256 votesAbstain,
+        uint256 startTime,
+        uint256 endTime,
+        uint256 quorumRequired,
+        uint8 status,
+        bytes memory executionData
+    );
+}
+
+/**
+ * @title RevitaHub Phase Manager
+ * @notice Dynamic phase advancement based on engagement analytics
+ * @dev Advances phases when 75% engagement threshold OR full subscription is reached
+ */
+contract PhaseManager is AccessControl, AutomationCompatibleInterface {
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+
+    IPropertyToken public propertyToken;
+    IGovernance public governance;
+
+    // Engagement threshold for early phase advancement (basis points)
+    uint256 public constant ENGAGEMENT_THRESHOLD = 7500; // 75%
+    
+    // Minimum engagement period before early advancement (prevents gaming)
+    uint256 public constant MIN_ENGAGEMENT_PERIOD = 7 days;
+
+    // Property engagement tracking
+    struct PropertyEngagement {
+        uint256 propertyId;
+        uint256 phaseStartTime;
+        uint256 totalEligibleVoters;
+        uint256 activeVoters;
+        uint256 totalProposals;
+        uint256 votedProposals;
+        bool isTracking;
+    }
+
+    // Engagement metrics per property
+    mapping(uint256 => PropertyEngagement) public propertyEngagement;
+    
+    // Active properties for automation
+    uint256[] public trackedProperties;
+    mapping(uint256 => bool) public isTracked;
+
+    // Behavioral nudge triggers
+    mapping(uint256 => uint256) public lastNudgeTime;
+    uint256 public nudgeCooldown = 24 hours;
+
+    // Events
+    event EngagementUpdated(
+        uint256 indexed propertyId,
+        uint256 activeVoters,
+        uint256 totalEligible,
+        uint256 engagementPercent
+    );
+    event PhaseAdvancedByEngagement(
+        uint256 indexed propertyId,
+        uint8 fromPhase,
+        uint8 toPhase,
+        uint256 engagementPercent
+    );
+    event PhaseAdvancedBySubscription(
+        uint256 indexed propertyId,
+        uint8 fromPhase,
+        uint8 toPhase
+    );
+    event NudgeTriggered(
+        uint256 indexed propertyId,
+        string nudgeType,
+        uint256 engagementPercent
+    );
+    event PropertyTrackingStarted(uint256 indexed propertyId);
+    event PropertyTrackingStopped(uint256 indexed propertyId);
+
+    constructor(address _propertyToken, address _governance) {
+        propertyToken = IPropertyToken(_propertyToken);
+        governance = IGovernance(_governance);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(OPERATOR_ROLE, msg.sender);
+    }
+
+    /**
+     * @notice Start tracking engagement for a property
+     * @param propertyId Property ID
+     * @param totalEligibleVoters Total number of eligible voters
+     */
+    function startTracking(uint256 propertyId, uint256 totalEligibleVoters) external onlyRole(OPERATOR_ROLE) {
+        require(!isTracked[propertyId], "Already tracking");
+        
+        propertyEngagement[propertyId] = PropertyEngagement({
+            propertyId: propertyId,
+            phaseStartTime: block.timestamp,
+            totalEligibleVoters: totalEligibleVoters,
+            activeVoters: 0,
+            totalProposals: 0,
+            votedProposals: 0,
+            isTracking: true
+        });
+
+        trackedProperties.push(propertyId);
+        isTracked[propertyId] = true;
+
+        emit PropertyTrackingStarted(propertyId);
+    }
+
+    /**
+     * @notice Update engagement metrics for a property
+     * @param propertyId Property ID
+     * @param activeVoters Number of unique voters
+     * @param totalProposals Total proposals for property
+     * @param votedProposals Proposals with votes
+     */
+    function updateEngagement(
+        uint256 propertyId,
+        uint256 activeVoters,
+        uint256 totalProposals,
+        uint256 votedProposals
+    ) external onlyRole(OPERATOR_ROLE) {
+        PropertyEngagement storage engagement = propertyEngagement[propertyId];
+        require(engagement.isTracking, "Not tracking");
+
+        engagement.activeVoters = activeVoters;
+        engagement.totalProposals = totalProposals;
+        engagement.votedProposals = votedProposals;
+
+        uint256 engagementPercent = calculateEngagement(propertyId);
+        emit EngagementUpdated(propertyId, activeVoters, engagement.totalEligibleVoters, engagementPercent);
+
+        // Check for nudge triggers
+        _checkNudges(propertyId, engagementPercent);
+
+        // Check for early phase advancement
+        _checkPhaseAdvancement(propertyId, engagementPercent);
+    }
+
+    /**
+     * @notice Calculate engagement percentage
+     * @param propertyId Property ID
+     */
+    function calculateEngagement(uint256 propertyId) public view returns (uint256) {
+        PropertyEngagement storage engagement = propertyEngagement[propertyId];
+        if (engagement.totalEligibleVoters == 0) return 0;
+
+        // Engagement = (active voters / eligible voters) * 100
+        // Returns in basis points (e.g., 7500 = 75%)
+        return (engagement.activeVoters * 10000) / engagement.totalEligibleVoters;
+    }
+
+    /**
+     * @notice Check if phase should advance based on engagement
+     * @param propertyId Property ID
+     * @param engagementPercent Current engagement in basis points
+     */
+    function _checkPhaseAdvancement(uint256 propertyId, uint256 engagementPercent) internal {
+        PropertyEngagement storage engagement = propertyEngagement[propertyId];
+        
+        // Check minimum engagement period
+        if (block.timestamp < engagement.phaseStartTime + MIN_ENGAGEMENT_PERIOD) {
+            return;
+        }
+
+        // Check engagement threshold
+        if (engagementPercent >= ENGAGEMENT_THRESHOLD) {
+            _advancePhaseByEngagement(propertyId, engagementPercent);
+        }
+    }
+
+    /**
+     * @notice Advance phase due to high engagement
+     * @param propertyId Property ID
+     * @param engagementPercent Engagement that triggered advancement
+     */
+    function _advancePhaseByEngagement(uint256 propertyId, uint256 engagementPercent) internal {
+        (,,,,,,,uint8 currentPhase,,) = propertyToken.getProperty(propertyId);
+        
+        if (currentPhase < 3) { // Not at International yet
+            propertyToken.advancePhase(propertyId);
+            
+            // Reset phase tracking
+            propertyEngagement[propertyId].phaseStartTime = block.timestamp;
+            propertyEngagement[propertyId].activeVoters = 0;
+            
+            emit PhaseAdvancedByEngagement(propertyId, currentPhase, currentPhase + 1, engagementPercent);
+        }
+    }
+
+    /**
+     * @notice Check and trigger behavioral nudges
+     * @param propertyId Property ID
+     * @param engagementPercent Current engagement
+     */
+    function _checkNudges(uint256 propertyId, uint256 engagementPercent) internal {
+        if (block.timestamp < lastNudgeTime[propertyId] + nudgeCooldown) {
+            return;
+        }
+
+        string memory nudgeType;
+
+        if (engagementPercent < 2500) {
+            // Low engagement - urgent nudge
+            nudgeType = "urgent_participation";
+        } else if (engagementPercent >= 6000 && engagementPercent < 7500) {
+            // Near threshold - milestone nudge
+            nudgeType = "milestone_near";
+        } else if (engagementPercent >= 7000 && engagementPercent < 7500) {
+            // Very close - final push nudge
+            nudgeType = "phase_closing";
+        } else {
+            return; // No nudge needed
+        }
+
+        lastNudgeTime[propertyId] = block.timestamp;
+        emit NudgeTriggered(propertyId, nudgeType, engagementPercent);
+    }
+
+    /**
+     * @notice Manually trigger phase check (for subscription-based advancement)
+     * @param propertyId Property ID
+     */
+    function checkSubscriptionAdvancement(uint256 propertyId) external {
+        (,,,,,,,uint8 currentPhase,,) = propertyToken.getProperty(propertyId);
+        
+        uint256 phaseAllocation = propertyToken.phaseAllocations(propertyId, currentPhase);
+        uint256 phaseMinted = propertyToken.phaseMinted(propertyId, currentPhase);
+
+        if (phaseMinted >= phaseAllocation && currentPhase < 3) {
+            propertyToken.advancePhase(propertyId);
+            
+            // Reset tracking for new phase
+            propertyEngagement[propertyId].phaseStartTime = block.timestamp;
+            propertyEngagement[propertyId].activeVoters = 0;
+            
+            emit PhaseAdvancedBySubscription(propertyId, currentPhase, currentPhase + 1);
+        }
+    }
+
+    // ============ Chainlink Automation ============
+
+    /**
+     * @notice Chainlink Automation check
+     */
+    function checkUpkeep(bytes calldata) external view override returns (bool upkeepNeeded, bytes memory performData) {
+        for (uint256 i = 0; i < trackedProperties.length; i++) {
+            uint256 propertyId = trackedProperties[i];
+            PropertyEngagement storage engagement = propertyEngagement[propertyId];
+            
+            if (!engagement.isTracking) continue;
+
+            // Check if minimum period passed
+            if (block.timestamp < engagement.phaseStartTime + MIN_ENGAGEMENT_PERIOD) continue;
+
+            uint256 engagementPercent = calculateEngagement(propertyId);
+            
+            if (engagementPercent >= ENGAGEMENT_THRESHOLD) {
+                return (true, abi.encode(propertyId, engagementPercent));
+            }
+        }
+        return (false, "");
+    }
+
+    /**
+     * @notice Chainlink Automation perform
+     */
+    function performUpkeep(bytes calldata performData) external override {
+        (uint256 propertyId, uint256 engagementPercent) = abi.decode(performData, (uint256, uint256));
+        
+        PropertyEngagement storage engagement = propertyEngagement[propertyId];
+        require(engagement.isTracking, "Not tracking");
+        require(block.timestamp >= engagement.phaseStartTime + MIN_ENGAGEMENT_PERIOD, "Too early");
+        
+        // Re-verify engagement
+        uint256 currentEngagement = calculateEngagement(propertyId);
+        require(currentEngagement >= ENGAGEMENT_THRESHOLD, "Threshold not met");
+
+        _advancePhaseByEngagement(propertyId, currentEngagement);
+    }
+
+    /**
+     * @notice Stop tracking a property
+     * @param propertyId Property ID
+     */
+    function stopTracking(uint256 propertyId) external onlyRole(OPERATOR_ROLE) {
+        require(isTracked[propertyId], "Not tracking");
+        
+        propertyEngagement[propertyId].isTracking = false;
+        isTracked[propertyId] = false;
+        
+        emit PropertyTrackingStopped(propertyId);
+    }
+
+    /**
+     * @notice Update nudge cooldown
+     * @param newCooldown New cooldown in seconds
+     */
+    function setNudgeCooldown(uint256 newCooldown) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newCooldown >= 1 hours && newCooldown <= 7 days, "Invalid cooldown");
+        nudgeCooldown = newCooldown;
+    }
+
+    /**
+     * @notice Get all tracked properties
+     */
+    function getTrackedProperties() external view returns (uint256[] memory) {
+        return trackedProperties;
+    }
+
+    /**
+     * @notice Get engagement details for a property
+     * @param propertyId Property ID
+     */
+    function getEngagement(uint256 propertyId) external view returns (
+        uint256 phaseStartTime,
+        uint256 totalEligible,
+        uint256 activeVoters,
+        uint256 engagementPercent,
+        bool isTracking
+    ) {
+        PropertyEngagement storage engagement = propertyEngagement[propertyId];
+        return (
+            engagement.phaseStartTime,
+            engagement.totalEligibleVoters,
+            engagement.activeVoters,
+            calculateEngagement(propertyId),
+            engagement.isTracking
+        );
+    }
+}
