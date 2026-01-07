@@ -34,6 +34,7 @@ async function main() {
 
   // 5. Grant roles
   await propertyToken.grantRole(await propertyToken.MINTER_ROLE(), await escrow.getAddress());
+  await propertyToken.grantRole(await propertyToken.BURNER_ROLE(), await escrow.getAddress());
   await propertyToken.grantRole(await propertyToken.PHASE_ADVANCER_ROLE(), await phaseManager.getAddress());
   await escrow.grantRole(await escrow.OPERATOR_ROLE(), deployer.address);
   await phaseManager.grantRole(await phaseManager.OPERATOR_ROLE(), deployer.address);

@@ -21,6 +21,7 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant WHITELIST_ADMIN_ROLE = keccak256("WHITELIST_ADMIN_ROLE");
     bytes32 public constant PHASE_ADVANCER_ROLE = keccak256("PHASE_ADVANCER_ROLE");
+    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
 
     // Property phases
     enum Phase { County, State, National, International }
@@ -96,6 +97,25 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         _grantRole(PAUSER_ROLE, msg.sender);
         _grantRole(WHITELIST_ADMIN_ROLE, msg.sender);
         _grantRole(PHASE_ADVANCER_ROLE, msg.sender);
+        _grantRole(BURNER_ROLE, msg.sender);
+    }
+
+    /**
+     * @notice Burn tokens on failed funding (Escrow only)
+     * @param propertyId Property ID
+     * @param holder Address holding tokens to burn
+     * @param amount Amount to burn
+     */
+    function burnFromOnFailure(
+        uint256 propertyId,
+        address holder,
+        uint256 amount
+    ) external onlyRole(BURNER_ROLE) {
+        require(amount > 0, "Amount must be positive");
+        require(balanceOf(holder, propertyId) >= amount, "Insufficient balance");
+        
+        // Burn bypasses normal transfer restrictions
+        _burn(holder, propertyId, amount);
     }
 
     /**
@@ -354,7 +374,7 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
     }
 
     /**
-     * @notice Override transfer to enforce whitelist and maintain phase tracking
+     * @notice Override transfer to enforce whitelist, funding lock, and maintain phase tracking
      */
     function _update(
         address from,
@@ -363,7 +383,14 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         uint256[] memory values
     ) internal virtual override(ERC1155, ERC1155Supply) whenNotPaused {
         // Allow minting (from == address(0)) and burning (to == address(0))
+        // For regular transfers, enforce whitelist AND funding completion
         if (from != address(0) && to != address(0)) {
+            // Check each property being transferred
+            for (uint256 i = 0; i < ids.length; i++) {
+                uint256 propertyId = ids[i];
+                // Block transfers until property is fully funded (investor protection)
+                require(properties[propertyId].isFunded, "Transfers locked during funding");
+            }
             require(whitelist[to], "Recipient not whitelisted");
         }
         

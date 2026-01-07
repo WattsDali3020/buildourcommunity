@@ -22,6 +22,8 @@ interface IPropertyToken {
         bool isFunded
     );
     function markFunded(uint256 propertyId) external;
+    function burnFromOnFailure(uint256 propertyId, address holder, uint256 amount) external;
+    function balanceOf(address account, uint256 id) external view returns (uint256);
 }
 
 /**
@@ -191,13 +193,19 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
         
         emit FundingFailed(propertyId, escrow.totalRaised, escrow.fundingTarget);
 
-        // Process all refunds
+        // Process all refunds and burn tokens
         Purchase[] storage purchases = propertyPurchases[propertyId];
         for (uint256 i = 0; i < purchases.length; i++) {
             Purchase storage p = purchases[i];
             if (!p.refunded) {
                 uint256 refundAmount = calculateRefund(p.totalPaid, p.timestamp);
                 p.refunded = true;
+                
+                // Burn buyer's tokens
+                uint256 tokenBalance = propertyToken.balanceOf(p.buyer, propertyId);
+                if (tokenBalance > 0) {
+                    propertyToken.burnFromOnFailure(propertyId, p.buyer, tokenBalance);
+                }
                 
                 (bool success, ) = payable(p.buyer).call{value: refundAmount}("");
                 require(success, "Refund transfer failed");
