@@ -982,6 +982,45 @@
         "Governance",
         "IPropertyToken"
       ]
+    },
+    "/home/runner/workspace/contracts/Treasury.sol": {
+      "lastModificationDate": 1767750345748,
+      "contentHash": "95909a15576ff009f2fe4bdf9cf7d028",
+      "sourceName": "contracts/Treasury.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "viaIR": true,
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/AccessControl.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Treasury"
+      ]
     }
   }
 }
