@@ -354,7 +354,7 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
     }
 
     /**
-     * @notice Override transfer to enforce whitelist
+     * @notice Override transfer to enforce whitelist and maintain phase tracking
      */
     function _update(
         address from,
@@ -366,6 +366,41 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         if (from != address(0) && to != address(0)) {
             require(whitelist[to], "Recipient not whitelisted");
         }
+        
+        // Handle transfers and burns - update holdingsByPhase
+        if (from != address(0)) {
+            for (uint256 i = 0; i < ids.length; i++) {
+                uint256 propertyId = ids[i];
+                uint256 amount = values[i];
+                
+                // Deduct from sender's phase holdings (FIFO - earliest phase first)
+                uint256 remaining = amount;
+                for (uint8 p = 0; p <= uint8(Phase.International) && remaining > 0; p++) {
+                    Phase phase = Phase(p);
+                    uint256 holdings = holdingsByPhase[propertyId][from][phase];
+                    if (holdings > 0) {
+                        uint256 toDeduct = holdings > remaining ? remaining : holdings;
+                        holdingsByPhase[propertyId][from][phase] -= toDeduct;
+                        
+                        // For burns (to == address(0)), also update global state
+                        if (to == address(0)) {
+                            properties[propertyId].mintedSupply -= toDeduct;
+                            phaseMinted[propertyId][phase] -= toDeduct;
+                            emit TokensBurned(propertyId, from, toDeduct, phase);
+                        } else {
+                            // For transfers, add to recipient's phase holdings
+                            holdingsByPhase[propertyId][to][phase] += toDeduct;
+                        }
+                        
+                        remaining -= toDeduct;
+                    }
+                }
+                
+                // Revert if we couldn't account for all tokens
+                require(remaining == 0, "Insufficient phase-tracked holdings");
+            }
+        }
+        
         super._update(from, to, ids, values);
     }
 
