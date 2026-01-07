@@ -63,10 +63,37 @@ Preferred communication style: Simple, everyday language.
 - Google Cloud Storage (`@google-cloud/storage`) for file uploads
 - Uppy for file upload UI components
 
-### Blockchain
-- Blockchain-agnostic design (EVM-compatible chains)
-- Exploring Chainlink Build Program participation for oracles, automation, and cross-chain features
-- Wallet connection via RainbowKit + wagmi (connection state managed in Header)
+### Blockchain / Smart Contracts
+- **Target Network**: Base (Coinbase L2)
+- **Chainlink Build Program**: Oracles, automation, cross-chain features
+- **Wallet Connection**: RainbowKit + wagmi (connection state managed in Header)
+
+#### Smart Contract Stack (contracts/ folder)
+| Contract | Purpose | Key Features |
+|----------|---------|--------------|
+| PropertyToken.sol | ERC-1155 property tokens | Phase-based holdings, voting power multipliers, transfer locks during funding, BURNER_ROLE for escrow |
+| Escrow.sol | Purchase & refund handling | MINTER_ROLE to mint tokens, 3% APR refunds, burns tokens on failed funding |
+| Governance.sol | DAO voting with AI moderation | Proposal creation, phase-weighted voting, bias detection |
+| PhaseManager.sol | Chainlink Automation | 75% engagement threshold, automatic phase advancement |
+| Treasury.sol | DAO fund execution | EXECUTOR_ROLE granted to Governance for approved proposals |
+
+#### Role Assignments (scripts/deploy.js)
+- Escrow → PropertyToken: MINTER_ROLE, BURNER_ROLE
+- PhaseManager → PropertyToken: PHASE_ADVANCER_ROLE
+- Governance → Treasury: EXECUTOR_ROLE
+- Deployer → Escrow, PhaseManager: OPERATOR_ROLE
+
+#### Voting Power Multipliers
+- County: 1.5x (15000/10000)
+- State: 1.25x (12500/10000)
+- National: 1.0x (10000/10000)
+- International: 0.75x (7500/10000)
+
+#### Key Security Features
+- Transfer locks: Tokens cannot be transferred during funding period
+- Whitelist-only transfers: Only KYC-verified addresses can receive tokens
+- FIFO phase deduction: Transfers maintain voting power consistency
+- OpenZeppelin v5.0.0: AccessControl, ReentrancyGuard, ERC1155
 
 ### Third-Party Integrations
 - Stripe for payment processing (pending full integration)
@@ -74,7 +101,18 @@ Preferred communication style: Simple, everyday language.
 - OpenAI and Google Generative AI for AI features
 - Passport.js for authentication
 
-## Recent Updates (December 2024)
+## Recent Updates (January 2026)
+
+### Smart Contract Development (January 2026)
+1. **PropertyToken.sol**: ERC-1155 with phase-based voting power, transfer locks during funding, BURNER_ROLE
+2. **Escrow.sol**: Token purchases with minting, 3% APR refunds with token burning on failure
+3. **Governance.sol**: DAO voting with AI bias detection, phase-weighted voting power
+4. **PhaseManager.sol**: Chainlink Automation for 75% engagement threshold phase advancement
+5. **Treasury.sol**: DAO-controlled fund execution via EXECUTOR_ROLE
+6. **Test Suite**: 5 passing tests covering minting, burning, transfer locks, phase tracking, voting power
+7. **Litepaper v1.2**: Updated technical architecture with actual contract code
+
+## Previous Updates (December 2024)
 
 ### Production Features Implemented
 1. **Wallet Connection**: RainbowKit + wagmi integration for Base network wallet connectivity

@@ -93,7 +93,7 @@ export default function Litepaper() {
                 Tokenizing Communities for Lasting Growth
               </p>
               <p className="text-sm text-muted-foreground mb-4">
-                Version 1.1 | December 2025
+                Version 1.2 | January 2026
               </p>
               <p className="text-xs text-muted-foreground mb-8">
                 Beta Prototype - Join the waitlist at buildourcommunity.co
@@ -1038,26 +1038,55 @@ export default function Litepaper() {
                   </ul>
                 </Subsection>
 
-                <Subsection title="10.3 Smart Contract Pseudocode">
+                <Subsection title="10.3 Smart Contract Implementation">
+                  <Card className="bg-muted/30 mb-4">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Code className="h-5 w-5 text-primary" />
+                        <h4 className="font-semibold">Governance.sol - Voting with Phase Multipliers</h4>
+                      </div>
+                      <pre className="text-xs bg-background p-4 rounded-md overflow-x-auto">
+{`function castVote(uint256 proposalId, bool support) external nonReentrant {
+    Proposal storage proposal = proposals[proposalId];
+    require(block.timestamp < proposal.endTime, "Voting ended");
+    require(!proposal.hasVoted[msg.sender], "Already voted");
+    
+    // Get voting power from PropertyToken (includes phase multipliers)
+    uint256 votingPower = propertyToken.getVotingPower(
+        proposal.propertyId, msg.sender
+    );
+    require(votingPower > 0, "No voting power");
+    
+    proposal.hasVoted[msg.sender] = true;
+    if (support) {
+        proposal.forVotes += votingPower;
+    } else {
+        proposal.againstVotes += votingPower;
+    }
+    emit VoteCast(proposalId, msg.sender, support, votingPower);
+}`}
+                      </pre>
+                    </CardContent>
+                  </Card>
                   <Card className="bg-muted/30">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 mb-3">
                         <Code className="h-5 w-5 text-primary" />
-                        <h4 className="font-semibold">GovernanceDAO.sol</h4>
+                        <h4 className="font-semibold">PropertyToken.sol - Voting Power Calculation</h4>
                       </div>
                       <pre className="text-xs bg-background p-4 rounded-md overflow-x-auto">
-{`function castVote(uint256 proposalId, bool support) external {
-    require(proposals[proposalId].deadline > block.timestamp);
-    uint256 tokens = balanceOf(msg.sender, proposalId);
-    uint256 multiplier = getPhaseMultiplier(msg.sender);
-    uint256 votingPower = tokens * multiplier / 100;
-    
-    if (support) {
-        proposals[proposalId].forVotes += votingPower;
-    } else {
-        proposals[proposalId].againstVotes += votingPower;
+{`// Phase multipliers: County 1.5x, State 1.25x, National 1.0x, Intl 0.75x
+uint256[4] public phaseMultipliers = [15000, 12500, 10000, 7500];
+
+function getVotingPower(uint256 propertyId, address voter) 
+    public view returns (uint256) 
+{
+    uint256 totalPower = 0;
+    for (uint256 phase = 0; phase < 4; phase++) {
+        uint256 holdings = holdingsByPhase[propertyId][voter][phase];
+        totalPower += (holdings * phaseMultipliers[phase]) / 10000;
     }
-    emit VoteCast(msg.sender, proposalId, support, votingPower);
+    return totalPower;
 }`}
                       </pre>
                     </CardContent>
@@ -1153,54 +1182,101 @@ export default function Litepaper() {
                 <Subsection title="13.1 Smart Contract System">
                   <Card className="border-2 border-primary/30 mb-6">
                     <CardContent className="p-6">
-                      <h4 className="text-center font-bold text-lg mb-6 text-primary">Core Contracts</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <h4 className="text-center font-bold text-lg mb-6 text-primary">Core Contracts (Base Network)</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div className="p-4 rounded-md bg-primary/10 border border-primary/20 text-center">
                           <Coins className="h-8 w-8 mx-auto mb-2 text-primary" />
-                          <h5 className="font-semibold text-sm">PropertyTokenFactory</h5>
-                          <p className="text-xs text-muted-foreground">ERC-1155 minting</p>
+                          <h5 className="font-semibold text-sm">PropertyToken</h5>
+                          <p className="text-xs text-muted-foreground">ERC-1155 with phase tracking</p>
                         </div>
                         <div className="p-4 rounded-md bg-chart-3/10 border border-chart-3/20 text-center">
                           <Lock className="h-8 w-8 mx-auto mb-2 text-chart-3" />
-                          <h5 className="font-semibold text-sm">FundingEscrow</h5>
-                          <p className="text-xs text-muted-foreground">USDC refunds</p>
+                          <h5 className="font-semibold text-sm">Escrow</h5>
+                          <p className="text-xs text-muted-foreground">Purchases & 3% APR refunds</p>
                         </div>
                         <div className="p-4 rounded-md bg-chart-1/10 border border-chart-1/20 text-center">
                           <Vote className="h-8 w-8 mx-auto mb-2 text-chart-1" />
-                          <h5 className="font-semibold text-sm">GovernanceDAO</h5>
-                          <p className="text-xs text-muted-foreground">Token-weighted voting</p>
+                          <h5 className="font-semibold text-sm">Governance</h5>
+                          <p className="text-xs text-muted-foreground">AI-moderated DAO voting</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 rounded-md bg-chart-2/10 border border-chart-2/20 text-center">
+                          <RefreshCw className="h-8 w-8 mx-auto mb-2 text-chart-2" />
+                          <h5 className="font-semibold text-sm">PhaseManager</h5>
+                          <p className="text-xs text-muted-foreground">Chainlink Automation for phase advancement</p>
+                        </div>
+                        <div className="p-4 rounded-md bg-chart-4/10 border border-chart-4/20 text-center">
+                          <Database className="h-8 w-8 mx-auto mb-2 text-chart-4" />
+                          <h5 className="font-semibold text-sm">Treasury</h5>
+                          <p className="text-xs text-muted-foreground">DAO-controlled fund execution</p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                 </Subsection>
 
-                <Subsection title="13.2 Escrow Pseudocode">
-                  <Card className="bg-muted/30">
+                <Subsection title="13.2 Escrow & Token Transfer Implementation">
+                  <Card className="bg-muted/30 mb-4">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 mb-3">
                         <Code className="h-5 w-5 text-primary" />
-                        <h4 className="font-semibold">FundingEscrow.sol</h4>
+                        <h4 className="font-semibold">Escrow.sol - Purchase & Refund with Token Burning</h4>
                       </div>
                       <pre className="text-xs bg-background p-4 rounded-md overflow-x-auto">
-{`function invest(uint256 propertyId, uint256 amount) external {
-    require(USDC.transferFrom(msg.sender, address(this), amount));
-    investments[propertyId][msg.sender] += amount;
-    totalFunding[propertyId] += amount;
+{`function purchase(uint256 propertyId, uint256 tokenAmount) 
+    external payable nonReentrant 
+{
+    require(block.timestamp <= escrows[propertyId].deadline);
+    uint256 price = propertyToken.getCurrentPrice(propertyId);
+    require(msg.value >= price * tokenAmount);
     
-    if (totalFunding[propertyId] >= fundingTarget[propertyId]) {
-        _releaseFunds(propertyId);
-    }
-    emit Investment(msg.sender, propertyId, amount);
+    // Mint tokens to buyer
+    propertyToken.mintTokens(propertyId, msg.sender, tokenAmount);
+    contributions[propertyId][msg.sender] += msg.value;
+    emit Purchase(propertyId, msg.sender, tokenAmount, msg.value);
 }
 
-function claimRefund(uint256 propertyId) external {
-    require(block.timestamp > deadline[propertyId]);
-    require(totalFunding[propertyId] < fundingTarget[propertyId]);
+function processRefunds(uint256 propertyId) external nonReentrant {
+    require(block.timestamp > escrows[propertyId].deadline);
+    require(!escrows[propertyId].funded); // Must have failed funding
     
-    uint256 principal = investments[propertyId][msg.sender];
-    uint256 interest = principal * 3 * daysHeld / 36500;
-    USDC.transfer(msg.sender, principal + interest);
+    for (uint i = 0; i < contributors[propertyId].length; i++) {
+        address investor = contributors[propertyId][i];
+        uint256 principal = contributions[propertyId][investor];
+        uint256 interest = (principal * 300 * daysHeld) / 36500 / 100;
+        
+        // Burn tokens before refund
+        propertyToken.burnFromOnFailure(propertyId, investor);
+        payable(investor).transfer(principal + interest);
+    }
+}`}
+                      </pre>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-muted/30">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Lock className="h-5 w-5 text-primary" />
+                        <h4 className="font-semibold">PropertyToken.sol - Transfer Locks During Funding</h4>
+                      </div>
+                      <pre className="text-xs bg-background p-4 rounded-md overflow-x-auto">
+{`function _update(
+    address from, address to, 
+    uint256[] memory ids, uint256[] memory values
+) internal override {
+    for (uint256 i = 0; i < ids.length; i++) {
+        uint256 propertyId = ids[i];
+        
+        // Block transfers during funding period (investor protection)
+        if (from != address(0) && to != address(0)) {
+            require(properties[propertyId].isFunded, 
+                "Transfers locked during funding");
+            require(whitelistedAddresses[to] != WhitelistStatus.None,
+                "Recipient not whitelisted");
+        }
+    }
+    super._update(from, to, ids, values);
 }`}
                       </pre>
                     </CardContent>
