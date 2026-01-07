@@ -2,14 +2,33 @@
 
 Solidity smart contracts for the RevitaHub community-owned real estate revitalization platform.
 
+## Project Structure
+
+```
+your-project/
+├── contracts/
+│   ├── PropertyToken.sol    # ERC-1155 fractional ownership
+│   ├── Escrow.sol           # Purchase & refund handling
+│   ├── Governance.sol       # DAO voting system
+│   ├── PhaseManager.sol     # Dynamic phase advancement
+│   └── README.md
+├── scripts/
+│   └── deploy.js            # Hardhat deployment script
+├── hardhat.config.js        # Hardhat configuration
+├── .env.example             # Environment variables template
+└── package.json
+```
+
 ## Contracts Overview
 
 ### 1. PropertyToken.sol (ERC-1155)
 Fractional property ownership tokens with:
+- ERC1155Supply for total supply tracking
+- ERC1155Burnable for token burning on failed offerings
+- EnumerableSet for property enumeration
 - Phase-based pricing ($12.50 base, increasing through phases)
 - Whitelist-only transfers (KYC compliance)
 - Phase-weighted voting power multipliers
-- Per-property supply limits
 
 ### 2. Escrow.sol
 Purchase and refund handling with:
@@ -22,7 +41,7 @@ Purchase and refund handling with:
 DAO voting system with:
 - Phase-weighted voting (County 1.5x, State 1.25x, National 1.0x, International 0.75x)
 - Proposal types: Property Development, Treasury, Parameters, Emergency
-- Quorum requirements by proposal type
+- Weighted quorum calculation (votes vs weighted supply)
 - Vote-to-earn bonus APR tracking
 
 ### 4. PhaseManager.sol
@@ -36,25 +55,37 @@ Dynamic phase advancement with:
 
 ### Prerequisites
 - Node.js 18+
-- Hardhat or Foundry
+- Hardhat with toolbox
 - OpenZeppelin Contracts 5.0+
-- Chainlink Contracts
 
-### Install Dependencies
+### Setup
 ```bash
-npm install @openzeppelin/contracts @chainlink/contracts
+# Install dependencies
+npm install
+
+# Copy environment template
+cp .env.example .env
+# Edit .env with your PRIVATE_KEY and other values
 ```
 
 ### Compile
 ```bash
 npx hardhat compile
-# or
-forge build
+```
+
+### Deploy (Local)
+```bash
+npx hardhat run scripts/deploy.js --network hardhat
 ```
 
 ### Deploy (Base Sepolia Testnet)
 ```bash
 npx hardhat run scripts/deploy.js --network base-sepolia
+```
+
+### Deploy (Base Mainnet)
+```bash
+npx hardhat run scripts/deploy.js --network base-mainnet
 ```
 
 ## Contract Addresses (Testnet)

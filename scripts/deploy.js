@@ -57,9 +57,10 @@ async function main() {
   await propertyToken.grantRole(MINTER_ROLE, escrowAddress);
   console.log("   Granted MINTER_ROLE to Escrow");
 
-  // Grant MINTER_ROLE to PhaseManager (so it can advance phases)
-  await propertyToken.grantRole(MINTER_ROLE, phaseManagerAddress);
-  console.log("   Granted MINTER_ROLE to PhaseManager");
+  // Grant PHASE_ADVANCER_ROLE to PhaseManager (so it can advance phases)
+  const PHASE_ADVANCER_ROLE = ethers.keccak256(ethers.toUtf8Bytes("PHASE_ADVANCER_ROLE"));
+  await propertyToken.grantRole(PHASE_ADVANCER_ROLE, phaseManagerAddress);
+  console.log("   Granted PHASE_ADVANCER_ROLE to PhaseManager");
 
   // Summary
   console.log("\n========================================");

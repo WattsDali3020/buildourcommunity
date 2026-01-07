@@ -1,7 +1,6 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 
-/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
     version: "0.8.20",
@@ -10,11 +9,18 @@ module.exports = {
         enabled: true,
         runs: 200,
       },
+      evmVersion: "paris",
+      viaIR: true,
     },
   },
+  defaultNetwork: "hardhat",
   networks: {
     hardhat: {
       chainId: 31337,
+      accounts: {
+        count: 20,
+        accountsBalance: "10000000000000000000000",
+      },
     },
     "base-sepolia": {
       url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
@@ -29,8 +35,8 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      "base-sepolia": process.env.BASESCAN_API_KEY || "",
-      "base-mainnet": process.env.BASESCAN_API_KEY || "",
+      "base-sepolia": process.env.BASESCAN_API_KEY || "abc",
+      "base-mainnet": process.env.BASESCAN_API_KEY || "abc",
     },
     customChains: [
       {
@@ -52,9 +58,14 @@ module.exports = {
     ],
   },
   paths: {
-    sources: "./",
+    sources: "./contracts",
     tests: "./test",
     cache: "./cache",
     artifacts: "./artifacts",
+  },
+  namedAccounts: {
+    deployer: { default: 0 },
+    operator: { default: 1 },
+    treasury: { default: 2 },
   },
 };

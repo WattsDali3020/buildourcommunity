@@ -3,19 +3,24 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
+import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 /**
  * @title RevitaHub Property Token
  * @notice ERC-1155 token for fractional real estate ownership
  * @dev Implements phase-based pricing, whitelist transfers, and per-property supply limits
  */
-contract PropertyToken is ERC1155, ERC1155Supply, AccessControl, Pausable, ReentrancyGuard {
+contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl, Pausable, ReentrancyGuard {
+    using EnumerableSet for EnumerableSet.UintSet;
+
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant WHITELIST_ADMIN_ROLE = keccak256("WHITELIST_ADMIN_ROLE");
+    bytes32 public constant PHASE_ADVANCER_ROLE = keccak256("PHASE_ADVANCER_ROLE");
 
     // Property phases
     enum Phase { County, State, National, International }
@@ -72,6 +77,9 @@ contract PropertyToken is ERC1155, ERC1155Supply, AccessControl, Pausable, Reent
     // Token holdings with phase information
     mapping(uint256 => mapping(address => mapping(Phase => uint256))) public holdingsByPhase;
 
+    // Track all property IDs for enumeration
+    EnumerableSet.UintSet private _allPropertyIds;
+
     // Events
     event PropertyCreated(uint256 indexed propertyId, string name, uint256 totalSupply, uint256 fundingTarget);
     event PropertyFunded(uint256 indexed propertyId, uint256 totalRaised);
@@ -80,12 +88,14 @@ contract PropertyToken is ERC1155, ERC1155Supply, AccessControl, Pausable, Reent
     event AddressWhitelisted(address indexed account, Phase eligibility);
     event AddressRemovedFromWhitelist(address indexed account);
     event BasePriceUpdated(uint256 newPrice);
+    event TokensBurned(uint256 indexed propertyId, address indexed from, uint256 amount, Phase phase);
 
     constructor(string memory uri_) ERC1155(uri_) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(MINTER_ROLE, msg.sender);
         _grantRole(PAUSER_ROLE, msg.sender);
         _grantRole(WHITELIST_ADMIN_ROLE, msg.sender);
+        _grantRole(PHASE_ADVANCER_ROLE, msg.sender);
     }
 
     /**
@@ -123,6 +133,9 @@ contract PropertyToken is ERC1155, ERC1155Supply, AccessControl, Pausable, Reent
         phaseAllocations[propertyId][Phase.State] = (totalSupply * STATE_ALLOCATION) / 10000;
         phaseAllocations[propertyId][Phase.National] = (totalSupply * NATIONAL_ALLOCATION) / 10000;
         phaseAllocations[propertyId][Phase.International] = (totalSupply * INTERNATIONAL_ALLOCATION) / 10000;
+
+        // Track property for enumeration
+        _allPropertyIds.add(propertyId);
 
         emit PropertyCreated(propertyId, name, totalSupply, fundingTarget);
         return propertyId;
@@ -242,7 +255,7 @@ contract PropertyToken is ERC1155, ERC1155Supply, AccessControl, Pausable, Reent
      * @notice Advance to next phase (can be called by PhaseManager)
      * @param propertyId Property ID
      */
-    function advancePhase(uint256 propertyId) external onlyRole(MINTER_ROLE) {
+    function advancePhase(uint256 propertyId) external onlyRole(PHASE_ADVANCER_ROLE) {
         _advancePhase(propertyId);
     }
 
@@ -317,6 +330,27 @@ contract PropertyToken is ERC1155, ERC1155Supply, AccessControl, Pausable, Reent
      */
     function getProperty(uint256 propertyId) external view returns (Property memory) {
         return properties[propertyId];
+    }
+
+    /**
+     * @notice Get all property IDs
+     */
+    function getAllPropertyIds() external view returns (uint256[] memory) {
+        return _allPropertyIds.values();
+    }
+
+    /**
+     * @notice Get property count
+     */
+    function getPropertyCount() external view returns (uint256) {
+        return _allPropertyIds.length();
+    }
+
+    /**
+     * @notice Check if property exists
+     */
+    function propertyExists(uint256 propertyId) external view returns (bool) {
+        return _allPropertyIds.contains(propertyId);
     }
 
     /**
