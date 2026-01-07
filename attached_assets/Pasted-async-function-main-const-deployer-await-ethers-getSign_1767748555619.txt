@@ -1,0 +1,50 @@
+async function main() {
+  const [deployer] = await ethers.getSigners();
+  console.log("Deploying with:", deployer.address);
+
+  // 1. Deploy PropertyToken
+  const PropertyToken = await ethers.getContractFactory("PropertyToken");
+  const propertyToken = await PropertyToken.deploy("https://revitahub.io/metadata/{id}.json");
+  await propertyToken.waitForDeployment();
+  console.log("PropertyToken deployed:", await propertyToken.getAddress());
+
+  // 2. Deploy PhaseManager
+  const PhaseManager = await ethers.getContractFactory("PhaseManager");
+  const phaseManager = await PhaseManager.deploy(await propertyToken.getAddress());
+  await phaseManager.waitForDeployment();
+  console.log("PhaseManager deployed:", await phaseManager.getAddress());
+
+  // 3. Deploy Escrow
+  const Escrow = await ethers.getContractFactory("Escrow");
+  const escrow = await Escrow.deploy(await propertyToken.getAddress());
+  await escrow.waitForDeployment();
+  console.log("Escrow deployed:", await escrow.getAddress());
+
+  // 4. Deploy Governance
+  const Governance = await ethers.getContractFactory("Governance");
+  const governance = await Governance.deploy(
+    await propertyToken.getAddress(),
+    await phaseManager.getAddress(),
+    ethers.ZeroAddress // treasury placeholder
+  );
+  await governance.waitForDeployment();
+  console.log("Governance deployed:", await governance.getAddress());
+
+  // 5. Grant roles
+  await propertyToken.grantRole(propertyToken.MINTER_ROLE(), await escrow.getAddress());
+  await propertyToken.grantRole(propertyToken.PHASE_ADVANCER_ROLE(), await phaseManager.getAddress());
+  await escrow.grantRole(escrow.OPERATOR_ROLE(), deployer.address);
+  await phaseManager.grantRole(phaseManager.OPERATOR_ROLE(), deployer.address);
+
+  console.log("\nDeployment complete!");
+  console.log("Addresses:");
+  console.log("PropertyToken:", await propertyToken.getAddress());
+  console.log("Escrow:", await escrow.getAddress());
+  console.log("PhaseManager:", await phaseManager.getAddress());
+  console.log("Governance:", await governance.getAddress());
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
