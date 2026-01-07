@@ -7,8 +7,8 @@ const steps = [
     number: "01",
     title: "Browse",
     description: "Explore community-nominated properties ready for revitalization",
-    color: "text-chart-1",
-    bgColor: "bg-chart-1/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
   },
   {
     icon: Coins,
@@ -38,10 +38,10 @@ const steps = [
 
 export function FourStepCTA() {
   return (
-    <section className="py-24 bg-muted/30">
+    <section className="py-24">
       <div className="mx-auto max-w-7xl px-4">
         <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
             Four Steps to Community Ownership
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -53,7 +53,7 @@ export function FourStepCTA() {
           {steps.map((step, index) => (
             <Card 
               key={step.number} 
-              className="relative overflow-visible border-0 bg-background shadow-sm hover-elevate"
+              className="relative border-glow"
               data-testid={`card-step-${index + 1}`}
             >
               <CardContent className="p-6">
