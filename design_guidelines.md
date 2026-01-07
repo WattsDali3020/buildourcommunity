@@ -1,132 +1,171 @@
-# Design Guidelines: Community Revitalization Platform
+# Design Guidelines: RevitaHub - Premium Fintech Platform
 
-## Design Approach
+## Design Philosophy
 
-**Reference-Based Approach**: Drawing inspiration from trusted financial and blockchain platforms:
-- **Coinbase**: Clean, trustworthy crypto interfaces with clear wallet connection patterns
-- **Stripe**: Professional financial dashboards with excellent data visualization
-- **Linear**: Modern B2B SaaS with superior information density and hierarchy
-- **Carta**: Equity management platforms with sophisticated ownership visualization
+**Reference Platforms**: Cosmos Network, Coinbase, Stripe, Linear
+- Premium, trustworthy aesthetic for handling real estate and financial transactions
+- Blue/white color scheme with subtle gradients and glow effects
+- Clean typography with generous white space
+- Glassmorphic elements for depth and sophistication
 
-**Design Principles**:
-1. **Trust First**: Professional polish to handle real estate and financial transactions
-2. **Clarity Over Creativity**: Complex blockchain/legal concepts require crystal-clear UI
-3. **Progressive Disclosure**: Multi-tier information architecture for varying user expertise
-4. **Data Density with Breathing Room**: Show comprehensive information without overwhelming
+## Color System
+
+### Primary Palette
+- **Primary Blue**: HSL 217 91% 35% (light) / HSL 217 91% 55% (dark)
+- **Background**: Clean white (#ffffff) with subtle blue tints
+- **Foreground**: Near black for high contrast text
+
+### Premium Effects
+- **Gradient Backgrounds**: Subtle blue gradients (`bg-gradient-hero`, `bg-gradient-premium`)
+- **Glow Effects**: Soft blue radial glows (`glow-blue`) for hero sections
+- **Glassmorphism**: Frosted glass cards (`glass-card`) with backdrop blur
+- **Border Glow**: Hover effect with subtle blue glow (`border-glow`)
 
 ## Typography System
 
 **Font Families**:
-- Primary: Inter (via Google Fonts CDN) - exceptional readability for data-heavy interfaces
-- Monospace: JetBrains Mono - for wallet addresses, token IDs, transaction hashes
+- Primary: Inter - exceptional readability for data-heavy interfaces
+- Monospace: JetBrains Mono - for wallet addresses, code, transaction hashes
 
 **Hierarchy**:
-- **Hero Headlines**: text-5xl to text-6xl, font-bold (landing pages, major sections)
-- **Page Titles**: text-3xl to text-4xl, font-semibold
-- **Section Headers**: text-2xl, font-semibold
-- **Subsection Headers**: text-xl, font-medium
-- **Body Text**: text-base, font-normal, leading-relaxed
-- **Small Print**: text-sm (metadata, disclaimers)
-- **Micro Text**: text-xs (labels, helper text)
-- **Financial Data**: text-lg to text-2xl, font-semibold (token prices, ROI figures)
-- **Legal/Compliance**: text-sm, leading-loose (enhanced readability for dense content)
+- **Hero Headlines**: text-5xl to text-7xl, font-bold, tracking-tight
+- **Page Titles**: text-3xl to text-4xl, font-bold
+- **Section Headers**: text-2xl lg:text-3xl, font-bold with icon badges
+- **Subsection Headers**: text-lg, font-semibold
+- **Body Text**: text-base/text-lg, leading-relaxed, text-muted-foreground
+- **Financial Metrics**: metric-value class (tabular-nums, tight letter-spacing)
 
-## Layout System
+## Layout Patterns
 
-**Spacing Primitives**: Use Tailwind units of **2, 4, 6, 8, 12, 16, 24** for consistency
-- Component internal padding: p-4 to p-6
-- Section padding: py-12 to py-24
-- Card spacing: gap-6 to gap-8
-- Form field spacing: space-y-4
+### Section Structure
+- Hero sections: Full-width with gradient backgrounds and glow effects
+- Content sections: max-w-4xl mx-auto for optimal reading width
+- Alternating backgrounds: `section-alt` class for visual rhythm
+- Gradient dividers: `divider-gradient` between major sections
 
-**Grid Structure**:
-- **Property Listings**: grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6
-- **Dashboard Cards**: grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6
-- **Data Tables**: Single column on mobile, multi-column responsive tables
-- **Filters Sidebar**: Sticky sidebar (w-64 to w-80) on desktop, collapsible drawer on mobile
+### Card Components
+- Use `border-glow` class for interactive hover effects
+- `stat-card` for metric displays with subtle gradient overlay
+- Rounded corners: rounded-xl (12px) for cards, rounded-lg for smaller elements
+- Padding: p-5 to p-6 for card content
 
-**Container Strategy**:
-- Marketing pages: max-w-7xl mx-auto px-4
-- Application pages: max-w-screen-2xl mx-auto (wider for dashboards)
-- Content pages: max-w-4xl mx-auto (educational resources)
-- Form pages: max-w-2xl mx-auto
+### Spacing
+- Section padding: py-16 lg:py-20 for major sections
+- Element gaps: gap-4 to gap-8 depending on density
+- Margin between subsections: mb-8 to mb-10
 
-## Component Library
+## Component Patterns
 
-### Navigation
-- **Global Header**: Fixed top navigation with logo, main nav links, wallet connection button, user menu
-- **Breadcrumbs**: For deep navigation (Property > State > City > Specific Listing)
-- **Tab Navigation**: For multi-section pages (Property Details: Overview, Financials, Documents, Community)
-- **Sidebar Navigation**: Sticky left sidebar for admin/dashboard areas with collapsible sections
+### Stat Cards
+```jsx
+<div className="stat-card rounded-xl border bg-card p-5 border-glow">
+  <p className="text-3xl font-bold metric-value text-primary">{value}</p>
+  <p className="text-sm text-muted-foreground mt-1">{label}</p>
+</div>
+```
 
-### Property Cards
-- **Image**: 16:9 aspect ratio thumbnail
-- **Property Type Badge**: Small pill badge (Vacant Land, Historic Building, etc.)
-- **Location**: State/City with icon
-- **Tokenization Status**: Progress indicator showing % tokenized
-- **Key Metrics**: Token price, total supply, funding goal in compact grid
-- **CTA**: Primary "View Details" button
+### Feature Cards
+```jsx
+<Card className="border-glow">
+  <CardContent className="p-6">
+    <div className="h-11 w-11 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+      <Icon className="h-5 w-5 text-primary" />
+    </div>
+    <h4 className="font-semibold mb-2">{title}</h4>
+    <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+  </CardContent>
+</Card>
+```
 
-### Financial Components
-- **ROI Calculator**: Multi-step form with real-time calculation display
-- **Portfolio Summary Cards**: Large number display with trend indicators
-- **Dividend Tracker**: Table with payment history and next payment countdown
-- **Token Holdings Visualization**: Pie chart showing portfolio allocation across properties
+### Section Headers with Icons
+```jsx
+<div className="flex items-center gap-3 mb-8">
+  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+    <Icon className="h-5 w-5 text-primary" />
+  </div>
+  <h2 className="text-2xl lg:text-3xl font-bold tracking-tight">{title}</h2>
+</div>
+```
 
-### Governance Components
-- **Proposal Cards**: Status badge, voting deadline, current vote tally with progress bars
-- **Voting Interface**: Radio buttons with token-weighted voting power display
-- **Discussion Threads**: Nested comment system with upvoting
+### Highlight Cards
+```jsx
+<div className="rounded-2xl border-2 border-primary/20 bg-primary/5 p-6">
+  {/* Premium callout content */}
+</div>
+```
 
-### Forms
-- **Multi-Step Property Submission**: Progress stepper at top, navigation buttons, auto-save indicators
-- **Document Upload**: Drag-and-drop zones with file type validation and preview thumbnails
-- **KYC Forms**: Clear field labels, inline validation, required field indicators
-- **Search/Filter Forms**: Combination of dropdowns, range sliders, checkboxes with "Apply Filters" action
+### Code Blocks
+```jsx
+<div className="rounded-xl overflow-hidden border border-border/50">
+  <div className="bg-muted/50 px-4 py-3 border-b flex items-center gap-2">
+    <Code className="h-4 w-4 text-primary" />
+    <span className="text-sm font-medium">{title}</span>
+  </div>
+  <pre className="text-xs bg-muted/20 p-4 overflow-x-auto font-mono">
+    <code>{code}</code>
+  </pre>
+</div>
+```
 
-### Data Displays
-- **State Compliance Matrix**: Interactive table showing requirements for all 50 states
-- **Project Impact Dashboard**: Stat cards with icons (jobs created, housing units, sustainability score)
-- **Transaction History**: Sortable table with blockchain explorer links for verified transactions
-- **Financial Projections Table**: 50-year timeline with collapsible year ranges
+## Interactive States
 
-### Trust Elements
-- **Verification Badges**: Icons for verified properties, KYC-approved users, audited smart contracts
-- **Legal Disclaimers**: Expandable accordions for SEC compliance notices
-- **Security Indicators**: SSL badge, wallet connection status, transaction confirmation steps
-- **Progress Indicators**: For blockchain transactions (pending, confirmed, completed)
+### Hover Effects
+- Cards: Use `border-glow` class for subtle blue glow on hover
+- Buttons: Built-in elevation through shadcn components
+- Nav items: Background highlight with `hover:bg-muted/50`
 
-### Educational Content
-- **Guide Cards**: Icon, title, estimated reading time, difficulty level
-- **Interactive Glossary**: Hover tooltips for blockchain/legal terminology
-- **Video Embeds**: Responsive 16:9 containers for educational content
-- **FAQ Accordions**: Collapsible Q&A sections by topic
+### Active/Current States
+- Navigation: `nav-item-active` class with left accent bar
+- Tabs: `toggle-elevate toggle-elevated` pattern
 
-## Images
+## Navigation
 
-**Landing Page Hero**: Large hero image (h-screen or min-h-[600px]) showing community revitalization - renovated historic building or vibrant downtown area. Image should convey transformation and community impact. Text overlay with blur-backed buttons.
+### Sticky Sidebar (Litepaper)
+- Use `sticky-nav` class for proper sticky positioning
+- Include scroll spy for active section highlighting
+- Custom scrollbar styling for elegant appearance
 
-**Property Detail Hero**: 21:9 ultra-wide hero image of the specific property with location info overlay
+### Header
+- Sticky with backdrop blur: `sticky top-0 z-50 bg-background/80 backdrop-blur-lg`
+- Logo + nav links + CTAs pattern
 
-**Section Background Images**: Subtle, semi-transparent background textures for trust/credibility sections showing architectural blueprints or cityscapes
+## Data Visualization
 
-**Thumbnail Images**: All property cards, team members, and case studies use 16:9 ratio images
+### Tables
+- Rounded container: `rounded-xl border overflow-hidden`
+- Header row: `bg-muted/50` with `font-semibold`
+- Cell padding: `p-4`
+- Primary values: `text-primary font-semibold`
 
-**Icon Library**: Heroicons (via CDN) for all UI icons - use outline style for navigation, solid for emphasizing active states
+### Metrics Grid
+- Use `grid grid-cols-2 md:grid-cols-4 gap-4` for stat displays
+- Consistent card styling with `stat-card` class
 
-## Animations
+## Responsive Design
 
-**Minimal Motion**:
-- Smooth page transitions (fade-in on route change)
-- Hover state transitions on cards (subtle elevation increase)
-- Loading states for blockchain transactions (spinner with status text)
-- Success animations only for critical actions (token purchase confirmation)
-- NO scroll-triggered animations, parallax effects, or decorative motion
+### Breakpoints
+- Mobile first approach
+- md: 768px - tablets, 2-column grids
+- lg: 1024px - desktop, sidebar visible
+- xl: 1280px - wider containers
+
+### Content Width
+- Hero/marketing: max-w-5xl to max-w-6xl
+- Content/reading: max-w-4xl
+- Full dashboard: max-w-7xl
+
+## Dark Mode
+
+All custom utilities support dark mode via `.dark` class selectors:
+- Gradient backgrounds adjust for darker tones
+- Glow effects reduce opacity slightly
+- Text colors shift to lighter variants
+- Border colors become more subtle
 
 ## Accessibility
 
 - WCAG AA contrast ratios for all text
-- Keyboard navigation for all interactive elements
-- ARIA labels for wallet connection status, transaction states
-- Focus visible states with clear outlines (ring-2 ring-offset-2)
-- Screen reader text for financial data and blockchain addresses
+- Focus visible states with ring outlines
+- Semantic HTML structure
+- ARIA labels for interactive elements
+- Keyboard navigation support
