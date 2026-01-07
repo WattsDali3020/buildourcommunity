@@ -34,20 +34,33 @@ describe("PropertyToken", function () {
   });
 
   it("Should burn tokens on escrow failure", async function () {
-    await propertyToken.createProperty("Fail Property", "", 10000, ethers.parseEther("9999"), 1); // short deadline
+    // Create property with short deadline (60 seconds) - enough time to purchase
+    await propertyToken.createProperty("Fail Property", "", 10000, ethers.parseEther("9999"), 60);
 
-    await escrow.initializeEscrow(0, ethers.parseEther("9999"), Math.floor(Date.now() / 1000) + 1);
+    // Get current block timestamp
+    const block = await ethers.provider.getBlock("latest");
+    const deadline = block.timestamp + 60;
+
+    await escrow.initializeEscrow(0, ethers.parseEther("9999"), deadline);
 
     const price = await propertyToken.getCurrentPrice(0);
-    await escrow.connect(buyer1).purchase(0, 50, { value: price * 50n });
+    const purchaseCost = price * 50n;
+    await escrow.connect(buyer1).purchase(0, 50, { value: purchaseCost });
 
-    // Fast forward time
-    await network.provider.send("evm_increaseTime", [3600]);
+    // Verify tokens were minted
+    expect(await propertyToken.balanceOf(buyer1.address, 0)).to.equal(50);
+
+    // Fund escrow with extra ETH for interest payments (3% APR)
+    await owner.sendTransaction({ to: await escrow.getAddress(), value: ethers.parseEther("1") });
+
+    // Fast forward time past deadline
+    await network.provider.send("evm_increaseTime", [120]); // 2 minutes
     await network.provider.send("evm_mine");
 
     // Process refund + burn
     await escrow.processRefunds(0);
 
+    // Verify tokens were burned
     expect(await propertyToken.balanceOf(buyer1.address, 0)).to.equal(0);
   });
 
