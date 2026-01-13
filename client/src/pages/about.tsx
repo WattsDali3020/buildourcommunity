@@ -2,17 +2,8 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Building2, Users, Target, Shield, Mail, MapPin } from "lucide-react";
-import { SiLinkedin, SiX } from "react-icons/si";
-
-// todo: remove mock functionality
-const teamMembers = [
-  { name: "Sarah Chen", role: "CEO & Co-Founder", initials: "SC" },
-  { name: "Marcus Johnson", role: "CTO", initials: "MJ" },
-  { name: "Emily Rodriguez", role: "Head of Legal", initials: "ER" },
-  { name: "David Kim", role: "VP of Community", initials: "DK" },
-];
+import { Building2, Users, Target, Shield, Mail, MapPin, Heart } from "lucide-react";
+import { SiX } from "react-icons/si";
 
 const values = [
   {
@@ -78,32 +69,32 @@ export default function About() {
 
         <section id="team" className="py-16 lg:py-24 bg-muted/30">
           <div className="mx-auto max-w-7xl px-4">
-            <h2 className="text-3xl font-semibold text-center mb-4">Leadership Team</h2>
-            <p className="text-muted-foreground text-center max-w-2xl mx-auto mb-12">
-              Experienced professionals from real estate, blockchain, legal, and community development
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {teamMembers.map((member) => (
-                <Card key={member.name}>
-                  <CardContent className="p-6 text-center">
-                    <Avatar className="h-20 w-20 mx-auto mb-4">
-                      <AvatarFallback className="text-lg bg-primary text-primary-foreground">
-                        {member.initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <h3 className="font-semibold text-lg">{member.name}</h3>
-                    <p className="text-sm text-muted-foreground mb-3">{member.role}</p>
-                    <div className="flex items-center justify-center gap-2">
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <SiLinkedin className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <SiX className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="max-w-3xl mx-auto text-center">
+              <h2 className="text-3xl font-semibold mb-4">Built with Purpose</h2>
+              <p className="text-lg text-muted-foreground mb-8">
+                RevitaHub is a <strong className="text-foreground">Build Our Community, LLC</strong> project, 
+                created to give everyday people a stake in transforming their neighborhoods.
+              </p>
+              <Card className="border-glow">
+                <CardContent className="p-8">
+                  <div className="flex items-center justify-center gap-3 mb-4">
+                    <Heart className="h-6 w-6 text-primary" />
+                    <span className="text-xl font-semibold">Our Mission</span>
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed mb-6">
+                    We believe that community wealth-building shouldn't be limited to those who can 
+                    afford traditional real estate investments. By lowering the barrier to $12.50, 
+                    we're making property ownership accessible to the ~231,000 adults in Cherokee County 
+                    and similar communities across America.
+                  </p>
+                  <Button variant="outline" asChild>
+                    <a href="https://x.com/RevitaHub" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                      <SiX className="h-4 w-4" />
+                      Follow Our Journey
+                    </a>
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>
