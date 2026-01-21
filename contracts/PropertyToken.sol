@@ -313,6 +313,27 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
     }
 
     /**
+     * @notice Auto-whitelist with Chainlink Functions verification
+     * @dev In production, verificationData contains Chainlink Functions proof (e.g., GA residency for County phase)
+     * @param account Address to whitelist
+     * @param eligibility Phase eligibility based on verified location
+     * @param verificationData Chainlink Functions proof or location hash
+     */
+    function autoWhitelist(
+        address account,
+        Phase eligibility,
+        bytes calldata verificationData
+    ) external onlyRole(WHITELIST_ADMIN_ROLE) {
+        // Placeholder: In production, call Chainlink Functions to verify (e.g., GA residency for County)
+        // For now: Simple require or mock
+        require(verificationData.length > 0, "No verification data");
+
+        whitelist[account] = true;
+        addressPhaseEligibility[account] = eligibility;
+        emit AddressWhitelisted(account, eligibility);
+    }
+
+    /**
      * @notice Remove address from whitelist
      * @param account Address to remove
      */
