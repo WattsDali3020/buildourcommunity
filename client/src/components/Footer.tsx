@@ -13,8 +13,8 @@ const footerLinks = {
   resources: [
     { href: "/litepaper", label: "Litepaper" },
     { href: "/how-it-works", label: "How It Works" },
+    { href: "/grants", label: "Grants & Funding" },
     { href: "/faq", label: "FAQ" },
-    { href: "/learn", label: "Learn" },
   ],
   company: [
     { href: "/about", label: "About Us" },

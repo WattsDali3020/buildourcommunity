@@ -24,6 +24,7 @@ import TokenizationProcess from "@/pages/tokenization-process";
 import FAQ from "@/pages/faq";
 import AIInsights from "@/pages/ai-insights";
 import BusinessLayer from "@/pages/business-layer";
+import Grants from "@/pages/grants";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -47,6 +48,7 @@ function Router() {
       <Route path="/faq" component={FAQ} />
       <Route path="/ai-insights" component={AIInsights} />
       <Route path="/business" component={BusinessLayer} />
+      <Route path="/grants" component={Grants} />
       <Route component={NotFound} />
     </Switch>
   );
