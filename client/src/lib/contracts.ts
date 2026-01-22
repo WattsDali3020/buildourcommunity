@@ -1,12 +1,12 @@
 export const CONTRACT_ADDRESSES = {
-  baseSepolia: {
+  "base-sepolia": {
     propertyToken: "",
     escrow: "",
     governance: "",
     phaseManager: "",
     treasury: "",
   },
-  baseMainnet: {
+  "base-mainnet": {
     propertyToken: "",
     escrow: "",
     governance: "",
@@ -24,10 +24,10 @@ export type NetworkName = keyof typeof CONTRACT_ADDRESSES;
 
 export function getContractAddresses(chainId: number) {
   if (chainId === CHAIN_IDS.baseSepolia) {
-    return CONTRACT_ADDRESSES.baseSepolia;
+    return CONTRACT_ADDRESSES["base-sepolia"];
   }
   if (chainId === CHAIN_IDS.baseMainnet) {
-    return CONTRACT_ADDRESSES.baseMainnet;
+    return CONTRACT_ADDRESSES["base-mainnet"];
   }
   return null;
 }
