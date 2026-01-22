@@ -303,6 +303,28 @@ contract Governance is AccessControl, ReentrancyGuard {
     }
 
     /**
+     * @notice Get all active proposals for a property
+     * @param propertyId Property ID to filter by
+     * @return active Array of active proposals for the property
+     */
+    function getActiveProposals(uint256 propertyId) external view returns (Proposal[] memory) {
+        uint256 count = 0;
+        for (uint256 i = 0; i < proposalCount; i++) {
+            if (proposals[i].propertyId == propertyId && proposals[i].status == ProposalStatus.Active) {
+                count++;
+            }
+        }
+        Proposal[] memory active = new Proposal[](count);
+        uint256 idx = 0;
+        for (uint256 i = 0; i < proposalCount; i++) {
+            if (proposals[i].propertyId == propertyId && proposals[i].status == ProposalStatus.Active) {
+                active[idx++] = proposals[i];
+            }
+        }
+        return active;
+    }
+
+    /**
      * @notice Get quorum requirement for proposal type
      */
     function _getQuorum(ProposalType proposalType) internal pure returns (uint256) {
