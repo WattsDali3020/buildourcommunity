@@ -8,6 +8,7 @@ interface IPropertyToken {
     enum Phase { County, State, National, International }
     
     function advancePhase(uint256 propertyId) external;
+    function mintTokens(uint256 propertyId, address buyer, uint256 amount) external;
     function getProperty(uint256 propertyId) external view returns (
         uint256 id,
         string memory name,
@@ -22,6 +23,7 @@ interface IPropertyToken {
     );
     function phaseAllocations(uint256 propertyId, uint8 phase) external view returns (uint256);
     function phaseMinted(uint256 propertyId, uint8 phase) external view returns (uint256);
+    function whitelist(address account) external view returns (bool);
 }
 
 interface IGovernance {
@@ -84,6 +86,10 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
     mapping(uint256 => uint256) public lastNudgeTime;
     uint256 public nudgeCooldown = 24 hours;
 
+    // Engagement bonus tracking (vote-to-earn)
+    mapping(uint256 => mapping(address => bool)) public hasClaimed;
+    uint256 public constant BONUS_TOKENS = 1; // Tokens awarded for engagement bonus
+
     // Events
     event EngagementUpdated(
         uint256 indexed propertyId,
@@ -109,6 +115,7 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
     );
     event PropertyTrackingStarted(uint256 indexed propertyId);
     event PropertyTrackingStopped(uint256 indexed propertyId);
+    event BonusClaimed(uint256 indexed propertyId, address indexed claimer, uint256 bonus);
 
     constructor(address _propertyToken, address _governance) {
         propertyToken = IPropertyToken(_propertyToken);
@@ -340,6 +347,29 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
      */
     function getTrackedProperties() external view returns (uint256[] memory) {
         return trackedProperties;
+    }
+
+    /**
+     * @notice Claim engagement bonus when threshold is met (vote-to-earn)
+     * @dev Mints bonus tokens to active participants when 75% engagement is reached
+     * @param propertyId Property ID
+     */
+    function claimEngagementBonus(uint256 propertyId) external {
+        require(propertyToken.whitelist(msg.sender), "Not whitelisted");
+        require(!hasClaimed[propertyId][msg.sender], "Already claimed");
+        
+        PropertyEngagement storage engagement = propertyEngagement[propertyId];
+        require(engagement.isTracking, "Not tracking");
+        require(calculateEngagement(propertyId) >= ENGAGEMENT_THRESHOLD, "Threshold not met");
+        require(block.timestamp >= engagement.phaseStartTime + MIN_ENGAGEMENT_PERIOD, "Too early");
+
+        // Mark as claimed before minting (reentrancy protection)
+        hasClaimed[propertyId][msg.sender] = true;
+
+        // Mint bonus tokens (requires MINTER_ROLE granted to PhaseManager)
+        propertyToken.mintTokens(propertyId, msg.sender, BONUS_TOKENS);
+
+        emit BonusClaimed(propertyId, msg.sender, BONUS_TOKENS);
     }
 
     /**
