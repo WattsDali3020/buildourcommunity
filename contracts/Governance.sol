@@ -3,6 +3,8 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 interface IPropertyToken {
     function getVotingPower(uint256 propertyId, address voter) external view returns (uint256);
@@ -17,10 +19,21 @@ interface IPropertyToken {
  * @dev County holders get 1.5x, State 1.25x, National 1.0x, International 0.75x
  */
 contract Governance is AccessControl, ReentrancyGuard {
+    using ECDSA for bytes32;
+    using MessageHashUtils for bytes32;
+
     bytes32 public constant PROPOSER_ROLE = keccak256("PROPOSER_ROLE");
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
+    bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
 
     IPropertyToken public propertyToken;
+    
+    // Domain separator for EIP-712 signatures
+    bytes32 public immutable DOMAIN_SEPARATOR;
+    bytes32 public constant VOTE_TYPEHASH = keccak256("Vote(uint256 proposalId,uint8 support,address voter,uint256 nonce,uint256 deadline)");
+    
+    // Nonces for replay protection
+    mapping(address => uint256) public nonces;
 
     // Proposal types
     enum ProposalType { 
@@ -107,12 +120,31 @@ contract Governance is AccessControl, ReentrancyGuard {
     event ProposalCancelled(uint256 indexed proposalId);
     event VotingPeriodUpdated(uint256 newPeriod);
     event VoteToEarnBonusUpdated(uint256 newBonus);
+    event OffChainVoteCast(
+        uint256 indexed proposalId,
+        address indexed voter,
+        uint8 support,
+        uint256 weight,
+        address relayer
+    );
 
     constructor(address _propertyToken) {
         propertyToken = IPropertyToken(_propertyToken);
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(PROPOSER_ROLE, msg.sender);
         _grantRole(EXECUTOR_ROLE, msg.sender);
+        _grantRole(RELAYER_ROLE, msg.sender);
+        
+        // Set up EIP-712 domain separator
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(bytes("RevitaHub Governance")),
+                keccak256(bytes("1")),
+                block.chainid,
+                address(this)
+            )
+        );
     }
 
     /**
@@ -207,6 +239,81 @@ contract Governance is AccessControl, ReentrancyGuard {
         lastVoteTimestamp[msg.sender] = block.timestamp;
 
         emit VoteCast(proposalId, msg.sender, support, weight);
+    }
+
+    /**
+     * @notice Cast a vote using off-chain signature (gasless voting)
+     * @dev Enables lower-income investors to vote without paying gas
+     * @param proposalId Proposal ID
+     * @param support 0 = against, 1 = for, 2 = abstain
+     * @param voter The address of the voter who signed
+     * @param deadline Timestamp after which signature expires
+     * @param v ECDSA signature component
+     * @param r ECDSA signature component
+     * @param s ECDSA signature component
+     */
+    function castVoteBySignature(
+        uint256 proposalId,
+        uint8 support,
+        address voter,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external onlyRole(RELAYER_ROLE) nonReentrant {
+        require(block.timestamp <= deadline, "Signature expired");
+        
+        Proposal storage proposal = proposals[proposalId];
+        require(proposal.status == ProposalStatus.Active, "Proposal not active");
+        require(block.timestamp >= proposal.startTime, "Voting not started");
+        require(block.timestamp < proposal.endTime, "Voting ended");
+        require(support <= 2, "Invalid vote type");
+
+        Vote storage voterRecord = votes[proposalId][voter];
+        require(!voterRecord.hasVoted, "Already voted");
+
+        // Verify signature using EIP-712
+        uint256 currentNonce = nonces[voter]++;
+        bytes32 structHash = keccak256(
+            abi.encode(VOTE_TYPEHASH, proposalId, support, voter, currentNonce, deadline)
+        );
+        bytes32 digest = keccak256(
+            abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash)
+        );
+        address signer = ECDSA.recover(digest, v, r, s);
+        require(signer == voter, "Invalid signature");
+
+        // Get voting power (phase-weighted)
+        uint256 weight = propertyToken.getVotingPower(proposal.propertyId, voter);
+        require(weight > 0, "No voting power");
+
+        // Record vote
+        voterRecord.hasVoted = true;
+        voterRecord.support = support;
+        voterRecord.weight = weight;
+
+        // Tally votes
+        if (support == 0) {
+            proposal.votesAgainst += weight;
+        } else if (support == 1) {
+            proposal.votesFor += weight;
+        } else {
+            proposal.votesAbstain += weight;
+        }
+
+        // Update vote-to-earn tracking
+        voterParticipationCount[voter]++;
+        lastVoteTimestamp[voter] = block.timestamp;
+
+        emit OffChainVoteCast(proposalId, voter, support, weight, msg.sender);
+    }
+
+    /**
+     * @notice Get current nonce for a voter (for signature creation)
+     * @param voter Voter address
+     */
+    function getNonce(address voter) external view returns (uint256) {
+        return nonces[voter];
     }
 
     /**

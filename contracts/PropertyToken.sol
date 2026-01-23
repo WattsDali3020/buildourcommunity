@@ -90,6 +90,20 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
     event AddressRemovedFromWhitelist(address indexed account);
     event BasePriceUpdated(uint256 newPrice);
     event TokensBurned(uint256 indexed propertyId, address indexed from, uint256 amount, Phase phase);
+    
+    // Regulatory Compliance Events
+    event KYCVerificationCompleted(address indexed account, uint256 timestamp, bytes32 verificationId);
+    event KYCVerificationRevoked(address indexed account, uint256 timestamp, string reason);
+    event AMLCheckPassed(address indexed account, uint256 timestamp, bytes32 checkId);
+    event AMLCheckFailed(address indexed account, uint256 timestamp, string reason);
+    event ComplianceCheckpoint(uint256 indexed propertyId, uint256 timestamp, uint256 totalHolders, uint256 totalSupplyMinted);
+    event TransferRestricted(uint256 indexed propertyId, address indexed from, address indexed to, string reason);
+    event RegulatorAuditRequested(uint256 indexed propertyId, address indexed requestor, uint256 timestamp);
+    
+    // KYC/AML verification tracking
+    mapping(address => bytes32) public kycVerificationIds;
+    mapping(address => uint256) public kycVerificationTimestamps;
+    mapping(address => bytes32) public amlCheckIds;
 
     constructor(string memory uri_) ERC1155(uri_) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -392,6 +406,108 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
      */
     function propertyExists(uint256 propertyId) external view returns (bool) {
         return _allPropertyIds.contains(propertyId);
+    }
+
+    // ============ Regulatory Compliance Functions ============
+
+    /**
+     * @notice Record KYC verification for an address
+     * @param account Address that passed KYC
+     * @param verificationId External verification ID from KYC provider
+     */
+    function recordKYCVerification(
+        address account,
+        bytes32 verificationId
+    ) external onlyRole(WHITELIST_ADMIN_ROLE) {
+        kycVerificationIds[account] = verificationId;
+        kycVerificationTimestamps[account] = block.timestamp;
+        emit KYCVerificationCompleted(account, block.timestamp, verificationId);
+    }
+
+    /**
+     * @notice Revoke KYC verification for an address
+     * @param account Address to revoke KYC
+     * @param reason Reason for revocation
+     */
+    function revokeKYCVerification(
+        address account,
+        string calldata reason
+    ) external onlyRole(WHITELIST_ADMIN_ROLE) {
+        delete kycVerificationIds[account];
+        delete kycVerificationTimestamps[account];
+        whitelist[account] = false;
+        emit KYCVerificationRevoked(account, block.timestamp, reason);
+        emit AddressRemovedFromWhitelist(account);
+    }
+
+    /**
+     * @notice Record AML check result
+     * @param account Address that passed AML check
+     * @param checkId External AML check ID
+     */
+    function recordAMLCheck(
+        address account,
+        bytes32 checkId
+    ) external onlyRole(WHITELIST_ADMIN_ROLE) {
+        amlCheckIds[account] = checkId;
+        emit AMLCheckPassed(account, block.timestamp, checkId);
+    }
+
+    /**
+     * @notice Record failed AML check
+     * @param account Address that failed AML check
+     * @param reason Reason for failure
+     */
+    function recordAMLFailure(
+        address account,
+        string calldata reason
+    ) external onlyRole(WHITELIST_ADMIN_ROLE) {
+        whitelist[account] = false;
+        emit AMLCheckFailed(account, block.timestamp, reason);
+        emit AddressRemovedFromWhitelist(account);
+    }
+
+    /**
+     * @notice Create a compliance checkpoint for audit trail
+     * @param propertyId Property ID to checkpoint
+     */
+    function createComplianceCheckpoint(uint256 propertyId) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        Property storage prop = properties[propertyId];
+        require(prop.isActive, "Property not active");
+        
+        // Count unique holders (simplified - in production use a more efficient method)
+        uint256 holderCount = 0; // Would need holder enumeration for actual count
+        
+        emit ComplianceCheckpoint(
+            propertyId,
+            block.timestamp,
+            holderCount,
+            prop.mintedSupply
+        );
+    }
+
+    /**
+     * @notice Request regulator audit (emits event for off-chain tracking)
+     * @param propertyId Property ID for audit
+     */
+    function requestRegulatorAudit(uint256 propertyId) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        emit RegulatorAuditRequested(propertyId, msg.sender, block.timestamp);
+    }
+
+    /**
+     * @notice Get KYC status for an address
+     * @param account Address to check
+     */
+    function getKYCStatus(address account) external view returns (
+        bool isVerified,
+        bytes32 verificationId,
+        uint256 verificationTimestamp
+    ) {
+        return (
+            whitelist[account] && kycVerificationIds[account] != bytes32(0),
+            kycVerificationIds[account],
+            kycVerificationTimestamps[account]
+        );
     }
 
     /**

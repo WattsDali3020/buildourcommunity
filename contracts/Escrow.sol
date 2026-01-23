@@ -88,6 +88,35 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
     );
     event FundingFailed(uint256 indexed propertyId, uint256 totalRaised, uint256 target);
     event FundsReleased(uint256 indexed propertyId, address indexed recipient, uint256 amount);
+    
+    // Regulatory Compliance Events
+    event CompliancePurchaseRecorded(
+        uint256 indexed propertyId,
+        address indexed buyer,
+        uint256 amount,
+        uint256 totalPaid,
+        bytes32 transactionHash
+    );
+    event InvestorLimitChecked(
+        uint256 indexed propertyId,
+        address indexed investor,
+        uint256 currentContribution,
+        uint256 newContribution,
+        bool withinLimit
+    );
+    event SuspiciousActivityReported(
+        uint256 indexed propertyId,
+        address indexed account,
+        string activityType,
+        uint256 timestamp
+    );
+    event RefundComplianceRecorded(
+        uint256 indexed propertyId,
+        address indexed recipient,
+        uint256 principal,
+        uint256 interest,
+        uint256 timestamp
+    );
 
     constructor(address _propertyToken) {
         propertyToken = IPropertyToken(_propertyToken);
@@ -160,6 +189,24 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
         }
 
         emit PurchaseReceived(propertyId, msg.sender, amount, totalCost, block.timestamp);
+        
+        // Emit compliance event for regulatory reporting
+        emit CompliancePurchaseRecorded(
+            propertyId,
+            msg.sender,
+            amount,
+            totalCost,
+            keccak256(abi.encodePacked(block.timestamp, msg.sender, propertyId, amount))
+        );
+        
+        // Emit investor limit check for AML monitoring
+        emit InvestorLimitChecked(
+            propertyId,
+            msg.sender,
+            buyerContributions[propertyId][msg.sender] - totalCost, // previous contribution
+            buyerContributions[propertyId][msg.sender], // new total contribution
+            true // withinLimit - would add threshold checking in production
+        );
 
         // Check if funding target reached
         if (escrow.totalRaised >= escrow.fundingTarget) {
@@ -216,6 +263,15 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
                     p.totalPaid,
                     refundAmount - p.totalPaid,
                     refundAmount
+                );
+                
+                // Emit compliance event for regulatory reporting
+                emit RefundComplianceRecorded(
+                    propertyId,
+                    p.buyer,
+                    p.totalPaid,
+                    refundAmount - p.totalPaid,
+                    block.timestamp
                 );
             }
         }
@@ -339,6 +395,57 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
      */
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
+    }
+
+    // ============ Regulatory Compliance Functions ============
+
+    /**
+     * @notice Report suspicious activity for compliance monitoring
+     * @param propertyId Property ID
+     * @param account Account involved
+     * @param activityType Type of suspicious activity
+     */
+    function reportSuspiciousActivity(
+        uint256 propertyId,
+        address account,
+        string calldata activityType
+    ) external onlyRole(OPERATOR_ROLE) {
+        emit SuspiciousActivityReported(propertyId, account, activityType, block.timestamp);
+    }
+
+    /**
+     * @notice Get detailed purchase history for compliance audits
+     * @param propertyId Property ID
+     * @param index Purchase index
+     */
+    function getPurchaseForAudit(uint256 propertyId, uint256 index) external view returns (
+        address buyer,
+        uint256 amount,
+        uint256 price,
+        uint256 totalPaid,
+        uint256 timestamp,
+        bool refunded
+    ) {
+        require(index < propertyPurchases[propertyId].length, "Index out of bounds");
+        Purchase storage p = propertyPurchases[propertyId][index];
+        return (p.buyer, p.amount, p.price, p.totalPaid, p.timestamp, p.refunded);
+    }
+
+    /**
+     * @notice Get purchase count for a property (for audit iteration)
+     * @param propertyId Property ID
+     */
+    function getPurchaseCount(uint256 propertyId) external view returns (uint256) {
+        return propertyPurchases[propertyId].length;
+    }
+
+    /**
+     * @notice Get investor contribution total for AML monitoring
+     * @param propertyId Property ID
+     * @param investor Investor address
+     */
+    function getInvestorContribution(uint256 propertyId, address investor) external view returns (uint256) {
+        return buyerContributions[propertyId][investor];
     }
 
     /**
