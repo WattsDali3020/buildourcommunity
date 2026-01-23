@@ -103,6 +103,35 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Updates (January 2026)
 
+### Governance Enhancements (January 23, 2026)
+Based on Amundi Fund Tokenization report recommendations for institutional credibility:
+
+1. **Gasless Voting (Governance.sol)**:
+   - EIP-712 signature verification for off-chain voting
+   - `castVoteBySignature()` allows relayers to submit signed votes on behalf of lower-income investors
+   - Replay attack protection via nonces
+   - RELAYER_ROLE for authorized vote submission
+
+2. **Multi-Sig Treasury (Treasury.sol)**:
+   - 2-of-3 multi-sig requirement for operational disbursements
+   - `submitTransaction()`, `confirmTransaction()`, `revokeConfirmation()`, `executeTransaction()` workflow
+   - SIGNER_ROLE for multi-sig participants
+   - Dual execution paths: Multi-sig for operations, direct execute() for DAO-approved proposals
+
+3. **Regulatory Compliance (PropertyToken.sol)**:
+   - KYC verification recording with external verification IDs
+   - AML check recording and failure tracking
+   - Compliance checkpoint events for audit trails
+   - Regulator audit request events
+   - `getKYCStatus()` view function
+
+4. **Compliance Events (Escrow.sol)**:
+   - CompliancePurchaseRecorded emitted on every purchase
+   - InvestorLimitChecked emitted for AML monitoring
+   - RefundComplianceRecorded emitted on refunds
+   - `reportSuspiciousActivity()` for compliance officers
+   - `getPurchaseForAudit()` and `getInvestorContribution()` for audits
+
 ### Smart Contract Development (January 2026)
 1. **PropertyToken.sol**: ERC-1155 with phase-based voting power, transfer locks during funding, BURNER_ROLE
 2. **Escrow.sol**: Token purchases with minting, 3% APR refunds with token burning on failure
