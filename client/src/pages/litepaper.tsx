@@ -165,7 +165,7 @@ export default function Litepaper() {
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-1.5 text-sm font-medium text-primary mb-6 print:hidden">
                 <FileText className="h-4 w-4" />
-                Technical Litepaper v1.2
+                Technical Litepaper v1.3
               </div>
               
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6" data-testid="litepaper-title">
@@ -222,7 +222,11 @@ export default function Litepaper() {
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span className="text-sm">AI-moderated DAO governance</span>
+                  <span className="text-sm">AI-moderated DAO with gasless voting</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <span className="text-sm">2-of-3 multi-sig treasury controls</span>
                 </div>
               </div>
             </div>
@@ -748,6 +752,81 @@ function getVotingPower(uint256 propertyId, address voter)
 }`}
                   />
                 </Subsection>
+
+                <Subsection title="Gasless Voting (EIP-712)">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    Lower-income investors can participate in governance without paying gas fees. 
+                    Using EIP-712 signature verification, investors sign their votes off-chain and 
+                    authorized relayers submit them to the blockchain on their behalf.
+                  </p>
+
+                  <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 p-6 mb-6">
+                    <h4 className="font-semibold mb-4 flex items-center gap-2">
+                      <Zap className="h-5 w-5 text-primary" />
+                      Financial Inclusion by Design
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Gas fees on Ethereum mainnet can exceed $5-20 per transaction, making voting prohibitively expensive 
+                      for small token holders. Our gasless voting system ensures <strong className="text-foreground">every investor's voice is heard</strong>, 
+                      regardless of their holdings size.
+                    </p>
+                  </div>
+
+                  <CodeBlock 
+                    title="Governance.sol - Gasless Voting via Signatures"
+                    code={`// EIP-712 typed data for secure off-chain voting
+bytes32 public constant VOTE_TYPEHASH = keccak256(
+    "Vote(uint256 proposalId,uint8 support,address voter,uint256 nonce,uint256 deadline)"
+);
+
+function castVoteBySignature(
+    uint256 proposalId,
+    uint8 support,       // 0=against, 1=for, 2=abstain
+    address voter,       // Voter signs off-chain
+    uint256 deadline,
+    uint8 v, bytes32 r, bytes32 s
+) external onlyRole(RELAYER_ROLE) nonReentrant {
+    require(block.timestamp <= deadline, "Signature expired");
+    
+    uint256 currentNonce = nonces[voter];
+    nonces[voter]++; // Increment nonce to prevent replay
+    
+    // Verify signature matches voter
+    bytes32 structHash = keccak256(abi.encode(
+        VOTE_TYPEHASH, proposalId, support, voter, currentNonce, deadline
+    ));
+    bytes32 digest = keccak256(abi.encodePacked("\\x19\\x01", DOMAIN_SEPARATOR, structHash));
+    address signer = ECDSA.recover(digest, v, r, s);
+    require(signer == voter, "Invalid signature");
+    
+    _castVote(proposalId, voter, support);
+}`}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                    <div className="flex items-start gap-3 p-4 rounded-xl border">
+                      <Lock className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-sm font-medium">Replay Protection</span>
+                        <p className="text-xs text-muted-foreground mt-1">Nonce-based signature tracking</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-4 rounded-xl border">
+                      <Clock className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-sm font-medium">Deadline Expiry</span>
+                        <p className="text-xs text-muted-foreground mt-1">Signatures expire for security</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-4 rounded-xl border">
+                      <Users className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-sm font-medium">RELAYER_ROLE</span>
+                        <p className="text-xs text-muted-foreground mt-1">Authorized submitters only</p>
+                      </div>
+                    </div>
+                  </div>
+                </Subsection>
               </Section>
 
               <div className="divider-gradient" />
@@ -769,7 +848,76 @@ function getVotingPower(uint256 propertyId, address voter)
                   </ul>
                 </Subsection>
 
-                <Subsection title="Security Measures">
+                <Subsection title="2-of-3 Multi-Sig Treasury">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    Operational disbursements from the Treasury require approval from 2 of 3 designated signers, 
+                    providing institutional-grade security against unauthorized fund transfers.
+                  </p>
+
+                  <div className="rounded-xl border overflow-hidden mb-6">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="text-left p-4 font-semibold">Step</th>
+                          <th className="text-left p-4 font-semibold">Action</th>
+                          <th className="text-left p-4 font-semibold">Description</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-t">
+                          <td className="p-4 font-medium">1</td>
+                          <td className="p-4 text-primary font-mono text-xs">submitTransaction()</td>
+                          <td className="p-4 text-muted-foreground">Signer proposes a disbursement</td>
+                        </tr>
+                        <tr className="border-t">
+                          <td className="p-4 font-medium">2</td>
+                          <td className="p-4 text-primary font-mono text-xs">confirmTransaction()</td>
+                          <td className="p-4 text-muted-foreground">Second signer reviews and approves</td>
+                        </tr>
+                        <tr className="border-t">
+                          <td className="p-4 font-medium">3</td>
+                          <td className="p-4 text-primary font-mono text-xs">executeTransaction()</td>
+                          <td className="p-4 text-muted-foreground">With 2 confirmations, funds are released</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <CodeBlock 
+                    title="Treasury.sol - Multi-Sig Execution"
+                    code={`uint256 public requiredConfirmations = 2; // Configurable 2-of-3 default
+uint256 public constant FOUNDER_CUT_BPS = 100; // 1% founder cut
+
+function executeTransaction(uint256 txId) external onlyRole(SIGNER_ROLE) {
+    Transaction storage txn = transactions[txId];
+    require(!txn.executed, "Transaction already executed");
+    require(txn.confirmationCount >= requiredConfirmations, "Not enough confirmations");
+    require(address(this).balance >= txn.value, "Insufficient treasury balance");
+    
+    txn.executed = true;
+    
+    // Calculate and transfer founder cut
+    uint256 founderCut = (txn.value * FOUNDER_CUT_BPS) / 10000;
+    uint256 remaining = txn.value - founderCut;
+    
+    payable(founderWallet).transfer(founderCut);
+    (bool success, ) = txn.target.call{value: remaining}(txn.data);
+    require(success, "Transaction failed");
+    
+    emit TransactionExecuted(txId, msg.sender);
+}`}
+                  />
+
+                  <div className="p-4 rounded-xl bg-muted/30 border mt-6">
+                    <p className="text-sm">
+                      <strong>Dual Execution Paths:</strong> Multi-sig protects operational funds, while DAO-approved proposals 
+                      execute directly through the Governance contract (which holds EXECUTOR_ROLE). This provides both 
+                      security and democratic governance.
+                    </p>
+                  </div>
+                </Subsection>
+
+                <Subsection title="Additional Security Measures">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex items-start gap-3 p-4 rounded-xl border">
                       <Lock className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -844,7 +992,7 @@ function getVotingPower(uint256 propertyId, address voter)
                 </Subsection>
 
                 <Subsection title="KYC/AML Requirements">
-                  <ul className="space-y-2">
+                  <ul className="space-y-2 mb-6">
                     {[
                       "Government-issued ID verification",
                       "Address verification (determines phase eligibility)",
@@ -857,6 +1005,82 @@ function getVotingPower(uint256 propertyId, address voter)
                       </li>
                     ))}
                   </ul>
+                </Subsection>
+
+                <Subsection title="On-Chain Compliance Events">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    Every transaction emits compliance events that create an immutable audit trail for regulatory reporting. 
+                    These events enable real-time monitoring and simplify regulatory examinations.
+                  </p>
+
+                  <div className="rounded-xl border overflow-hidden mb-6">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="text-left p-4 font-semibold">Event</th>
+                          <th className="text-left p-4 font-semibold">Trigger</th>
+                          <th className="text-left p-4 font-semibold">Data Captured</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-t">
+                          <td className="p-4 font-mono text-xs text-primary">CompliancePurchaseRecorded</td>
+                          <td className="p-4 text-muted-foreground">Token purchase</td>
+                          <td className="p-4 text-muted-foreground">Amount, totalPaid, transactionHash</td>
+                        </tr>
+                        <tr className="border-t">
+                          <td className="p-4 font-mono text-xs text-primary">InvestorLimitChecked</td>
+                          <td className="p-4 text-muted-foreground">Each purchase</td>
+                          <td className="p-4 text-muted-foreground">currentContribution, newContribution, withinLimit</td>
+                        </tr>
+                        <tr className="border-t">
+                          <td className="p-4 font-mono text-xs text-primary">RefundComplianceRecorded</td>
+                          <td className="p-4 text-muted-foreground">Refund processing</td>
+                          <td className="p-4 text-muted-foreground">Principal, interest, timestamp</td>
+                        </tr>
+                        <tr className="border-t">
+                          <td className="p-4 font-mono text-xs text-primary">KYCVerificationCompleted</td>
+                          <td className="p-4 text-muted-foreground">Identity verification</td>
+                          <td className="p-4 text-muted-foreground">Account, timestamp, verificationId</td>
+                        </tr>
+                        <tr className="border-t">
+                          <td className="p-4 font-mono text-xs text-primary">ComplianceCheckpoint</td>
+                          <td className="p-4 text-muted-foreground">Periodic audits</td>
+                          <td className="p-4 text-muted-foreground">totalHolders, totalSupplyMinted, timestamp</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <CodeBlock 
+                    title="Escrow.sol - Compliance Events on Purchase"
+                    code={`event CompliancePurchaseRecorded(
+    uint256 indexed propertyId, address indexed buyer,
+    uint256 amount, uint256 totalPaid, bytes32 transactionHash
+);
+
+event InvestorLimitChecked(
+    uint256 indexed propertyId, address indexed investor,
+    uint256 currentContribution, uint256 newContribution, bool withinLimit
+);
+
+// Emitted in purchase() for regulatory audit trail
+emit CompliancePurchaseRecorded(
+    propertyId, msg.sender, tokenAmount, totalPaid,
+    keccak256(abi.encodePacked(block.number, msg.sender, propertyId))
+);
+
+emit InvestorLimitChecked(
+    propertyId, msg.sender, previousContribution, contributions[propertyId][msg.sender], withinLimit
+);`}
+                  />
+
+                  <div className="p-4 rounded-xl bg-chart-3/5 border border-chart-3/20 mt-6">
+                    <p className="text-sm">
+                      <strong>Audit Functions:</strong> Compliance officers can call <code className="text-xs bg-muted px-1 py-0.5 rounded">getPurchaseForAudit()</code> and 
+                      <code className="text-xs bg-muted px-1 py-0.5 rounded ml-1">getInvestorContribution()</code> to retrieve detailed transaction data for regulatory examinations.
+                    </p>
+                  </div>
                 </Subsection>
               </Section>
 
