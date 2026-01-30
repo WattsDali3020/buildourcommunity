@@ -103,6 +103,39 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Updates (January 2026)
 
+### VC-Recommended Features (January 30, 2026)
+Added 5 new VC-recommended features based on institutional feedback:
+
+1. **Community Polls (Governance.sol)**:
+   - Non-binding demand gauges via `createPoll()`, `votePoll()`, `endPoll()`
+   - Poll-to-proposal pipeline: >30% support polls convert to proposals
+   - 5% quorum bonus for poll-backed proposals
+   - No token holdings required to create or vote on polls
+
+2. **Dynamic Funding Targets (Escrow.sol)**:
+   - `updatePollDemand()` adjusts funding targets based on poll scores
+   - High-demand properties (>70% support) get up to 25% premium
+   - `getDemandAdjustedTarget()` for transparency
+
+3. **Relayer Reimbursement (Treasury.sol)**:
+   - `fundReimbursementPool()` for gasless voting subsidies
+   - `reimburseRelayer()` with max 0.01 ETH per transaction
+   - Ensures financial inclusion for all voters
+
+4. **24-Month Founder Vesting (Treasury.sol)**:
+   - 730-day vesting with 90-day cliff
+   - `getClaimableVested()`, `claimVestedCuts()` functions
+   - Linear vesting after cliff period
+
+5. **Poll Participation Bonuses (PhaseManager.sol)**:
+   - `recordPollParticipation()` for engagement credit
+   - `updateEngagementWithPolls()` with 0.5x poll bonus
+   - `claimPollBoostBonus()` for 2x bonus tokens
+
+### Litepaper v1.4
+- Added Community Polls section to DAO Governance
+- Added Founder Vesting & Relayer Subsidies section to Investor Protections
+
 ### Governance Enhancements (January 23, 2026)
 Based on Amundi Fund Tokenization report recommendations for institutional credibility:
 
