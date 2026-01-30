@@ -165,7 +165,7 @@ export default function Litepaper() {
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-1.5 text-sm font-medium text-primary mb-6 print:hidden">
                 <FileText className="h-4 w-4" />
-                Technical Litepaper v1.3
+                Technical Litepaper v1.4
               </div>
               
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6" data-testid="litepaper-title">
@@ -827,6 +827,72 @@ function castVoteBySignature(
                     </div>
                   </div>
                 </Subsection>
+
+                <Subsection title="Community Polls (Demand Gauges)">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    Before formal proposals, community members can create lightweight polls to gauge demand for potential 
+                    property listings or development ideas. Polls are non-binding but provide valuable market signals.
+                  </p>
+
+                  <div className="rounded-2xl border-2 border-chart-3/20 bg-chart-3/5 p-6 mb-6">
+                    <h4 className="font-semibold mb-4 flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-chart-3" />
+                      Poll-to-Proposal Pipeline
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Polls with <strong className="text-foreground">&gt;30% support</strong> can be converted into formal governance proposals 
+                      with a <strong className="text-foreground">5% quorum reduction bonus</strong>. This incentivizes community 
+                      engagement while ensuring popular ideas get fast-tracked.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="p-4 rounded-xl border">
+                      <h5 className="font-semibold text-sm mb-2">Poll Features</h5>
+                      <ul className="space-y-1 text-xs text-muted-foreground">
+                        <li>• No token holdings required to create polls</li>
+                        <li>• 1-30 day configurable duration</li>
+                        <li>• Simple yes/no voting</li>
+                        <li>• Property-specific or platform-wide</li>
+                      </ul>
+                    </div>
+                    <div className="p-4 rounded-xl border">
+                      <h5 className="font-semibold text-sm mb-2">Poll Bonuses</h5>
+                      <ul className="space-y-1 text-xs text-muted-foreground">
+                        <li>• Poll voters get 0.5x engagement credit</li>
+                        <li>• 2x bonus tokens for poll participants</li>
+                        <li>• High-demand polls boost funding targets</li>
+                        <li>• Dynamic pricing for popular properties</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <CodeBlock 
+                    title="Governance.sol - Poll-to-Proposal Conversion"
+                    code={`// Polls with >30% support get 5% quorum bonus when converted
+uint256 public constant POLL_PROPOSAL_THRESHOLD = 3000; // 30%
+uint256 public constant POLL_QUORUM_BONUS = 500; // 5% reduction
+
+function createProposalFromPoll(
+    uint256 pollId,
+    ProposalType proposalType,
+    bytes memory executionData
+) external onlyRole(PROPOSER_ROLE) returns (uint256) {
+    Poll storage poll = polls[pollId];
+    require(poll.status == PollStatus.Ended, "Poll must be ended first");
+    
+    uint256 totalVotes = poll.votesFor + poll.votesAgainst;
+    uint256 supportPercent = (poll.votesFor * 10000) / totalVotes;
+    require(supportPercent >= POLL_PROPOSAL_THRESHOLD, "Insufficient support");
+    
+    // Apply quorum bonus for poll-backed proposals
+    uint256 adjustedQuorum = baseQuorum - POLL_QUORUM_BONUS;
+    
+    // Create proposal with reduced quorum requirement
+    // ... proposal creation with poll.question as title
+}`}
+                  />
+                </Subsection>
               </Section>
 
               <div className="divider-gradient" />
@@ -915,6 +981,60 @@ function executeTransaction(uint256 txId) external onlyRole(SIGNER_ROLE) {
                       security and democratic governance.
                     </p>
                   </div>
+                </Subsection>
+
+                <Subsection title="Founder Vesting & Relayer Subsidies">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    The 1% founder sustainability fee vests over 24 months with a 3-month cliff, ensuring long-term 
+                    alignment with investor interests. The Treasury also subsidizes gasless voting through relayer reimbursements.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="p-4 rounded-xl border">
+                      <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-primary" />
+                        24-Month Vesting
+                      </h5>
+                      <ul className="space-y-1 text-xs text-muted-foreground">
+                        <li>• 3-month cliff before any claims</li>
+                        <li>• Linear vesting after cliff</li>
+                        <li>• Founder can claim accrued cuts monthly</li>
+                        <li>• Aligns incentives with platform success</li>
+                      </ul>
+                    </div>
+                    <div className="p-4 rounded-xl border">
+                      <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-chart-3" />
+                        Relayer Reimbursement Pool
+                      </h5>
+                      <ul className="space-y-1 text-xs text-muted-foreground">
+                        <li>• Treasury funds gasless voting subsidies</li>
+                        <li>• Max 0.01 ETH per transaction</li>
+                        <li>• Reimburses authorized relayers</li>
+                        <li>• Ensures financial inclusion for all voters</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <CodeBlock 
+                    title="Treasury.sol - Vesting Schedule"
+                    code={`uint256 public constant VESTING_PERIOD = 730 days; // 24 months
+uint256 public constant VESTING_CLIFF = 90 days; // 3 month cliff
+
+function getClaimableVested(address founder) public view returns (uint256) {
+    if (vestingStart[founder] == 0) return 0;
+    
+    uint256 elapsed = block.timestamp - vestingStart[founder];
+    if (elapsed < VESTING_CLIFF) return 0;
+    
+    uint256 totalVested = vestedCuts[founder];
+    uint256 vestedAmount = elapsed >= VESTING_PERIOD 
+        ? totalVested 
+        : (totalVested * elapsed) / VESTING_PERIOD;
+    
+    return vestedAmount - claimedCuts[founder];
+}`}
+                  />
                 </Subsection>
 
                 <Subsection title="Additional Security Measures">

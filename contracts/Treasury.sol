@@ -30,6 +30,18 @@ contract Treasury is AccessControl, ReentrancyGuard {
     uint256 public requiredConfirmations = 2; // 2-of-3 default
     uint256 public transactionCount;
     
+    // Vesting schedule for founder cuts (24 months)
+    uint256 public constant VESTING_PERIOD = 730 days; // ~24 months
+    uint256 public constant VESTING_CLIFF = 90 days; // 3 month cliff
+    mapping(address => uint256) public vestedCuts; // Total vested amount per founder
+    mapping(address => uint256) public vestingStart; // When vesting started
+    mapping(address => uint256) public claimedCuts; // Already claimed amount
+    
+    // Relayer reimbursement for gasless voting
+    uint256 public relayerReimbursementPool;
+    uint256 public maxReimbursementPerTx = 0.01 ether; // Max reimbursement per transaction
+    mapping(address => uint256) public relayerReimbursements; // Total reimbursed per relayer
+    
     // Transaction structure for multi-sig
     struct Transaction {
         address target;
@@ -55,6 +67,13 @@ contract Treasury is AccessControl, ReentrancyGuard {
     event RequiredConfirmationsUpdated(uint256 oldRequired, uint256 newRequired);
     event SignerAdded(address indexed signer);
     event SignerRemoved(address indexed signer);
+    
+    // Vesting and reimbursement events
+    event VestedCutAccrued(address indexed founder, uint256 amount, uint256 totalVested);
+    event VestedCutClaimed(address indexed founder, uint256 amount, uint256 remaining);
+    event RelayerReimbursed(address indexed relayer, uint256 amount, uint256 poolRemaining);
+    event ReimbursementPoolFunded(uint256 amount, uint256 newTotal);
+    event MaxReimbursementUpdated(uint256 oldMax, uint256 newMax);
 
     constructor(address _founderWallet) {
         require(_founderWallet != address(0), "Invalid founder wallet");
@@ -303,5 +322,144 @@ contract Treasury is AccessControl, ReentrancyGuard {
         uint256 reserves = IChainlinkFunctions(chainlinkOracle).getReserves(propertyId);
         emit ReservesVerified(propertyId, reserves);
         return reserves;
+    }
+
+    // ============ Vesting Functions ============
+
+    /**
+     * @notice Accrue founder cut to vesting schedule instead of immediate payout
+     * @dev Called internally when founder cuts would normally be sent
+     * @param founder Founder address
+     * @param amount Amount to vest
+     */
+    function _accrueVestedCut(address founder, uint256 amount) internal {
+        if (vestingStart[founder] == 0) {
+            vestingStart[founder] = block.timestamp;
+        }
+        vestedCuts[founder] += amount;
+        emit VestedCutAccrued(founder, amount, vestedCuts[founder]);
+    }
+
+    /**
+     * @notice Calculate claimable vested amount
+     * @param founder Founder address
+     */
+    function getClaimableVested(address founder) public view returns (uint256) {
+        if (vestingStart[founder] == 0) return 0;
+        
+        uint256 elapsed = block.timestamp - vestingStart[founder];
+        if (elapsed < VESTING_CLIFF) return 0;
+        
+        uint256 totalVested = vestedCuts[founder];
+        uint256 vestedAmount;
+        
+        if (elapsed >= VESTING_PERIOD) {
+            vestedAmount = totalVested;
+        } else {
+            // Linear vesting after cliff
+            vestedAmount = (totalVested * elapsed) / VESTING_PERIOD;
+        }
+        
+        return vestedAmount - claimedCuts[founder];
+    }
+
+    /**
+     * @notice Claim vested founder cuts
+     */
+    function claimVestedCuts() external nonReentrant {
+        require(msg.sender == founderWallet, "Only founder can claim");
+        
+        uint256 claimable = getClaimableVested(msg.sender);
+        require(claimable > 0, "Nothing to claim");
+        require(address(this).balance >= claimable, "Insufficient treasury balance");
+        
+        claimedCuts[msg.sender] += claimable;
+        
+        (bool success, ) = payable(msg.sender).call{value: claimable}("");
+        require(success, "Transfer failed");
+        
+        uint256 remaining = vestedCuts[msg.sender] - claimedCuts[msg.sender];
+        emit VestedCutClaimed(msg.sender, claimable, remaining);
+    }
+
+    /**
+     * @notice Get vesting info for founder
+     * @param founder Founder address
+     */
+    function getVestingInfo(address founder) external view returns (
+        uint256 totalVested,
+        uint256 claimed,
+        uint256 claimable,
+        uint256 vestingStartTime,
+        uint256 vestingEndTime
+    ) {
+        return (
+            vestedCuts[founder],
+            claimedCuts[founder],
+            getClaimableVested(founder),
+            vestingStart[founder],
+            vestingStart[founder] + VESTING_PERIOD
+        );
+    }
+
+    // ============ Relayer Reimbursement Functions ============
+
+    /**
+     * @notice Fund the relayer reimbursement pool for gasless voting
+     */
+    function fundReimbursementPool() external payable {
+        relayerReimbursementPool += msg.value;
+        emit ReimbursementPoolFunded(msg.value, relayerReimbursementPool);
+    }
+
+    /**
+     * @notice Reimburse a relayer for gasless voting transaction
+     * @dev Called by Governance contract after processing gasless vote
+     * @param relayer Relayer address to reimburse
+     * @param gasUsed Approximate gas used for the transaction
+     */
+    function reimburseRelayer(address relayer, uint256 gasUsed) external onlyRole(EXECUTOR_ROLE) {
+        uint256 reimbursement = gasUsed * tx.gasprice;
+        
+        // Cap at max reimbursement
+        if (reimbursement > maxReimbursementPerTx) {
+            reimbursement = maxReimbursementPerTx;
+        }
+        
+        // Cap at available pool
+        if (reimbursement > relayerReimbursementPool) {
+            reimbursement = relayerReimbursementPool;
+        }
+        
+        if (reimbursement > 0) {
+            relayerReimbursementPool -= reimbursement;
+            relayerReimbursements[relayer] += reimbursement;
+            
+            (bool success, ) = payable(relayer).call{value: reimbursement}("");
+            require(success, "Reimbursement failed");
+            
+            emit RelayerReimbursed(relayer, reimbursement, relayerReimbursementPool);
+        }
+    }
+
+    /**
+     * @notice Update max reimbursement per transaction
+     * @param newMax New maximum in wei
+     */
+    function setMaxReimbursement(uint256 newMax) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newMax <= 0.1 ether, "Max too high");
+        uint256 oldMax = maxReimbursementPerTx;
+        maxReimbursementPerTx = newMax;
+        emit MaxReimbursementUpdated(oldMax, newMax);
+    }
+
+    /**
+     * @notice Get reimbursement pool info
+     */
+    function getReimbursementPoolInfo() external view returns (
+        uint256 poolBalance,
+        uint256 maxPerTx
+    ) {
+        return (relayerReimbursementPool, maxReimbursementPerTx);
     }
 }

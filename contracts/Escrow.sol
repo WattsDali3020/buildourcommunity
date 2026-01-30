@@ -69,6 +69,11 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
     // All property IDs for automation
     uint256[] public activeProperties;
     mapping(uint256 => bool) public isPropertyActive;
+    
+    // Dynamic funding targets based on poll demand
+    mapping(uint256 => uint256) public pollDemandScores; // Poll demand in basis points (e.g., 8000 = 80% support)
+    mapping(uint256 => uint256) public baseFundingTargets; // Original funding target before adjustment
+    uint256 public constant MAX_DEMAND_BONUS = 2500; // Max 25% increase for high-demand properties
 
     // Events
     event PurchaseReceived(
@@ -117,6 +122,11 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
         uint256 interest,
         uint256 timestamp
     );
+    event PollDemandUpdated(
+        uint256 indexed propertyId,
+        uint256 demandScore,
+        uint256 adjustedTarget
+    );
 
     constructor(address _propertyToken) {
         propertyToken = IPropertyToken(_propertyToken);
@@ -137,6 +147,9 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
     ) external onlyRole(OPERATOR_ROLE) {
         require(!isPropertyActive[propertyId], "Escrow already exists");
         
+        // Store base target for potential dynamic adjustment
+        baseFundingTargets[propertyId] = fundingTarget;
+        
         propertyEscrows[propertyId] = PropertyEscrow({
             totalRaised: 0,
             fundingTarget: fundingTarget,
@@ -147,6 +160,53 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
 
         activeProperties.push(propertyId);
         isPropertyActive[propertyId] = true;
+    }
+
+    /**
+     * @notice Update poll demand score and adjust funding target dynamically
+     * @dev Higher demand = higher funding target (premium for popular properties)
+     * @param propertyId Property ID
+     * @param demandScore Poll support percentage in basis points (e.g., 8000 = 80%)
+     */
+    function updatePollDemand(uint256 propertyId, uint256 demandScore) external onlyRole(OPERATOR_ROLE) {
+        require(isPropertyActive[propertyId], "Property not active");
+        require(demandScore <= 10000, "Invalid demand score");
+        
+        PropertyEscrow storage escrow = propertyEscrows[propertyId];
+        require(!escrow.isComplete, "Funding already complete");
+        
+        pollDemandScores[propertyId] = demandScore;
+        
+        // Calculate adjusted target: base + (base * demandBonus / 10000)
+        // High demand (>70%) gets up to 25% higher target (premium property)
+        uint256 baseTarget = baseFundingTargets[propertyId];
+        uint256 demandBonus = 0;
+        
+        if (demandScore >= 7000) {
+            // Scale bonus: 70% demand = 0%, 100% demand = 25%
+            demandBonus = ((demandScore - 7000) * MAX_DEMAND_BONUS) / 3000;
+        }
+        
+        uint256 adjustedTarget = baseTarget + (baseTarget * demandBonus) / 10000;
+        escrow.fundingTarget = adjustedTarget;
+        
+        emit PollDemandUpdated(propertyId, demandScore, adjustedTarget);
+    }
+
+    /**
+     * @notice Get demand-adjusted funding info
+     * @param propertyId Property ID
+     */
+    function getDemandAdjustedTarget(uint256 propertyId) external view returns (
+        uint256 baseTarget,
+        uint256 adjustedTarget,
+        uint256 demandScore
+    ) {
+        return (
+            baseFundingTargets[propertyId],
+            propertyEscrows[propertyId].fundingTarget,
+            pollDemandScores[propertyId]
+        );
     }
 
     /**

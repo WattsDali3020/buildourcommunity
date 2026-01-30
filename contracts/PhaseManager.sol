@@ -89,6 +89,11 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
     // Engagement bonus tracking (vote-to-earn)
     mapping(uint256 => mapping(address => bool)) public hasClaimed;
     uint256 public constant BONUS_TOKENS = 1; // Tokens awarded for engagement bonus
+    
+    // Poll participation bonuses
+    mapping(uint256 => mapping(address => bool)) public pollParticipated; // Track poll voters
+    mapping(uint256 => uint256) public propertyPollCount; // Number of polls per property
+    uint256 public constant POLL_BONUS_MULTIPLIER = 50; // 0.5 extra engagement credit per poll vote (in basis points)
 
     // Events
     event EngagementUpdated(
@@ -116,6 +121,8 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
     event PropertyTrackingStarted(uint256 indexed propertyId);
     event PropertyTrackingStopped(uint256 indexed propertyId);
     event BonusClaimed(uint256 indexed propertyId, address indexed claimer, uint256 bonus);
+    event PollParticipationRecorded(uint256 indexed propertyId, address indexed participant);
+    event PollBonusApplied(uint256 indexed propertyId, uint256 pollParticipants, uint256 bonusEngagement);
 
     constructor(address _propertyToken, address _governance) {
         propertyToken = IPropertyToken(_propertyToken);
@@ -307,7 +314,7 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
      * @notice Chainlink Automation perform
      */
     function performUpkeep(bytes calldata performData) external override {
-        (uint256 propertyId, uint256 engagementPercent) = abi.decode(performData, (uint256, uint256));
+        (uint256 propertyId, ) = abi.decode(performData, (uint256, uint256));
         
         PropertyEngagement storage engagement = propertyEngagement[propertyId];
         require(engagement.isTracking, "Not tracking");
@@ -391,5 +398,101 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
             calculateEngagement(propertyId),
             engagement.isTracking
         );
+    }
+
+    // ============ Poll Bonus Functions ============
+
+    /**
+     * @notice Record poll participation for engagement bonus credit
+     * @dev Called by operator when user votes on a property-related poll
+     * @param propertyId Property ID
+     * @param participant Address of poll participant
+     */
+    function recordPollParticipation(
+        uint256 propertyId,
+        address participant
+    ) external onlyRole(OPERATOR_ROLE) {
+        require(isTracked[propertyId], "Property not tracked");
+        require(!pollParticipated[propertyId][participant], "Already recorded");
+        
+        pollParticipated[propertyId][participant] = true;
+        emit PollParticipationRecorded(propertyId, participant);
+    }
+
+    /**
+     * @notice Update engagement with poll participation bonus
+     * @dev Adds half-credit for poll voters to boost engagement calculation
+     * @param propertyId Property ID
+     * @param activeVoters Number of unique proposal voters
+     * @param totalProposals Total proposals for property
+     * @param votedProposals Proposals with votes
+     * @param pollParticipants Number of unique poll voters
+     */
+    function updateEngagementWithPolls(
+        uint256 propertyId,
+        uint256 activeVoters,
+        uint256 totalProposals,
+        uint256 votedProposals,
+        uint256 pollParticipants
+    ) external onlyRole(OPERATOR_ROLE) {
+        PropertyEngagement storage engagement = propertyEngagement[propertyId];
+        require(engagement.isTracking, "Not tracking");
+
+        // Calculate poll bonus: half credit per poll voter
+        // pollParticipants / 2 added to active voters (but not exceeding totalEligible)
+        uint256 pollBonus = (pollParticipants * POLL_BONUS_MULTIPLIER) / 100;
+        uint256 adjustedActiveVoters = activeVoters + pollBonus;
+        
+        // Cap at total eligible voters
+        if (adjustedActiveVoters > engagement.totalEligibleVoters) {
+            adjustedActiveVoters = engagement.totalEligibleVoters;
+        }
+
+        engagement.activeVoters = adjustedActiveVoters;
+        engagement.totalProposals = totalProposals;
+        engagement.votedProposals = votedProposals;
+
+        uint256 engagementPercent = calculateEngagement(propertyId);
+        emit EngagementUpdated(propertyId, adjustedActiveVoters, engagement.totalEligibleVoters, engagementPercent);
+        emit PollBonusApplied(propertyId, pollParticipants, pollBonus);
+
+        // Check for nudge triggers
+        _checkNudges(propertyId, engagementPercent);
+
+        // Check for early phase advancement
+        _checkPhaseAdvancement(propertyId, engagementPercent);
+    }
+
+    /**
+     * @notice Claim poll-boosted engagement bonus
+     * @dev Extra bonus tokens for poll participants when threshold met
+     * @param propertyId Property ID
+     */
+    function claimPollBoostBonus(uint256 propertyId) external {
+        require(propertyToken.whitelist(msg.sender), "Not whitelisted");
+        require(pollParticipated[propertyId][msg.sender], "Did not participate in polls");
+        require(!hasClaimed[propertyId][msg.sender], "Already claimed");
+        
+        PropertyEngagement storage engagement = propertyEngagement[propertyId];
+        require(engagement.isTracking, "Not tracking");
+        require(calculateEngagement(propertyId) >= ENGAGEMENT_THRESHOLD, "Threshold not met");
+        require(block.timestamp >= engagement.phaseStartTime + MIN_ENGAGEMENT_PERIOD, "Too early");
+
+        hasClaimed[propertyId][msg.sender] = true;
+
+        // Poll participants get 2x bonus
+        uint256 bonusAmount = BONUS_TOKENS * 2;
+        propertyToken.mintTokens(propertyId, msg.sender, bonusAmount);
+
+        emit BonusClaimed(propertyId, msg.sender, bonusAmount);
+    }
+
+    /**
+     * @notice Check if user participated in polls for a property
+     * @param propertyId Property ID
+     * @param participant User address
+     */
+    function hasParticipatedInPolls(uint256 propertyId, address participant) external view returns (bool) {
+        return pollParticipated[propertyId][participant];
     }
 }

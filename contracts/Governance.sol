@@ -102,6 +102,49 @@ contract Governance is AccessControl, ReentrancyGuard {
     mapping(address => uint256) public voterParticipationCount;
     mapping(address => uint256) public lastVoteTimestamp;
 
+    // ============ Community Polls (Non-Binding Gauges) ============
+    
+    // Poll status
+    enum PollStatus {
+        Active,
+        Ended,
+        ConvertedToProposal
+    }
+    
+    // Poll structure for community demand gauges
+    struct Poll {
+        uint256 id;
+        uint256 propertyId;         // 0 for platform-wide polls
+        address creator;
+        string question;
+        string description;
+        string ipfsHash;
+        uint256 votesFor;
+        uint256 votesAgainst;
+        uint256 startTime;
+        uint256 endTime;
+        PollStatus status;
+        uint256 linkedProposalId;   // If converted to proposal
+    }
+    
+    // Poll vote record
+    struct PollVote {
+        bool hasVoted;
+        bool support;
+    }
+    
+    // Poll storage
+    mapping(uint256 => Poll) public polls;
+    uint256 public pollCount;
+    mapping(uint256 => mapping(address => PollVote)) public pollVotes;
+    mapping(uint256 => uint256) public pollParticipants; // Total unique voters per poll
+    
+    // Poll-to-proposal threshold (30% support in basis points)
+    uint256 public constant POLL_PROPOSAL_THRESHOLD = 3000;
+    
+    // Poll quorum bonus (5% reduction when poll-backed)
+    uint256 public constant POLL_QUORUM_BONUS = 500;
+
     // Events
     event ProposalCreated(
         uint256 indexed proposalId,
@@ -120,6 +163,22 @@ contract Governance is AccessControl, ReentrancyGuard {
     event ProposalCancelled(uint256 indexed proposalId);
     event VotingPeriodUpdated(uint256 newPeriod);
     event VoteToEarnBonusUpdated(uint256 newBonus);
+    
+    // Poll events
+    event PollCreated(
+        uint256 indexed pollId,
+        uint256 indexed propertyId,
+        address creator,
+        string question
+    );
+    event PollVoteCast(
+        uint256 indexed pollId,
+        address indexed voter,
+        bool support
+    );
+    event PollEnded(uint256 indexed pollId, uint256 votesFor, uint256 votesAgainst);
+    event PollConvertedToProposal(uint256 indexed pollId, uint256 indexed proposalId);
+    
     event OffChainVoteCast(
         uint256 indexed proposalId,
         address indexed voter,
@@ -459,5 +518,195 @@ contract Governance is AccessControl, ReentrancyGuard {
         require(newBonus <= 500, "Bonus too high"); // Max 5%
         voteToEarnBonus = newBonus;
         emit VoteToEarnBonusUpdated(newBonus);
+    }
+
+    // ============ Community Poll Functions ============
+
+    /**
+     * @notice Create a non-binding community poll to gauge demand
+     * @dev Polls are lightweight and don't require token holdings
+     * @param propertyId Property ID (0 for platform-wide)
+     * @param question Poll question
+     * @param description Detailed description
+     * @param ipfsHash IPFS hash for additional docs
+     * @param duration Poll duration in seconds
+     */
+    function createPoll(
+        uint256 propertyId,
+        string memory question,
+        string memory description,
+        string memory ipfsHash,
+        uint256 duration
+    ) external returns (uint256) {
+        require(duration >= 1 days && duration <= 30 days, "Invalid duration");
+        
+        uint256 pollId = pollCount++;
+        
+        polls[pollId] = Poll({
+            id: pollId,
+            propertyId: propertyId,
+            creator: msg.sender,
+            question: question,
+            description: description,
+            ipfsHash: ipfsHash,
+            votesFor: 0,
+            votesAgainst: 0,
+            startTime: block.timestamp,
+            endTime: block.timestamp + duration,
+            status: PollStatus.Active,
+            linkedProposalId: 0
+        });
+        
+        emit PollCreated(pollId, propertyId, msg.sender, question);
+        return pollId;
+    }
+
+    /**
+     * @notice Vote on a community poll (no gas subsidy needed - lightweight)
+     * @param pollId Poll ID
+     * @param support True = support, False = oppose
+     */
+    function votePoll(uint256 pollId, bool support) external {
+        Poll storage poll = polls[pollId];
+        require(poll.status == PollStatus.Active, "Poll not active");
+        require(block.timestamp < poll.endTime, "Poll ended");
+        
+        PollVote storage voterRecord = pollVotes[pollId][msg.sender];
+        require(!voterRecord.hasVoted, "Already voted");
+        
+        voterRecord.hasVoted = true;
+        voterRecord.support = support;
+        pollParticipants[pollId]++;
+        
+        if (support) {
+            poll.votesFor++;
+        } else {
+            poll.votesAgainst++;
+        }
+        
+        emit PollVoteCast(pollId, msg.sender, support);
+    }
+
+    /**
+     * @notice End a poll and calculate results
+     * @param pollId Poll ID
+     */
+    function endPoll(uint256 pollId) external {
+        Poll storage poll = polls[pollId];
+        require(poll.status == PollStatus.Active, "Poll not active");
+        require(block.timestamp >= poll.endTime, "Poll not ended yet");
+        
+        poll.status = PollStatus.Ended;
+        emit PollEnded(pollId, poll.votesFor, poll.votesAgainst);
+    }
+
+    /**
+     * @notice Create a proposal from a successful poll (poll-to-proposal pipeline)
+     * @dev Requires >30% support in the poll for reduced quorum
+     * @param pollId Poll ID to convert
+     * @param proposalType Type of proposal to create
+     * @param executionData Encoded execution data
+     */
+    function createProposalFromPoll(
+        uint256 pollId,
+        ProposalType proposalType,
+        bytes memory executionData
+    ) external onlyRole(PROPOSER_ROLE) returns (uint256) {
+        Poll storage poll = polls[pollId];
+        require(poll.status == PollStatus.Ended, "Poll must be ended first");
+        require(poll.linkedProposalId == 0, "Already converted");
+        
+        // Calculate poll support percentage
+        uint256 totalVotes = poll.votesFor + poll.votesAgainst;
+        require(totalVotes > 0, "No votes cast");
+        uint256 supportPercent = (poll.votesFor * 10000) / totalVotes;
+        require(supportPercent >= POLL_PROPOSAL_THRESHOLD, "Insufficient poll support");
+        
+        // Require token holdings
+        require(
+            propertyToken.getVotingPower(poll.propertyId, msg.sender) > 0,
+            "Must hold tokens to propose"
+        );
+        
+        uint256 proposalId = proposalCount++;
+        
+        // Apply quorum bonus for poll-backed proposals
+        uint256 baseQuorum = _getQuorum(proposalType);
+        uint256 adjustedQuorum = baseQuorum > POLL_QUORUM_BONUS 
+            ? baseQuorum - POLL_QUORUM_BONUS 
+            : baseQuorum;
+        
+        // Snapshot voting power
+        uint256 snapshotVotingPower = propertyToken.getTotalWeightedVotingPower(poll.propertyId);
+        require(snapshotVotingPower > 0, "No voting power exists");
+        totalVotingPower[proposalId] = snapshotVotingPower;
+        
+        proposals[proposalId] = Proposal({
+            id: proposalId,
+            propertyId: poll.propertyId,
+            proposer: msg.sender,
+            proposalType: proposalType,
+            title: poll.question,
+            description: poll.description,
+            ipfsHash: poll.ipfsHash,
+            votesFor: 0,
+            votesAgainst: 0,
+            votesAbstain: 0,
+            startTime: block.timestamp,
+            endTime: block.timestamp + votingPeriod,
+            quorumRequired: adjustedQuorum,
+            status: ProposalStatus.Active,
+            executionData: executionData
+        });
+        
+        // Link poll to proposal
+        poll.status = PollStatus.ConvertedToProposal;
+        poll.linkedProposalId = proposalId;
+        
+        emit ProposalCreated(proposalId, poll.propertyId, msg.sender, proposalType, poll.question);
+        emit PollConvertedToProposal(pollId, proposalId);
+        
+        return proposalId;
+    }
+
+    /**
+     * @notice Get poll details
+     * @param pollId Poll ID
+     */
+    function getPoll(uint256 pollId) external view returns (Poll memory) {
+        return polls[pollId];
+    }
+
+    /**
+     * @notice Get poll support percentage
+     * @param pollId Poll ID
+     * @return supportPercent Support in basis points (e.g., 6000 = 60%)
+     */
+    function getPollSupport(uint256 pollId) external view returns (uint256) {
+        Poll storage poll = polls[pollId];
+        uint256 totalVotes = poll.votesFor + poll.votesAgainst;
+        if (totalVotes == 0) return 0;
+        return (poll.votesFor * 10000) / totalVotes;
+    }
+
+    /**
+     * @notice Get active polls for a property
+     * @param propertyId Property ID (0 for platform-wide)
+     */
+    function getActivePolls(uint256 propertyId) external view returns (Poll[] memory) {
+        uint256 count = 0;
+        for (uint256 i = 0; i < pollCount; i++) {
+            if (polls[i].propertyId == propertyId && polls[i].status == PollStatus.Active) {
+                count++;
+            }
+        }
+        Poll[] memory active = new Poll[](count);
+        uint256 idx = 0;
+        for (uint256 i = 0; i < pollCount; i++) {
+            if (polls[i].propertyId == propertyId && polls[i].status == PollStatus.Active) {
+                active[idx++] = polls[i];
+            }
+        }
+        return active;
     }
 }
