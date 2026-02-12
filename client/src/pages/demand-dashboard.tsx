@@ -58,22 +58,29 @@ export default function DemandDashboard() {
     queryKey: ["/api/stats"],
   });
 
-  const activeProposals = proposals.filter((p: any) => p.status === "active");
-  const passedProposals = proposals.filter((p: any) => p.status === "passed" || p.status === "executed");
-  const totalVotes = proposals.reduce((sum: number, p: any) => sum + (p.votesFor || 0) + (p.votesAgainst || 0), 0);
+  const activeProposals = proposals.filter((p) => p.status === "active");
+  const passedProposals = proposals.filter((p) => p.status === "passed" || p.status === "executed");
+  const totalVotes = proposals.reduce((sum, p) => sum + (p.votesFor || 0) + (p.votesAgainst || 0), 0);
 
-  const propertyDevVotes = proposals
-    .filter((p: any) => p.type === "property_development" || !p.type)
-    .reduce((sum: number, p: any) => sum + (p.votesFor || 0) + (p.votesAgainst || 0), 0);
-  const treasuryVotes = proposals
-    .filter((p: any) => p.type === "treasury_allocation")
-    .reduce((sum: number, p: any) => sum + (p.votesFor || 0) + (p.votesAgainst || 0), 0);
-  const parameterVotes = proposals
-    .filter((p: any) => p.type === "parameter_change")
-    .reduce((sum: number, p: any) => sum + (p.votesFor || 0) + (p.votesAgainst || 0), 0);
-  const emergencyVotes = proposals
-    .filter((p: any) => p.type === "emergency")
-    .reduce((sum: number, p: any) => sum + (p.votesFor || 0) + (p.votesAgainst || 0), 0);
+  const categorize = (p: ProposalSchema): string => {
+    const text = ((p.title || "") + " " + (p.description || "")).toLowerCase();
+    if (/treasury|fund|budget|allocat|spend|financ/.test(text)) return "treasury";
+    if (/parameter|setting|rule|config|threshold|quorum/.test(text)) return "parameter";
+    if (/emergency|urgent|safety|critical|security/.test(text)) return "emergency";
+    return "property";
+  };
+
+  const votesByCategory = proposals.reduce((acc, p) => {
+    const cat = categorize(p);
+    const votes = (p.votesFor || 0) + (p.votesAgainst || 0);
+    acc[cat] = (acc[cat] || 0) + votes;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const propertyDevVotes = votesByCategory["property"] || 0;
+  const treasuryVotes = votesByCategory["treasury"] || 0;
+  const parameterVotes = votesByCategory["parameter"] || 0;
+  const emergencyVotes = votesByCategory["emergency"] || 0;
 
   const safeTotal = totalVotes || 1;
 

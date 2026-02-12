@@ -35,10 +35,24 @@ export async function registerRoutes(
       const proposals = await storage.getProposals();
       const activeProposals = proposals.filter((p: any) => p.status === "active");
 
+      let totalUsers = 0;
+      let totalInvested = "0";
+      try {
+        const { db } = await import("./db");
+        const { users, tokenHoldings } = await import("@shared/schema");
+        const { sql } = await import("drizzle-orm");
+        const userCountResult = await db.select({ count: sql<number>`count(*)` }).from(users);
+        totalUsers = Number(userCountResult[0]?.count || 0);
+        const investedResult = await db.select({
+          total: sql<string>`COALESCE(SUM(token_count * CAST(average_purchase_price AS DECIMAL)), 0)`
+        }).from(tokenHoldings);
+        totalInvested = String(investedResult[0]?.total || "0");
+      } catch {}
+
       res.json({
         totalProperties: properties.length,
-        totalUsers: 0,
-        totalInvested: "0",
+        totalUsers,
+        totalInvested,
         activeProposals: activeProposals.length,
         totalProposals: proposals.length,
       });

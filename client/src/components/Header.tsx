@@ -9,15 +9,15 @@ import type { User } from "@shared/schema";
 
 const publicNavLinks = [
   { href: "/", label: "Home" },
-  { href: "/properties", label: "Properties" },
+  { href: "/properties", label: "Explore" },
   { href: "/how-it-works", label: "How It Works" },
-  { href: "/governance", label: "Governance" },
-  { href: "/litepaper", label: "Litepaper" },
+  { href: "/demand", label: "Demand" },
+  { href: "/litepaper", label: "Learn" },
 ];
 
 const authenticatedNavLinks = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/demand", label: "Demand", icon: BarChart3 },
+  { href: "/founder", label: "Founder" },
   { href: "/ai-insights", label: "AI Insights", icon: Brain },
   { href: "/business", label: "Business", icon: FileText },
 ];
