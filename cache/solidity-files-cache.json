@@ -426,8 +426,8 @@
       ]
     },
     "/home/runner/workspace/contracts/PhaseManager.sol": {
-      "lastModificationDate": 1769804978489,
-      "contentHash": "9ddf95e38c81c73631ea4d1c4ce84197",
+      "lastModificationDate": 1770897765784,
+      "contentHash": "174309e0be66e19b96916afc3a12030a",
       "sourceName": "contracts/PhaseManager.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -943,8 +943,8 @@
       ]
     },
     "/home/runner/workspace/contracts/Governance.sol": {
-      "lastModificationDate": 1769804826317,
-      "contentHash": "37d99c77641bbe6300eda5695507361c",
+      "lastModificationDate": 1770897730671,
+      "contentHash": "0bce4c60c8b0a70005c3a2b8c40fad19",
       "sourceName": "contracts/Governance.sol",
       "solcConfig": {
         "version": "0.8.24",

@@ -45,6 +45,8 @@ interface IGovernance {
         uint8 status,
         bytes memory executionData
     );
+    function getDemandBars() external view returns (uint256[4] memory);
+    function getCommunityHealthScore() external view returns (uint256);
 }
 
 /**
@@ -123,6 +125,8 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
     event BonusClaimed(uint256 indexed propertyId, address indexed claimer, uint256 bonus);
     event PollParticipationRecorded(uint256 indexed propertyId, address indexed participant);
     event PollBonusApplied(uint256 indexed propertyId, uint256 pollParticipants, uint256 bonusEngagement);
+    event DemandNudge(uint256 indexed propertyId, uint8 demandType, uint256 demandBps);
+    event DemandDrivenAdvancement(uint256 indexed propertyId, uint256 demandBps);
 
     constructor(address _propertyToken, address _governance) {
         propertyToken = IPropertyToken(_propertyToken);
@@ -494,5 +498,65 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
      */
     function hasParticipatedInPolls(uint256 propertyId, address participant) external view returns (bool) {
         return pollParticipated[propertyId][participant];
+    }
+
+    // ============ Demand-Driven Engagement (SimCity Integration) ============
+
+    /**
+     * @notice Update engagement based on governance demand signals
+     * @dev Reads demand bars from Governance contract, triggers phase advancement
+     *      if PropertyDevelopment demand exceeds threshold. Like SimCity's advisor system.
+     * @param propertyId Property ID to evaluate
+     */
+    function updateDemandEngagement(uint256 propertyId) external onlyRole(OPERATOR_ROLE) {
+        require(isTracked[propertyId], "Property not tracked");
+        PropertyEngagement storage engagement = propertyEngagement[propertyId];
+        require(engagement.isTracking, "Not tracking");
+        
+        // Get demand bars from Governance (SimCity-style RCI readings)
+        uint256[4] memory demandBars = governance.getDemandBars();
+        uint256 propDemandBps = demandBars[0]; // PropertyDevelopment = index 0
+        
+        // Emit advisor-style nudge for UI
+        emit DemandNudge(propertyId, 0, propDemandBps);
+        
+        // Check if PropertyDevelopment demand meets engagement threshold
+        if (propDemandBps >= ENGAGEMENT_THRESHOLD && 
+            block.timestamp >= engagement.phaseStartTime + MIN_ENGAGEMENT_PERIOD) {
+            _advancePhaseByEngagement(propertyId, propDemandBps);
+            emit DemandDrivenAdvancement(propertyId, propDemandBps);
+        }
+    }
+
+    /**
+     * @notice Get community health from governance contract
+     * @return healthScore 0-10000 based on demand diversity and participation
+     */
+    function getCommunityHealth() external view returns (uint256) {
+        return governance.getCommunityHealthScore();
+    }
+
+    /**
+     * @notice Get demand-adjusted engagement metrics for a property
+     * @param propertyId Property ID
+     * @return baseEngagement Standard engagement percentage in BPS
+     * @return demandBars Governance demand bars [PropDev, Treasury, Params, Emergency]
+     * @return healthScore Community health score 0-10000
+     * @return isReadyForAdvancement Whether demand conditions support phase advancement
+     */
+    function getDemandEngagementMetrics(uint256 propertyId) external view returns (
+        uint256 baseEngagement,
+        uint256[4] memory demandBars,
+        uint256 healthScore,
+        bool isReadyForAdvancement
+    ) {
+        baseEngagement = calculateEngagement(propertyId);
+        demandBars = governance.getDemandBars();
+        healthScore = governance.getCommunityHealthScore();
+        
+        PropertyEngagement storage engagement = propertyEngagement[propertyId];
+        isReadyForAdvancement = engagement.isTracking && 
+            demandBars[0] >= ENGAGEMENT_THRESHOLD &&
+            block.timestamp >= engagement.phaseStartTime + MIN_ENGAGEMENT_PERIOD;
     }
 }

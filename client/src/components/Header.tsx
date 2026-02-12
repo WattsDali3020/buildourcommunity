@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { WalletButton } from "./WalletButton";
-import { Building2, Menu, X, Brain, FileText } from "lucide-react";
+import { Building2, Menu, X, Brain, FileText, BarChart3 } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
@@ -17,6 +17,7 @@ const publicNavLinks = [
 
 const authenticatedNavLinks = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/demand", label: "Demand", icon: BarChart3 },
   { href: "/ai-insights", label: "AI Insights", icon: Brain },
   { href: "/business", label: "Business", icon: FileText },
 ];

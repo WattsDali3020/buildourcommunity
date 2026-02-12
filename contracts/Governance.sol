@@ -145,6 +145,21 @@ contract Governance is AccessControl, ReentrancyGuard {
     // Poll quorum bonus (5% reduction when poll-backed)
     uint256 public constant POLL_QUORUM_BONUS = 500;
 
+    // ============ SimCity-Style Demand Meters ============
+    
+    // Cumulative vote weight per proposal type (tracks community demand signals)
+    mapping(ProposalType => uint256) public typeDemandWeights;
+    
+    // Demand snapshots in BPS (e.g., 7500 = 75% of total votes for this type)
+    mapping(ProposalType => uint256) public demandSnapshots;
+    
+    // Total demand weight across all types (for percentage calculation)
+    uint256 public totalDemandWeight;
+    
+    // Demand-driven quorum boost threshold (50% demand = -5% quorum)
+    uint256 public constant DEMAND_QUORUM_BOOST_THRESHOLD = 5000;
+    uint256 public constant DEMAND_QUORUM_BOOST = 500;
+
     // Events
     event ProposalCreated(
         uint256 indexed proposalId,
@@ -185,6 +200,16 @@ contract Governance is AccessControl, ReentrancyGuard {
         uint8 support,
         uint256 weight,
         address relayer
+    );
+    
+    // Demand meter events
+    event DemandUpdated(
+        ProposalType indexed proposalType,
+        uint256 demandWeight,
+        uint256 demandBps
+    );
+    event DemandSnapshotTaken(
+        uint256[4] demandBars
     );
 
     constructor(address _propertyToken) {
@@ -297,6 +322,9 @@ contract Governance is AccessControl, ReentrancyGuard {
         voterParticipationCount[msg.sender]++;
         lastVoteTimestamp[msg.sender] = block.timestamp;
 
+        // Update demand meters
+        _updateDemandMeters(proposal.proposalType, weight);
+
         emit VoteCast(proposalId, msg.sender, support, weight);
     }
 
@@ -363,6 +391,9 @@ contract Governance is AccessControl, ReentrancyGuard {
         // Update vote-to-earn tracking
         voterParticipationCount[voter]++;
         lastVoteTimestamp[voter] = block.timestamp;
+
+        // Update demand meters
+        _updateDemandMeters(proposal.proposalType, weight);
 
         emit OffChainVoteCast(proposalId, voter, support, weight, msg.sender);
     }
@@ -491,13 +522,21 @@ contract Governance is AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @notice Get quorum requirement for proposal type
+     * @notice Get quorum requirement for proposal type (with demand-driven boost)
      */
-    function _getQuorum(ProposalType proposalType) internal pure returns (uint256) {
-        if (proposalType == ProposalType.PropertyDevelopment) return QUORUM_PROPERTY;
-        if (proposalType == ProposalType.TreasuryAllocation) return QUORUM_TREASURY;
-        if (proposalType == ProposalType.ParameterChange) return QUORUM_PARAMETER;
-        return QUORUM_EMERGENCY;
+    function _getQuorum(ProposalType proposalType) internal view returns (uint256) {
+        uint256 baseQuorum;
+        if (proposalType == ProposalType.PropertyDevelopment) baseQuorum = QUORUM_PROPERTY;
+        else if (proposalType == ProposalType.TreasuryAllocation) baseQuorum = QUORUM_TREASURY;
+        else if (proposalType == ProposalType.ParameterChange) baseQuorum = QUORUM_PARAMETER;
+        else baseQuorum = QUORUM_EMERGENCY;
+        
+        // Demand-driven quorum boost: types with >50% demand get -5% quorum
+        if (demandSnapshots[proposalType] >= DEMAND_QUORUM_BOOST_THRESHOLD) {
+            uint256 boosted = baseQuorum > DEMAND_QUORUM_BOOST ? baseQuorum - DEMAND_QUORUM_BOOST : 1000;
+            return boosted < 1000 ? 1000 : boosted; // Minimum 10% quorum
+        }
+        return baseQuorum;
     }
 
     /**
@@ -708,5 +747,103 @@ contract Governance is AccessControl, ReentrancyGuard {
             }
         }
         return active;
+    }
+
+    // ============ SimCity-Style Demand Meter Functions ============
+
+    /**
+     * @notice Internal: Update demand meters when a vote is cast
+     * @param proposalType The type of proposal being voted on
+     * @param weight The voting weight applied
+     */
+    function _updateDemandMeters(ProposalType proposalType, uint256 weight) internal {
+        typeDemandWeights[proposalType] += weight;
+        totalDemandWeight += weight;
+        
+        // Update snapshot for this type
+        if (totalDemandWeight > 0) {
+            demandSnapshots[proposalType] = (typeDemandWeights[proposalType] * 10000) / totalDemandWeight;
+        }
+        
+        emit DemandUpdated(proposalType, typeDemandWeights[proposalType], demandSnapshots[proposalType]);
+    }
+
+    /**
+     * @notice Get SimCity-style demand bars for all 4 proposal types
+     * @return bars Array of 4 values in BPS: [PropertyDev, Treasury, Parameters, Emergency]
+     * @dev Like SimCity's R/C/I demand bars - shows what the community wants
+     */
+    function getDemandBars() external view returns (uint256[4] memory bars) {
+        if (totalDemandWeight == 0) return bars;
+        
+        for (uint256 i = 0; i < 4; i++) {
+            bars[i] = (typeDemandWeights[ProposalType(i)] * 10000) / totalDemandWeight;
+        }
+        return bars;
+    }
+
+    /**
+     * @notice Get demand weight for a specific proposal type
+     * @param proposalType The proposal type to query
+     * @return weight Cumulative vote weight for this type
+     * @return bps Demand percentage in basis points
+     */
+    function getDemandForType(ProposalType proposalType) external view returns (uint256 weight, uint256 bps) {
+        weight = typeDemandWeights[proposalType];
+        bps = totalDemandWeight > 0 ? (weight * 10000) / totalDemandWeight : 0;
+    }
+
+    /**
+     * @notice Take a demand snapshot (callable by operator for analytics)
+     * @dev Updates all demand snapshots and emits event for off-chain indexing
+     */
+    function takeDemandSnapshot() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        uint256[4] memory bars;
+        if (totalDemandWeight > 0) {
+            for (uint256 i = 0; i < 4; i++) {
+                ProposalType pType = ProposalType(i);
+                bars[i] = (typeDemandWeights[pType] * 10000) / totalDemandWeight;
+                demandSnapshots[pType] = bars[i];
+            }
+        }
+        emit DemandSnapshotTaken(bars);
+    }
+
+    /**
+     * @notice Get the effective quorum for a proposal type (includes demand boost)
+     * @param proposalType The proposal type
+     * @return effectiveQuorum The quorum in basis points after demand adjustments
+     */
+    function getEffectiveQuorum(ProposalType proposalType) external view returns (uint256) {
+        return _getQuorum(proposalType);
+    }
+
+    /**
+     * @notice Get community health score based on demand diversity and participation
+     * @return healthScore Score 0-10000 (higher = healthier community)
+     * @dev Measures demand diversity (balanced = healthier) and total participation
+     */
+    function getCommunityHealthScore() external view returns (uint256 healthScore) {
+        if (totalDemandWeight == 0) return 0;
+        
+        // Diversity score: How evenly distributed demand is across types
+        // Perfect balance = 2500 each = max diversity
+        uint256 diversityScore = 0;
+        for (uint256 i = 0; i < 4; i++) {
+            uint256 typeBps = (typeDemandWeights[ProposalType(i)] * 10000) / totalDemandWeight;
+            // Distance from perfect balance (2500)
+            uint256 deviation = typeBps > 2500 ? typeBps - 2500 : 2500 - typeBps;
+            // Max deviation per type is 2500, so normalize
+            diversityScore += (2500 - deviation);
+        }
+        // diversityScore ranges 0-10000, normalize to 0-5000 (half of health)
+        diversityScore = diversityScore / 2;
+        
+        // Participation score: Based on total votes cast (capped contribution)
+        // More votes = healthier, cap at 5000 for the other half
+        uint256 participationScore = totalDemandWeight > 0 ? 5000 : 0;
+        
+        healthScore = diversityScore + participationScore;
+        if (healthScore > 10000) healthScore = 10000;
     }
 }

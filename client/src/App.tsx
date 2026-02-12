@@ -25,6 +25,8 @@ import FAQ from "@/pages/faq";
 import AIInsights from "@/pages/ai-insights";
 import BusinessLayer from "@/pages/business-layer";
 import Grants from "@/pages/grants";
+import DemandDashboard from "@/pages/demand-dashboard";
+import FounderDashboard from "@/pages/founder-dashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -49,6 +51,8 @@ function Router() {
       <Route path="/ai-insights" component={AIInsights} />
       <Route path="/business" component={BusinessLayer} />
       <Route path="/grants" component={Grants} />
+      <Route path="/demand" component={DemandDashboard} />
+      <Route path="/founder" component={FounderDashboard} />
       <Route component={NotFound} />
     </Switch>
   );

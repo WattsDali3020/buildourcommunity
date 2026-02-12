@@ -28,6 +28,31 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   await setupAuth(app);
+
+  app.get("/api/stats", async (req: Request, res: Response) => {
+    try {
+      const properties = await storage.getProperties();
+      const proposals = await storage.getProposals();
+      const activeProposals = proposals.filter((p: any) => p.status === "active");
+
+      res.json({
+        totalProperties: properties.length,
+        totalUsers: 0,
+        totalInvested: "0",
+        activeProposals: activeProposals.length,
+        totalProposals: proposals.length,
+      });
+    } catch (error) {
+      res.json({
+        totalProperties: 0,
+        totalUsers: 0,
+        totalInvested: "0",
+        activeProposals: 0,
+        totalProposals: 0,
+      });
+    }
+  });
+
   app.get("/api/properties", async (req: Request, res: Response) => {
     const properties = await storage.getProperties();
     res.json(properties);
