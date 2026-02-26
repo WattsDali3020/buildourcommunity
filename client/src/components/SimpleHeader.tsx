@@ -9,6 +9,7 @@ import type { User } from "@shared/schema";
 const publicNavLinks = [
   { href: "/", label: "Home" },
   { href: "/properties", label: "Explore" },
+  { href: "/wishlist", label: "Wishlist" },
   { href: "/how-it-works", label: "How It Works" },
   { href: "/litepaper", label: "Learn" },
 ];

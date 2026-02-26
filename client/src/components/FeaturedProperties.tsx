@@ -6,7 +6,6 @@ import riverfrontImage from "@assets/generated_images/riverfront_wellness_commun
 import millImage from "@assets/generated_images/historic_mill_adaptive_reuse.png";
 import downtownImage from "@assets/generated_images/revitalized_downtown_community_district.png";
 
-// todo: remove mock functionality
 const mockProperties: Property[] = [
   {
     id: "etowah-wellness-village",
@@ -14,13 +13,15 @@ const mockProperties: Property[] = [
     location: { city: "Canton", state: "Georgia" },
     type: "downtown",
     image: riverfrontImage,
-    tokenPrice: 100,
+    tokenPrice: 12.50,
     totalTokens: 100000,
     tokensSold: 42000,
     fundingGoal: 10000000,
     fundingRaised: 4200000,
     projectedROI: 8,
     communityBenefits: ["50+ affordable housing units", "100+ local jobs", "Riverfront trail access"],
+    phase: "County",
+    engagementPercent: 65,
   },
   {
     id: "mill-on-main",
@@ -28,13 +29,15 @@ const mockProperties: Property[] = [
     location: { city: "Greenville", state: "South Carolina" },
     type: "historic_building",
     image: millImage,
-    tokenPrice: 250,
+    tokenPrice: 18.75,
     totalTokens: 80000,
     tokensSold: 58000,
     fundingGoal: 20000000,
     fundingRaised: 14500000,
     projectedROI: 9.5,
     communityBenefits: ["Co-working space", "Local retail incubator", "Event venue"],
+    phase: "State",
+    engagementPercent: 82,
   },
   {
     id: "downtown-revitalization",
@@ -42,13 +45,15 @@ const mockProperties: Property[] = [
     location: { city: "Asheville", state: "North Carolina" },
     type: "commercial",
     image: downtownImage,
-    tokenPrice: 150,
+    tokenPrice: 28.13,
     totalTokens: 120000,
     tokensSold: 85000,
     fundingGoal: 18000000,
     fundingRaised: 12750000,
     projectedROI: 7.5,
     communityBenefits: ["Downtown walkability", "Small business support", "Cultural programming"],
+    phase: "National",
+    engagementPercent: 78,
   },
 ];
 
@@ -58,9 +63,9 @@ export function FeaturedProperties() {
       <div className="mx-auto max-w-7xl px-4">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>
-            <h2 className="text-3xl font-semibold mb-2">Featured Properties</h2>
+            <h2 className="text-3xl font-semibold mb-2" data-testid="text-featured-title">Featured Properties</h2>
             <p className="text-muted-foreground">
-              Discover high-impact revitalization projects across the nation
+              Top revitalization projects with highest community engagement
             </p>
           </div>
           <Link href="/properties">

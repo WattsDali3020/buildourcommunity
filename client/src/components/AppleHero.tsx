@@ -1,67 +1,278 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { ArrowRight, Play, Sparkles } from "lucide-react";
+import { ArrowRight, MapPin, Building2, TrendingUp, Users, DollarSign } from "lucide-react";
+import { useEffect, useRef } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+const propertyMarkers = [
+  {
+    id: "etowah-wellness-village",
+    name: "Etowah Riverfront Wellness Village",
+    city: "Canton",
+    state: "Georgia",
+    lat: 34.2368,
+    lng: -84.4908,
+    phase: "County",
+    fundingPercent: 42,
+    tokenPrice: 12.50,
+    roi: 8,
+  },
+  {
+    id: "mill-on-main",
+    name: "Historic Mill Adaptive Reuse",
+    city: "Greenville",
+    state: "South Carolina",
+    lat: 34.8526,
+    lng: -82.394,
+    phase: "State",
+    fundingPercent: 72,
+    tokenPrice: 18.75,
+    roi: 9.5,
+  },
+  {
+    id: "downtown-revitalization",
+    name: "Main Street Revitalization District",
+    city: "Asheville",
+    state: "North Carolina",
+    lat: 35.5951,
+    lng: -82.5515,
+    phase: "National",
+    fundingPercent: 71,
+    tokenPrice: 28.13,
+    roi: 7.5,
+  },
+  {
+    id: "austin-land-trust",
+    name: "Community Land Trust Initiative",
+    city: "Austin",
+    state: "Texas",
+    lat: 30.2672,
+    lng: -97.7431,
+    phase: "County",
+    fundingPercent: 33,
+    tokenPrice: 12.50,
+    roi: 6.5,
+  },
+  {
+    id: "denver-warehouse",
+    name: "RiNo Arts District Warehouse",
+    city: "Denver",
+    state: "Colorado",
+    lat: 39.7645,
+    lng: -104.9803,
+    phase: "State",
+    fundingPercent: 72,
+    tokenPrice: 18.75,
+    roi: 8.5,
+  },
+  {
+    id: "phoenix-downtown",
+    name: "Roosevelt Row Revitalization",
+    city: "Phoenix",
+    state: "Arizona",
+    lat: 33.462,
+    lng: -112.065,
+    phase: "County",
+    fundingPercent: 28,
+    tokenPrice: 12.50,
+    roi: 7.8,
+  },
+];
+
+const phaseColors: Record<string, string> = {
+  County: "#22c55e",
+  State: "#3b82f6",
+  National: "#a855f7",
+  International: "#f59e0b",
+};
+
+function createMarkerIcon(phase: string) {
+  const color = phaseColors[phase] || "#3b82f6";
+  return L.divIcon({
+    className: "custom-marker",
+    html: `<div style="
+      width: 28px; height: 28px; border-radius: 50%;
+      background: ${color}; border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: center;
+    "><svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3" fill="${color}"/></svg></div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+  });
+}
 
 export function AppleHero() {
-  return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gradient-hero glow-blue">
-      <div className="relative z-10 mx-auto max-w-5xl px-4 text-center">
-        <div className="mb-8">
-          <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-5 py-2 text-sm font-medium text-primary">
-            <Sparkles className="h-4 w-4" />
-            AI-Powered Community Investment Platform
-          </span>
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+
+  useEffect(() => {
+    if (!mapRef.current || mapInstanceRef.current) return;
+
+    const map = L.map(mapRef.current, {
+      center: [39.8, -98.5],
+      zoom: 4,
+      zoomControl: false,
+      attributionControl: false,
+      scrollWheelZoom: false,
+      dragging: true,
+    });
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      maxZoom: 19,
+    }).addTo(map);
+
+    L.control.zoom({ position: "bottomright" }).addTo(map);
+
+    propertyMarkers.forEach((prop) => {
+      const marker = L.marker([prop.lat, prop.lng], {
+        icon: createMarkerIcon(prop.phase),
+      }).addTo(map);
+
+      const popupContent = `
+        <div style="min-width:200px;font-family:system-ui,sans-serif;">
+          <div style="font-weight:600;font-size:14px;margin-bottom:4px;">${prop.name}</div>
+          <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">${prop.city}, ${prop.state}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:11px;color:#94a3b8;">Funded</span>
+            <span style="font-size:12px;font-weight:600;color:${phaseColors[prop.phase]}">${prop.fundingPercent}%</span>
+          </div>
+          <div style="background:#1e293b;border-radius:4px;height:6px;overflow:hidden;margin-bottom:8px;">
+            <div style="background:${phaseColors[prop.phase]};height:100%;width:${prop.fundingPercent}%;border-radius:4px;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;">
+            <span style="color:#94a3b8;">$${prop.tokenPrice}/token</span>
+            <span style="color:#22c55e;font-weight:600;">${prop.roi}% ROI</span>
+          </div>
         </div>
-        
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-8">
-          <span className="block text-foreground">
-            Own Your Community's
-          </span>
-          <span className="text-gradient-animated">
-            Future
-          </span>
-        </h1>
-        
-        <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed">
-          Transform vacant properties into thriving assets. Invest from $12.50, 
-          vote on development, and earn returns—powered by AI-driven governance 
-          on the blockchain.
-        </p>
-        
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
-          <Button size="lg" asChild className="min-w-[200px]" data-testid="button-explore-properties">
-            <Link href="/properties">
-              Explore Properties
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-          <Button size="lg" variant="outline" asChild className="min-w-[200px]" data-testid="button-watch-demo">
-            <Link href="/how-it-works">
-              <Play className="mr-2 h-4 w-4" />
-              How It Works
-            </Link>
-          </Button>
+      `;
+
+      marker.bindPopup(popupContent, {
+        className: "leaflet-dark-popup",
+        closeButton: true,
+      });
+
+    });
+
+    mapInstanceRef.current = map;
+
+    return () => {
+      map.remove();
+      mapInstanceRef.current = null;
+    };
+  }, []);
+
+  return (
+    <>
+      <style>{`
+        .leaflet-dark-popup .leaflet-popup-content-wrapper {
+          background: #0f172a;
+          color: #e2e8f0;
+          border-radius: 12px;
+          border: 1px solid #1e293b;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        .leaflet-dark-popup .leaflet-popup-tip {
+          background: #0f172a;
+          border: 1px solid #1e293b;
+        }
+        .leaflet-dark-popup .leaflet-popup-close-button {
+          color: #94a3b8 !important;
+        }
+        .custom-marker {
+          background: transparent !important;
+          border: none !important;
+        }
+      `}</style>
+      <section className="relative" data-testid="hero-section">
+        <div className="relative h-[85vh] min-h-[600px]">
+          <div ref={mapRef} className="absolute inset-0 z-0" data-testid="hero-map" />
+
+          <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-b from-black/70 via-black/40 to-black/70" />
+
+          <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+            <div className="text-center px-4 max-w-4xl pointer-events-auto">
+              <div className="mb-6">
+                <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30 px-4 py-1.5 text-sm" data-testid="badge-platform">
+                  <Building2 className="h-3.5 w-3.5 mr-1.5" />
+                  AI-Nudged RevitalDAO
+                </Badge>
+              </div>
+
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 text-white drop-shadow-lg" data-testid="text-hero-title">
+                Build Your Community,{" "}
+                <span className="text-gradient-animated">One Token at a Time</span>
+              </h1>
+
+              <p className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto mb-8 leading-relaxed drop-shadow-md" data-testid="text-hero-subtitle">
+                Nominate distressed properties, invest in revitalization, vote on development 
+                plans, and watch your county transform.{" "}
+                <span className="text-primary font-medium">Like SimCity, but real.</span>
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+                <Button size="lg" asChild className="min-w-[200px] shadow-lg" data-testid="button-explore-properties">
+                  <Link href="/properties">
+                    Explore Properties
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" asChild className="min-w-[200px] bg-white/10 border-white/20 text-white hover:bg-white/20 shadow-lg" data-testid="button-nominate">
+                  <Link href="/wishlist">
+                    <MapPin className="mr-2 h-4 w-4" />
+                    Nominate Property
+                  </Link>
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                {Object.entries(phaseColors).map(([phase, color]) => (
+                  <div key={phase} className="flex items-center gap-1.5 text-xs text-gray-400">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
+                    <span>{phase}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-3xl mx-auto">
-          <div className="stat-card rounded-xl border bg-card/50 backdrop-blur-sm p-5 border-glow" data-testid="stat-investment">
-            <p className="text-3xl sm:text-4xl font-bold metric-value text-primary">$12.50</p>
-            <p className="text-sm text-muted-foreground mt-2">Min. Investment</p>
-          </div>
-          <div className="stat-card rounded-xl border bg-card/50 backdrop-blur-sm p-5 border-glow" data-testid="stat-returns">
-            <p className="text-3xl sm:text-4xl font-bold metric-value text-primary">8.2%</p>
-            <p className="text-sm text-muted-foreground mt-2">Target Returns</p>
-          </div>
-          <div className="stat-card rounded-xl border bg-card/50 backdrop-blur-sm p-5 border-glow" data-testid="stat-protection">
-            <p className="text-3xl sm:text-4xl font-bold metric-value text-primary">3%</p>
-            <p className="text-sm text-muted-foreground mt-2">APR Protection</p>
-          </div>
-          <div className="stat-card rounded-xl border bg-card/50 backdrop-blur-sm p-5 border-glow" data-testid="stat-governance">
-            <p className="text-3xl sm:text-4xl font-bold metric-value text-primary">AI</p>
-            <p className="text-sm text-muted-foreground mt-2">Smart Governance</p>
+        <div className="bg-card border-y" data-testid="stats-bar">
+          <div className="mx-auto max-w-7xl px-4 py-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="text-center" data-testid="stat-properties">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <Building2 className="h-4 w-4 text-primary" />
+                  <span className="text-2xl sm:text-3xl font-bold text-primary">6</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Active Properties</p>
+              </div>
+              <div className="text-center" data-testid="stat-funded">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <TrendingUp className="h-4 w-4 text-chart-3" />
+                  <span className="text-2xl sm:text-3xl font-bold text-chart-3">$56.4M</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Total Raised</p>
+              </div>
+              <div className="text-center" data-testid="stat-investors">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <Users className="h-4 w-4 text-chart-2" />
+                  <span className="text-2xl sm:text-3xl font-bold text-chart-2">2,847</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Community Members</p>
+              </div>
+              <div className="text-center" data-testid="stat-engagement">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <DollarSign className="h-4 w-4 text-chart-4" />
+                  <span className="text-2xl sm:text-3xl font-bold text-chart-4">$12.50</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Min. Investment</p>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
