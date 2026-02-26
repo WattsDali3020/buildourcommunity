@@ -111,11 +111,11 @@ export function AppleHero() {
     if (!mapRef.current || mapInstanceRef.current) return;
 
     const map = L.map(mapRef.current, {
-      center: [39.8, -98.5],
+      center: [36.5, -96],
       zoom: 4,
       zoomControl: false,
       attributionControl: false,
-      scrollWheelZoom: false,
+      scrollWheelZoom: true,
       dragging: true,
     });
 
@@ -131,7 +131,7 @@ export function AppleHero() {
       }).addTo(map);
 
       const popupContent = `
-        <div style="min-width:200px;font-family:system-ui,sans-serif;">
+        <div style="min-width:220px;font-family:system-ui,sans-serif;padding:4px 0;">
           <div style="font-weight:600;font-size:14px;margin-bottom:4px;">${prop.name}</div>
           <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">${prop.city}, ${prop.state}</div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
@@ -152,7 +152,6 @@ export function AppleHero() {
         className: "leaflet-dark-popup",
         closeButton: true,
       });
-
     });
 
     mapInstanceRef.current = map;
@@ -185,55 +184,67 @@ export function AppleHero() {
           border: none !important;
         }
       `}</style>
-      <section className="relative" data-testid="hero-section">
-        <div className="relative h-[85vh] min-h-[600px]">
-          <div ref={mapRef} className="absolute inset-0 z-0" data-testid="hero-map" />
 
-          <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-b from-black/70 via-black/40 to-black/70" />
+      <section data-testid="hero-section">
+        <div className="bg-gradient-to-b from-background to-muted/30 border-b">
+          <div className="mx-auto max-w-5xl px-4 pt-14 pb-10 text-center">
+            <div className="mb-5">
+              <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30 px-4 py-1.5 text-sm" data-testid="badge-platform">
+                <Building2 className="h-3.5 w-3.5 mr-1.5" />
+                AI-Nudged RevitalDAO
+              </Badge>
+            </div>
 
-          <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
-            <div className="text-center px-4 max-w-4xl pointer-events-auto">
-              <div className="mb-6">
-                <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30 px-4 py-1.5 text-sm" data-testid="badge-platform">
-                  <Building2 className="h-3.5 w-3.5 mr-1.5" />
-                  AI-Nudged RevitalDAO
-                </Badge>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-5 text-foreground" data-testid="text-hero-title">
+              Build Your Community,{" "}
+              <span className="text-gradient-animated">One Token at a Time</span>
+            </h1>
+
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed" data-testid="text-hero-subtitle">
+              Nominate distressed properties, invest in revitalization, vote on development
+              plans, and watch your county transform.{" "}
+              <span className="text-primary font-medium">Like SimCity, but real.</span>
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+              <Button size="lg" asChild className="min-w-[200px]" data-testid="button-explore-properties">
+                <Link href="/properties">
+                  Explore Properties
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild className="min-w-[200px]" data-testid="button-nominate">
+                <Link href="/wishlist">
+                  <MapPin className="mr-2 h-4 w-4" />
+                  Nominate Property
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative bg-muted/20">
+          <div className="mx-auto max-w-7xl px-4 py-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">Active Projects</span>
+                <span className="text-xs text-muted-foreground">— click markers for details</span>
               </div>
-
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 text-white drop-shadow-lg" data-testid="text-hero-title">
-                Build Your Community,{" "}
-                <span className="text-gradient-animated">One Token at a Time</span>
-              </h1>
-
-              <p className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto mb-8 leading-relaxed drop-shadow-md" data-testid="text-hero-subtitle">
-                Nominate distressed properties, invest in revitalization, vote on development 
-                plans, and watch your county transform.{" "}
-                <span className="text-primary font-medium">Like SimCity, but real.</span>
-              </p>
-
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-                <Button size="lg" asChild className="min-w-[200px] shadow-lg" data-testid="button-explore-properties">
-                  <Link href="/properties">
-                    Explore Properties
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button size="lg" variant="outline" asChild className="min-w-[200px] bg-white/10 border-white/20 text-white hover:bg-white/20 shadow-lg" data-testid="button-nominate">
-                  <Link href="/wishlist">
-                    <MapPin className="mr-2 h-4 w-4" />
-                    Nominate Property
-                  </Link>
-                </Button>
-              </div>
-
-              <div className="flex items-center justify-center gap-3 flex-wrap">
+              <div className="flex items-center gap-3 flex-wrap">
                 {Object.entries(phaseColors).map(([phase, color]) => (
-                  <div key={phase} className="flex items-center gap-1.5 text-xs text-gray-400">
+                  <div key={phase} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
                     <span>{phase}</span>
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+
+          <div className="mx-auto max-w-7xl px-4 pb-4">
+            <div className="rounded-xl overflow-hidden border shadow-lg" style={{ height: "500px" }}>
+              <div ref={mapRef} className="w-full h-full" data-testid="hero-map" />
             </div>
           </div>
         </div>
