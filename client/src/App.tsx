@@ -27,6 +27,8 @@ import BusinessLayer from "@/pages/business-layer";
 import Grants from "@/pages/grants";
 import DemandDashboard from "@/pages/demand-dashboard";
 import FounderDashboard from "@/pages/founder-dashboard";
+import Wishlist from "@/pages/wishlist";
+import Treasury from "@/pages/treasury";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -53,6 +55,8 @@ function Router() {
       <Route path="/grants" component={Grants} />
       <Route path="/demand" component={DemandDashboard} />
       <Route path="/founder" component={FounderDashboard} />
+      <Route path="/wishlist" component={Wishlist} />
+      <Route path="/treasury" component={Treasury} />
       <Route component={NotFound} />
     </Switch>
   );

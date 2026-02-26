@@ -14,10 +14,11 @@ import {
   type PrivateOfferingInvite, type InsertPrivateOfferingInvite,
   type PropertyGrant, type InsertPropertyGrant, type CapitalStackSummary,
   type Waitlist,
+  type Wish, type InsertWish,
   PHASE_CONFIG, calculatePhasePrice, getPhaseAllocation,
   users, properties, tokenOfferings, offeringPhases, tokenPurchases, 
   tokenHoldings, proposals, votes, propertySubmissions, submissionDocuments,
-  propertyNominations, desiredUseVotes, privateOfferingInvites, propertyGrants, waitlist
+  propertyNominations, desiredUseVotes, privateOfferingInvites, propertyGrants, waitlist, wishes
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
@@ -875,5 +876,22 @@ export class DatabaseStorage implements IStorage {
 
   async getWaitlistEntries(): Promise<Waitlist[]> {
     return db.select().from(waitlist).orderBy(desc(waitlist.createdAt));
+  }
+
+  async getWishes(): Promise<Wish[]> {
+    return db.select().from(wishes).orderBy(desc(wishes.votes));
+  }
+
+  async createWish(wish: InsertWish): Promise<Wish> {
+    const [entry] = await db.insert(wishes).values(wish).returning();
+    return entry;
+  }
+
+  async upvoteWish(id: string): Promise<Wish | undefined> {
+    const [updated] = await db.update(wishes)
+      .set({ votes: sql`${wishes.votes} + 1` })
+      .where(eq(wishes.id, id))
+      .returning();
+    return updated || undefined;
   }
 }

@@ -101,7 +101,39 @@ Preferred communication style: Simple, everyday language.
 - OpenAI and Google Generative AI for AI features
 - Passport.js for authentication
 
-## Recent Updates (January 2026)
+## Recent Updates (February 2026)
+
+### Feature Integration (February 26, 2026)
+Integrated features from community-wishlist and revita-hub-merge apps:
+
+1. **Community Wishlist** (`/wishlist`):
+   - Public page for submitting and voting on community wishes
+   - 9 categories: Housing, Retail, Entertainment, Parks & Recreation, Restaurant, Healthcare, Education, Services, Transportation
+   - 12 seed wishes with vote counts from external database
+   - Schema: `wishes` table (id, title, description, category, location, votes, email, take_it_further)
+   - API: `GET /api/wishes`, `POST /api/wishes`, `POST /api/wishes/:id/vote`
+
+2. **Interactive Map on Properties Page**:
+   - Mapbox map view with grid/map toggle (uses existing VITE_MAPBOX_TOKEN)
+   - Property markers with popup cards showing phase, funding progress, price, ROI
+   - Sidebar list with map pan-to-property on click
+   - Coordinates added to all mock property data
+
+3. **Treasury Page** (`/treasury`, authenticated):
+   - Fund allocation breakdown (Property Dev 40%, Community 20%, Operating 15%, Maintenance 15%, Emergency 10%)
+   - Transaction history with inflow/outflow filtering
+   - On-chain verification links
+
+4. **Achievements/Gamification** (Dashboard):
+   - 8 achievement types: First Investment, Diversified Portfolio, Phase Pioneer, Community Champion, Governance Voter, Diamond Hands, Whale Investor, Active Participant
+   - Progress bars for multi-step achievements
+   - Earned vs locked states computed from user holdings data
+
+5. **Navigation Updates**:
+   - Public: Wishlist link added
+   - Authenticated: Treasury link added
+
+## Previous Updates (January 2026)
 
 ### VC-Recommended Features (January 30, 2026)
 Added 5 new VC-recommended features based on institutional feedback:

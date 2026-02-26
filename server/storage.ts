@@ -14,10 +14,11 @@ import {
   type PrivateOfferingInvite, type InsertPrivateOfferingInvite,
   type PropertyGrant, type InsertPropertyGrant, type CapitalStackSummary,
   type Waitlist,
+  type Wish, type InsertWish,
   PHASE_CONFIG, calculatePhasePrice, getPhaseAllocation,
   users, properties, tokenOfferings, offeringPhases, tokenPurchases, 
   tokenHoldings, proposals, votes, propertySubmissions, submissionDocuments,
-  propertyNominations, desiredUseVotes, privateOfferingInvites, propertyGrants, waitlist
+  propertyNominations, desiredUseVotes, privateOfferingInvites, propertyGrants, waitlist, wishes
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -144,6 +145,11 @@ export interface IStorage {
   addToWaitlist(email: string, role: string, message?: string): Promise<Waitlist>;
   getWaitlistByEmail(email: string): Promise<Waitlist | undefined>;
   getWaitlistEntries(): Promise<Waitlist[]>;
+
+  // Wishes
+  getWishes(): Promise<Wish[]>;
+  createWish(wish: InsertWish): Promise<Wish>;
+  upvoteWish(id: string): Promise<Wish | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -1236,6 +1242,37 @@ export class MemStorage implements IStorage {
   
   async getWaitlistEntries(): Promise<Waitlist[]> {
     return Array.from(this.waitlistEntries.values());
+  }
+
+  private wishEntries: Map<string, Wish> = new Map();
+
+  async getWishes(): Promise<Wish[]> {
+    return Array.from(this.wishEntries.values()).sort((a, b) => (b.votes ?? 0) - (a.votes ?? 0));
+  }
+
+  async createWish(wish: InsertWish): Promise<Wish> {
+    const id = randomUUID();
+    const entry: Wish = {
+      id,
+      title: wish.title,
+      description: wish.description,
+      category: wish.category,
+      location: wish.location,
+      votes: 0,
+      email: wish.email || null,
+      takeItFurther: wish.takeItFurther || false,
+      createdAt: new Date(),
+    };
+    this.wishEntries.set(id, entry);
+    return entry;
+  }
+
+  async upvoteWish(id: string): Promise<Wish | undefined> {
+    const wish = this.wishEntries.get(id);
+    if (!wish) return undefined;
+    wish.votes = (wish.votes ?? 0) + 1;
+    this.wishEntries.set(id, wish);
+    return wish;
   }
 }
 

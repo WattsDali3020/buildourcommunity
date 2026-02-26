@@ -8,10 +8,176 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Bell, Wallet, TrendingUp, Vote, DollarSign } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Settings, Bell, Wallet, TrendingUp, Vote, DollarSign, Award, Target, Users, Zap, Shield, Star, Lock, CheckCircle } from "lucide-react";
 import { useAccount } from "wagmi";
 import { WalletButton } from "@/components/WalletButton";
 import type { User, TokenHolding } from "@shared/schema";
+
+interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: typeof Award;
+  category: "investment" | "community" | "governance" | "milestone";
+  earned: boolean;
+  progress: number;
+  maxProgress: number;
+  earnedDate?: string;
+}
+
+function getAchievements(holdings: TokenHolding[], totalTokens: number, totalVotingPower: number): Achievement[] {
+  const hasInvestment = holdings.length > 0;
+  const propertyCount = holdings.length;
+
+  return [
+    {
+      id: "first-investment",
+      title: "First Investment",
+      description: "Make your first token purchase",
+      icon: DollarSign,
+      category: "investment",
+      earned: hasInvestment,
+      progress: hasInvestment ? 1 : 0,
+      maxProgress: 1,
+      earnedDate: hasInvestment ? "Earned" : undefined,
+    },
+    {
+      id: "diversified-portfolio",
+      title: "Diversified Portfolio",
+      description: "Invest in 3 different properties",
+      icon: Target,
+      category: "investment",
+      earned: propertyCount >= 3,
+      progress: Math.min(propertyCount, 3),
+      maxProgress: 3,
+      earnedDate: propertyCount >= 3 ? "Earned" : undefined,
+    },
+    {
+      id: "phase-pioneer",
+      title: "Phase Pioneer",
+      description: "Participate in a county-level phase before it advances",
+      icon: Zap,
+      category: "investment",
+      earned: hasInvestment,
+      progress: hasInvestment ? 1 : 0,
+      maxProgress: 1,
+      earnedDate: hasInvestment ? "Earned" : undefined,
+    },
+    {
+      id: "community-champion",
+      title: "Community Champion",
+      description: "Accumulate 100 tokens across all properties",
+      icon: Users,
+      category: "community",
+      earned: totalTokens >= 100,
+      progress: Math.min(totalTokens, 100),
+      maxProgress: 100,
+      earnedDate: totalTokens >= 100 ? "Earned" : undefined,
+    },
+    {
+      id: "governance-voter",
+      title: "Governance Voter",
+      description: "Cast your first governance vote",
+      icon: Vote,
+      category: "governance",
+      earned: totalVotingPower > 0 && hasInvestment,
+      progress: totalVotingPower > 0 && hasInvestment ? 1 : 0,
+      maxProgress: 1,
+      earnedDate: totalVotingPower > 0 && hasInvestment ? "Earned" : undefined,
+    },
+    {
+      id: "diamond-hands",
+      title: "Diamond Hands",
+      description: "Hold tokens for 30+ days",
+      icon: Shield,
+      category: "milestone",
+      earned: false,
+      progress: 0,
+      maxProgress: 30,
+    },
+    {
+      id: "whale-investor",
+      title: "Whale Investor",
+      description: "Own 500+ tokens total",
+      icon: Star,
+      category: "milestone",
+      earned: totalTokens >= 500,
+      progress: Math.min(totalTokens, 500),
+      maxProgress: 500,
+      earnedDate: totalTokens >= 500 ? "Earned" : undefined,
+    },
+    {
+      id: "active-participant",
+      title: "Active Participant",
+      description: "Participate in 5 governance votes",
+      icon: Award,
+      category: "governance",
+      earned: false,
+      progress: 0,
+      maxProgress: 5,
+    },
+  ];
+}
+
+const CATEGORY_LABELS: Record<Achievement["category"], string> = {
+  investment: "Investment",
+  community: "Community",
+  governance: "Governance",
+  milestone: "Milestone",
+};
+
+function AchievementCard({ achievement }: { achievement: Achievement }) {
+  const Icon = achievement.icon;
+  const progressPercent = achievement.maxProgress > 0 ? (achievement.progress / achievement.maxProgress) * 100 : 0;
+
+  return (
+    <div
+      className={`relative flex items-start gap-3 p-3 rounded-md border ${
+        achievement.earned
+          ? "bg-primary/5 border-primary/20"
+          : "bg-muted/30 border-border"
+      }`}
+      data-testid={`achievement-${achievement.id}`}
+    >
+      <div
+        className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ${
+          achievement.earned
+            ? "bg-primary/15 text-primary"
+            : "bg-muted text-muted-foreground"
+        }`}
+      >
+        {achievement.earned ? (
+          <Icon className="h-5 w-5" />
+        ) : (
+          <Lock className="h-4 w-4" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className={`text-sm font-medium ${achievement.earned ? "" : "text-muted-foreground"}`}>
+            {achievement.title}
+          </p>
+          {achievement.earned && (
+            <CheckCircle className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground mt-0.5">{achievement.description}</p>
+        {!achievement.earned && achievement.maxProgress > 1 && (
+          <div className="mt-2">
+            <Progress value={progressPercent} className="h-1.5" />
+            <p className="text-xs text-muted-foreground mt-1">
+              {achievement.progress} / {achievement.maxProgress}
+            </p>
+          </div>
+        )}
+        {achievement.earnedDate && (
+          <p className="text-xs text-primary mt-1">{achievement.earnedDate}</p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const { address, isConnected } = useAccount();
@@ -32,6 +198,9 @@ export default function Dashboard() {
 
   const totalTokens = holdings.reduce((sum, h) => sum + h.tokenCount, 0);
   const totalVotingPower = holdings.reduce((sum, h) => sum + (h.votingPower || 0), 0);
+
+  const achievements = getAchievements(holdings, totalTokens, totalVotingPower);
+  const earnedCount = achievements.filter(a => a.earned).length;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -174,6 +343,37 @@ export default function Dashboard() {
               </Card>
             </div>
           </div>
+
+          <Card data-testid="section-achievements">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="h-5 w-5 text-primary" />
+                  Achievements
+                </CardTitle>
+                <CardDescription>
+                  {earnedCount} of {achievements.length} achievements earned
+                </CardDescription>
+              </div>
+              <Badge variant="secondary" data-testid="badge-achievements-count">
+                {earnedCount}/{achievements.length}
+              </Badge>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4">
+                <Progress
+                  value={(earnedCount / achievements.length) * 100}
+                  className="h-2"
+                  data-testid="progress-achievements"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {achievements.map((achievement) => (
+                  <AchievementCard key={achievement.id} achievement={achievement} />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
       <Footer />

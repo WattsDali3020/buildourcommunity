@@ -13,11 +13,13 @@ const publicNavLinks = [
   { href: "/how-it-works", label: "How It Works" },
   { href: "/demand", label: "Demand" },
   { href: "/litepaper", label: "Learn" },
+  { href: "/wishlist", label: "Wishlist" },
 ];
 
 const authenticatedNavLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/founder", label: "Founder" },
+  { href: "/treasury", label: "Treasury", icon: BarChart3 },
   { href: "/ai-insights", label: "AI Insights", icon: Brain },
   { href: "/business", label: "Business", icon: FileText },
 ];

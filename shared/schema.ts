@@ -897,6 +897,27 @@ export const PHASE_CONFIG = {
   },
 } as const;
 
+export const wishes = pgTable("wishes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(),
+  location: text("location").notNull(),
+  votes: integer("votes").notNull().default(0),
+  email: text("email"),
+  takeItFurther: boolean("take_it_further").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertWishSchema = createInsertSchema(wishes).omit({
+  id: true,
+  votes: true,
+  createdAt: true,
+});
+
+export type InsertWish = z.infer<typeof insertWishSchema>;
+export type Wish = typeof wishes.$inferSelect;
+
 export function calculatePhasePrice(basePrice: number, phase: keyof typeof PHASE_CONFIG): number {
   return Number((basePrice * PHASE_CONFIG[phase].priceMultiplier).toFixed(2));
 }

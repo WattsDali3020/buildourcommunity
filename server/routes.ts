@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPropertySchema, insertPropertySubmissionSchema, insertPropertyNominationSchema, insertPropertyGrantSchema } from "@shared/schema";
+import { insertPropertySchema, insertPropertySubmissionSchema, insertPropertyNominationSchema, insertPropertyGrantSchema, insertWishSchema } from "@shared/schema";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replit_integrations/auth";
@@ -1476,6 +1476,43 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Waitlist signup error:", error);
       res.status(500).json({ error: "Failed to join waitlist" });
+    }
+  });
+
+  app.get("/api/wishes", async (req: Request, res: Response) => {
+    try {
+      const allWishes = await storage.getWishes();
+      res.json(allWishes);
+    } catch (error) {
+      console.error("Failed to fetch wishes:", error);
+      res.status(500).json({ error: "Failed to fetch wishes" });
+    }
+  });
+
+  app.post("/api/wishes", async (req: Request, res: Response) => {
+    try {
+      const parsed = insertWishSchema.parse(req.body);
+      const wish = await storage.createWish(parsed);
+      res.status(201).json(wish);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid wish data", details: error.errors });
+      }
+      console.error("Failed to create wish:", error);
+      res.status(500).json({ error: "Failed to create wish" });
+    }
+  });
+
+  app.post("/api/wishes/:id/vote", async (req: Request, res: Response) => {
+    try {
+      const wish = await storage.upvoteWish(req.params.id);
+      if (!wish) {
+        return res.status(404).json({ error: "Wish not found" });
+      }
+      res.json(wish);
+    } catch (error) {
+      console.error("Failed to upvote wish:", error);
+      res.status(500).json({ error: "Failed to upvote wish" });
     }
   });
 

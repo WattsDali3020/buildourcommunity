@@ -1,0 +1,340 @@
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import {
+  Wallet,
+  ArrowUpRight,
+  ArrowDownRight,
+  TrendingUp,
+  Building2,
+  Users,
+  ShieldCheck,
+  PieChart,
+  ExternalLink,
+  Info,
+  Clock,
+} from "lucide-react";
+import { useState } from "react";
+
+const treasuryBalance = 2_450_000;
+const monthlyInflow = 185_000;
+const monthlyOutflow = 142_000;
+
+const allocationBreakdown = [
+  { label: "Property Development", percentage: 40, amount: 980_000, color: "bg-primary" },
+  { label: "Community Benefits", percentage: 20, amount: 490_000, color: "bg-chart-1" },
+  { label: "Operating Reserve", percentage: 15, amount: 367_500, color: "bg-chart-3" },
+  { label: "Maintenance Fund", percentage: 15, amount: 367_500, color: "bg-chart-4" },
+  { label: "Emergency Reserve", percentage: 10, amount: 245_000, color: "bg-chart-5" },
+];
+
+interface Transaction {
+  id: string;
+  type: "inflow" | "outflow";
+  description: string;
+  amount: number;
+  date: string;
+  category: string;
+  status: "confirmed" | "pending";
+  txHash?: string;
+}
+
+const recentTransactions: Transaction[] = [
+  {
+    id: "tx-1",
+    type: "inflow",
+    description: "Rental Income - Etowah Wellness Village",
+    amount: 45_000,
+    date: "2025-01-15",
+    category: "Revenue",
+    status: "confirmed",
+    txHash: "0xabc123",
+  },
+  {
+    id: "tx-2",
+    type: "outflow",
+    description: "Contractor Payment - Historic Mill Renovation",
+    amount: 28_500,
+    date: "2025-01-14",
+    category: "Development",
+    status: "confirmed",
+    txHash: "0xdef456",
+  },
+  {
+    id: "tx-3",
+    type: "inflow",
+    description: "Token Sale - Main Street District Phase 2",
+    amount: 120_000,
+    date: "2025-01-13",
+    category: "Token Sales",
+    status: "confirmed",
+    txHash: "0xghi789",
+  },
+  {
+    id: "tx-4",
+    type: "outflow",
+    description: "Quarterly Dividend Distribution",
+    amount: 67_200,
+    date: "2025-01-12",
+    category: "Dividends",
+    status: "confirmed",
+    txHash: "0xjkl012",
+  },
+  {
+    id: "tx-5",
+    type: "outflow",
+    description: "Insurance Premium - All Properties",
+    amount: 18_750,
+    date: "2025-01-10",
+    category: "Operations",
+    status: "confirmed",
+    txHash: "0xmno345",
+  },
+  {
+    id: "tx-6",
+    type: "inflow",
+    description: "Grant Disbursement - Community Development",
+    amount: 75_000,
+    date: "2025-01-09",
+    category: "Grants",
+    status: "confirmed",
+    txHash: "0xpqr678",
+  },
+  {
+    id: "tx-7",
+    type: "outflow",
+    description: "EV Charging Station Installation",
+    amount: 32_000,
+    date: "2025-01-08",
+    category: "Development",
+    status: "pending",
+  },
+  {
+    id: "tx-8",
+    type: "inflow",
+    description: "Lease Payment - Harbor View Commercial",
+    amount: 38_500,
+    date: "2025-01-07",
+    category: "Revenue",
+    status: "confirmed",
+    txHash: "0xstu901",
+  },
+];
+
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+export default function Treasury() {
+  const [activeTab, setActiveTab] = useState("all");
+
+  const filteredTransactions = recentTransactions.filter((tx) => {
+    if (activeTab === "inflow") return tx.type === "inflow";
+    if (activeTab === "outflow") return tx.type === "outflow";
+    return true;
+  });
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1">
+        <div className="mx-auto max-w-7xl px-4 py-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div>
+              <h1 className="text-3xl font-semibold mb-2" data-testid="text-treasury-title">
+                Community Treasury
+              </h1>
+              <p className="text-muted-foreground">
+                Transparent fund management for all community properties
+              </p>
+            </div>
+            <Badge variant="outline" className="flex items-center gap-1 self-start">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              On-Chain Verified
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <Card>
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Wallet className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Balance</p>
+                  <p className="text-xl font-semibold" data-testid="text-treasury-balance">
+                    {formatCurrency(treasuryBalance)}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-full bg-chart-1/10 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-chart-1" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Monthly Inflow</p>
+                  <p className="text-xl font-semibold text-chart-1" data-testid="text-monthly-inflow">
+                    +{formatCurrency(monthlyInflow)}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-full bg-chart-5/10 flex items-center justify-center">
+                  <ArrowDownRight className="h-5 w-5 text-chart-5" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Monthly Outflow</p>
+                  <p className="text-xl font-semibold" data-testid="text-monthly-outflow">
+                    -{formatCurrency(monthlyOutflow)}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="mb-8">
+            <CardHeader className="flex flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <PieChart className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Fund Allocation</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex h-3 rounded-full overflow-hidden mb-6">
+                {allocationBreakdown.map((item) => (
+                  <div
+                    key={item.label}
+                    className={`${item.color}`}
+                    style={{ width: `${item.percentage}%` }}
+                  />
+                ))}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                {allocationBreakdown.map((item) => (
+                  <div key={item.label} className="flex items-start gap-3">
+                    <div className={`h-3 w-3 rounded-full ${item.color} mt-1 shrink-0`} />
+                    <div>
+                      <p className="text-sm font-medium">{item.label}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.percentage}% &middot; {formatCurrency(item.amount)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 p-3 rounded-md bg-primary/5 border border-primary/20 flex gap-2">
+                <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">Full transparency:</span>{" "}
+                  All treasury transactions are recorded on-chain. Fund allocations are governed
+                  by community proposals and DAO voting.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-4">
+              <CardTitle className="text-lg">Recent Transactions</CardTitle>
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList>
+                  <TabsTrigger value="all" data-testid="tab-tx-all">All</TabsTrigger>
+                  <TabsTrigger value="inflow" data-testid="tab-tx-inflow">Inflows</TabsTrigger>
+                  <TabsTrigger value="outflow" data-testid="tab-tx-outflow">Outflows</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {filteredTransactions.map((tx) => (
+                  <div
+                    key={tx.id}
+                    className="flex items-center justify-between gap-4 p-4 rounded-md bg-muted/30"
+                    data-testid={`treasury-tx-${tx.id}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                          tx.type === "inflow"
+                            ? "bg-chart-1/10 text-chart-1"
+                            : "bg-chart-5/10 text-chart-5"
+                        }`}
+                      >
+                        {tx.type === "inflow" ? (
+                          <ArrowUpRight className="h-5 w-5" />
+                        ) : (
+                          <ArrowDownRight className="h-5 w-5" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-sm">{tx.description}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {tx.category}
+                          </Badge>
+                          {tx.status === "pending" && (
+                            <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              Pending
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {new Date(tx.date).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`font-semibold text-sm ${
+                          tx.type === "inflow" ? "text-chart-1" : ""
+                        }`}
+                      >
+                        {tx.type === "inflow" ? "+" : "-"}
+                        {formatCurrency(tx.amount)}
+                      </span>
+                      {tx.txHash && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            window.open(
+                              `https://basescan.org/tx/${tx.txHash}`,
+                              "_blank"
+                            )
+                          }
+                          data-testid={`button-view-treasury-tx-${tx.id}`}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+}
