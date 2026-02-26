@@ -44,13 +44,13 @@ Preferred communication style: Simple, everyday language.
 - **Wallet Connection**: RainbowKit + wagmi for Base network.
 - **KYC Verification**: User identity verification with admin approval.
 - **Token Purchase Flow**: Includes phase restrictions, per-person limits, and payment method selection.
-- **Investor Dashboard**: Portfolio metrics, voting power, KYC status.
-- **Governance Voting**: API-backed proposals with token-weighted voting.
+- **Investor Dashboard**: Portfolio metrics, voting power, KYC status, My Holdings with per-property phase multipliers.
+- **Governance Voting**: API-backed proposals with token-weighted voting and 75% phase engagement meters.
 - **Admin Panel**: Property/nomination approval, KYC management.
 - **Investor Protection API**: 3% APR refund calculation for unfunded properties.
 - **Community Wishlist**: Public page for submitting and voting on community needs across various categories.
 - **Interactive Maps**: Leaflet-based map on homepage and Mapbox on properties page with property markers and filtering.
-- **Treasury Page**: Authenticated page detailing fund allocation and transaction history.
+- **Treasury Page**: Authenticated page with fund allocation, transaction history, and 1% founder sustainability cut (24-month vesting, 90-day cliff).
 - **Achievements/Gamification**: Tracks user engagement and milestones.
 - **Community Polls**: Non-binding polls that can lead to formal proposals, influencing funding targets.
 - **Gasless Voting**: EIP-712 signature verification for off-chain voting via relayers.

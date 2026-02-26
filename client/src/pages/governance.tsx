@@ -339,6 +339,80 @@ export default function Governance() {
             </CardContent>
           </Card>
 
+          <Card className="mb-8" data-testid="card-phase-engagement">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Phase Engagement Meter</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-6">
+                When community engagement reaches 75%, the phase auto-advances via PhaseManager smart contract. 
+                No gatekeepers — the community drives momentum.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { name: "Etowah Wellness Village", phase: "County", engagement: 65, color: "#22c55e" },
+                  { name: "Historic Mill Adaptive Reuse", phase: "State", engagement: 82, color: "#3b82f6" },
+                  { name: "Main Street District", phase: "National", engagement: 78, color: "#a855f7" },
+                ].map((property) => {
+                  const isAboveThreshold = property.engagement >= 75;
+                  return (
+                    <div
+                      key={property.name}
+                      className="p-4 rounded-lg border bg-muted/30"
+                      data-testid={`engagement-meter-${property.name.replace(/\s+/g, '-').toLowerCase()}`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-sm truncate pr-2">{property.name}</h4>
+                        <Badge variant="outline" className="text-xs flex-shrink-0">{property.phase}</Badge>
+                      </div>
+                      <div className="relative mb-2">
+                        <div className="h-4 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-700"
+                            style={{
+                              width: `${property.engagement}%`,
+                              background: property.color,
+                            }}
+                          />
+                        </div>
+                        <div
+                          className="absolute top-0 h-4 w-0.5 bg-foreground/60"
+                          style={{ left: "75%" }}
+                          title="75% threshold"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">
+                          {property.engagement}% engaged
+                        </span>
+                        {isAboveThreshold ? (
+                          <span className="font-medium" style={{ color: property.color }}>
+                            Ready to advance
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            {75 - property.engagement}% to threshold
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-4 p-3 rounded-md bg-primary/5 border border-primary/20 flex gap-2">
+                <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">75% threshold:</span>{" "}
+                  The vertical line on each bar marks the 75% engagement threshold. Once reached, 
+                  PhaseManager.sol automatically advances the property to the next phase via Chainlink Automation.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
             <TabsList>
               <TabsTrigger value="active" data-testid="tab-active">Active</TabsTrigger>

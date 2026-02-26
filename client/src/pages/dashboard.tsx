@@ -344,6 +344,78 @@ export default function Dashboard() {
             </div>
           </div>
 
+          <Card className="mb-8" data-testid="section-my-holdings">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-primary" />
+                My Holdings
+              </CardTitle>
+              <CardDescription>Per-property token breakdown with phase multipliers</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {holdings.length > 0 ? (
+                <div className="space-y-3">
+                  {holdings.map((h, index) => {
+                    const phase = h.purchasePhase || "county";
+                    const multiplierMap: Record<string, { label: string; value: number; color: string }> = {
+                      county: { label: "County", value: 1.5, color: "text-green-500" },
+                      state: { label: "State", value: 1.25, color: "text-blue-500" },
+                      national: { label: "National", value: 1.0, color: "text-purple-500" },
+                      international: { label: "International", value: 0.75, color: "text-amber-500" },
+                    };
+                    const phaseInfo = multiplierMap[phase] || multiplierMap.county;
+                    const tokenValue = h.tokenCount * parseFloat(h.averagePurchasePrice || "0");
+
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between gap-4 p-4 rounded-lg bg-muted/30 border"
+                        data-testid={`holding-${index}`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <DollarSign className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">Property #{h.propertyId}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <Badge variant="outline" className="text-xs">
+                                {phaseInfo.label}
+                              </Badge>
+                              <span className={`text-xs font-semibold ${phaseInfo.color}`}>
+                                {phaseInfo.value}x voting
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="font-semibold text-sm">{h.tokenCount.toLocaleString()} tokens</p>
+                          <p className="text-xs text-muted-foreground">
+                            ${tokenValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                          <p className="text-xs text-primary">
+                            {Math.round(h.tokenCount * phaseInfo.value)} voting power
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Wallet className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground mb-1">No holdings yet</p>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Purchase tokens to see your per-property breakdown with phase multipliers
+                  </p>
+                  <Button asChild size="sm" data-testid="button-browse-properties">
+                    <a href="/properties">Browse Properties</a>
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card data-testid="section-achievements">
             <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
               <div>

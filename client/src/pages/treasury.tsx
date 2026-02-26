@@ -17,12 +17,24 @@ import {
   ExternalLink,
   Info,
   Clock,
+  UserCheck,
+  Lock,
+  CalendarClock,
 } from "lucide-react";
 import { useState } from "react";
 
 const treasuryBalance = 2_450_000;
 const monthlyInflow = 185_000;
 const monthlyOutflow = 142_000;
+
+const founderCutBps = 100;
+const founderCutPercent = founderCutBps / 100;
+const totalDisbursed = 1_420_000;
+const founderCutAmount = Math.round(totalDisbursed * (founderCutPercent / 100));
+const vestingMonths = 24;
+const cliffMonths = 3;
+const vestingElapsedMonths = 6;
+const vestedPercent = Math.min(100, Math.round(((vestingElapsedMonths - cliffMonths) / (vestingMonths - cliffMonths)) * 100));
 
 const allocationBreakdown = [
   { label: "Property Development", percentage: 40, amount: 980_000, color: "bg-primary" },
@@ -41,6 +53,7 @@ interface Transaction {
   category: string;
   status: "confirmed" | "pending";
   txHash?: string;
+  founderCut?: number;
 }
 
 const recentTransactions: Transaction[] = [
@@ -63,6 +76,7 @@ const recentTransactions: Transaction[] = [
     category: "Development",
     status: "confirmed",
     txHash: "0xdef456",
+    founderCut: 285,
   },
   {
     id: "tx-3",
@@ -83,6 +97,7 @@ const recentTransactions: Transaction[] = [
     category: "Dividends",
     status: "confirmed",
     txHash: "0xjkl012",
+    founderCut: 672,
   },
   {
     id: "tx-5",
@@ -93,6 +108,7 @@ const recentTransactions: Transaction[] = [
     category: "Operations",
     status: "confirmed",
     txHash: "0xmno345",
+    founderCut: 188,
   },
   {
     id: "tx-6",
@@ -112,6 +128,7 @@ const recentTransactions: Transaction[] = [
     date: "2025-01-08",
     category: "Development",
     status: "pending",
+    founderCut: 320,
   },
   {
     id: "tx-8",
@@ -205,47 +222,111 @@ export default function Treasury() {
             </Card>
           </div>
 
-          <Card className="mb-8">
-            <CardHeader className="flex flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <PieChart className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Fund Allocation</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex h-3 rounded-full overflow-hidden mb-6">
-                {allocationBreakdown.map((item) => (
-                  <div
-                    key={item.label}
-                    className={`${item.color}`}
-                    style={{ width: `${item.percentage}%` }}
-                  />
-                ))}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                {allocationBreakdown.map((item) => (
-                  <div key={item.label} className="flex items-start gap-3">
-                    <div className={`h-3 w-3 rounded-full ${item.color} mt-1 shrink-0`} />
-                    <div>
-                      <p className="text-sm font-medium">{item.label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.percentage}% &middot; {formatCurrency(item.amount)}
-                      </p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <Card className="lg:col-span-2">
+              <CardHeader className="flex flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <PieChart className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">Fund Allocation</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex h-3 rounded-full overflow-hidden mb-6">
+                  {allocationBreakdown.map((item) => (
+                    <div
+                      key={item.label}
+                      className={`${item.color}`}
+                      style={{ width: `${item.percentage}%` }}
+                    />
+                  ))}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {allocationBreakdown.map((item) => (
+                    <div key={item.label} className="flex items-start gap-3">
+                      <div className={`h-3 w-3 rounded-full ${item.color} mt-1 shrink-0`} />
+                      <div>
+                        <p className="text-sm font-medium">{item.label}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.percentage}% &middot; {formatCurrency(item.amount)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              <div className="mt-6 p-3 rounded-md bg-primary/5 border border-primary/20 flex gap-2">
-                <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">Full transparency:</span>{" "}
-                  All treasury transactions are recorded on-chain. Fund allocations are governed
-                  by community proposals and DAO voting.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="mt-6 p-3 rounded-md bg-primary/5 border border-primary/20 flex gap-2">
+                  <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">Full transparency:</span>{" "}
+                    All treasury transactions are recorded on-chain. Fund allocations are governed
+                    by community proposals and DAO voting.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card data-testid="card-founder-sustainability">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <UserCheck className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">Founder Sustainability</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 text-center">
+                  <p className="text-3xl font-bold text-primary" data-testid="text-founder-cut-percent">{founderCutPercent}%</p>
+                  <p className="text-xs text-muted-foreground mt-1">of treasury disbursements</p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Total disbursed</span>
+                    <span className="font-medium" data-testid="text-total-disbursed">{formatCurrency(totalDisbursed)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Founder cut (1%)</span>
+                    <span className="font-medium text-primary" data-testid="text-founder-cut-amount">{formatCurrency(founderCutAmount)}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Vesting Schedule</span>
+                  </div>
+                  <Progress value={vestedPercent} className="h-2" data-testid="progress-vesting" />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Month {vestingElapsedMonths} of {vestingMonths}</span>
+                    <span>{vestedPercent}% vested</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 text-xs text-muted-foreground">
+                  <div className="flex items-start gap-2">
+                    <Lock className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                    <span>90-day cliff before vesting begins</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CalendarClock className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                    <span>24-month linear vesting schedule</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <ShieldCheck className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                    <span>On-chain, capped, and fully auditable</span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-md bg-muted/50 border flex gap-2">
+                  <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground">
+                    The 1% founder cut is applied only to DAO-approved outflows.
+                    It is explicit in the Treasury smart contract, capped, and recorded
+                    on-chain for full transparency.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-4">
@@ -293,13 +374,20 @@ export default function Treasury() {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {new Date(tx.date).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </p>
+                        <div className="flex items-center gap-3 mt-0.5">
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(tx.date).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </p>
+                          {tx.founderCut && (
+                            <span className="text-xs text-primary" data-testid={`text-founder-cut-${tx.id}`}>
+                              1% founder: {formatCurrency(tx.founderCut)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">

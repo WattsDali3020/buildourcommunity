@@ -7,11 +7,23 @@ import { FeaturedProperties } from "@/components/FeaturedProperties";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
-import { ArrowRight, Shield, Users, Coins, CheckCircle2, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Shield,
+  Users,
+  Coins,
+  CheckCircle2,
+  Sparkles,
+  TrendingUp,
+  Vote,
+  Zap,
+  BarChart3,
+  Lock,
+} from "lucide-react";
 
 function TrustIndicators() {
   return (
-    <section className="py-16 border-y section-alt">
+    <section className="py-16 border-y section-alt" data-testid="section-trust">
       <div className="mx-auto max-w-7xl px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="flex items-center gap-4 p-4 rounded-xl border-glow border bg-card/50 backdrop-blur-sm">
@@ -48,46 +60,58 @@ function TrustIndicators() {
 }
 
 function FeatureHighlights() {
+  const features = [
+    {
+      title: "Dynamic Community Vaults",
+      desc: "Not static fractional shares. RevitaHub properties are living vaults — pricing, governance, and yield evolve as engagement grows.",
+      icon: BarChart3,
+    },
+    {
+      title: "4-Phase Pricing Ramp",
+      desc: "County $12.50 → State $18.75 → National $28.13 → International $37.50. Early community investors get the best price and strongest voting power.",
+      icon: TrendingUp,
+    },
+    {
+      title: "75% Engagement Auto-Advance",
+      desc: "When community engagement hits 75%, the phase auto-advances via smart contract. No gatekeepers — the community drives momentum.",
+      icon: Zap,
+    },
+    {
+      title: "Vote-to-Earn Governance",
+      desc: "Active voters earn bonus tokens. Phase-weighted voting power ensures local voices lead (County 1.5x, State 1.25x, National 1.0x).",
+      icon: Vote,
+    },
+    {
+      title: "Transparent Founder Economics",
+      desc: "1% of treasury disbursements, on-chain, capped, and auditable. 24-month vesting with 90-day cliff. No hidden fees.",
+      icon: Lock,
+    },
+    {
+      title: "3% APR Investor Protection",
+      desc: "100% funding required or full refund with 3% APR interest. Your investment is protected by smart contract escrow.",
+      icon: Shield,
+    },
+  ];
+
   return (
-    <section className="py-20 bg-gradient-premium">
+    <section className="py-20 bg-gradient-premium" data-testid="section-features">
       <div className="mx-auto max-w-7xl px-4">
         <div className="text-center mb-12">
           <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-1.5 text-sm font-medium text-primary mb-4">
             <Sparkles className="h-4 w-4" />
             Why RevitaHub
           </span>
-          <h2 className="text-3xl lg:text-4xl font-bold tracking-tight mb-4">
-            Built for Communities, Powered by Innovation
+          <h2 className="text-3xl lg:text-4xl font-bold tracking-tight mb-4" data-testid="text-why-revitahub">
+            Distribution Is the Real Unlock
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            RevitaHub combines blockchain transparency with AI governance to create 
-            the most accessible real estate investment platform.
+            RevitaHub doesn't just tokenize real estate — it distributes ownership, governance, 
+            and yield directly to the communities that need it most.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            { 
-              title: "Fractional Ownership", 
-              desc: "Own a piece of real estate starting at $12.50 with full property rights.",
-              icon: Coins 
-            },
-            { 
-              title: "Community Governance", 
-              desc: "Vote on development decisions with token-weighted voting power.",
-              icon: Users 
-            },
-            { 
-              title: "AI-Moderated DAO", 
-              desc: "Bias detection and engagement optimization through AI analysis.",
-              icon: Sparkles 
-            },
-            { 
-              title: "Investor Protection", 
-              desc: "3% APR refunds if property funding fails to reach 100%.",
-              icon: Shield 
-            },
-          ].map((feature, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((feature, i) => (
             <Card key={i} className="border-glow">
               <CardContent className="p-6">
                 <div className="h-11 w-11 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
@@ -114,7 +138,7 @@ function JoinWaitlist() {
           </h2>
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             Be among the first to transform vacant properties into thriving community assets. 
-            Early members get priority access to Phase 1 investments.
+            Early members get priority access to County Phase investments at $12.50 per token.
           </p>
           
           <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
@@ -122,7 +146,7 @@ function JoinWaitlist() {
               "Fractional real estate ownership",
               "Quarterly dividend payments",
               "Community voting rights",
-              "AI-powered governance"
+              "Vote-to-earn bonus tokens"
             ].map((item, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
                 <CheckCircle2 className="h-4 w-4 text-primary" />
