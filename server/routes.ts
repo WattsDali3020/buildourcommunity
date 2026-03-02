@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPropertySchema, insertPropertySubmissionSchema, insertPropertyNominationSchema, insertPropertyGrantSchema, insertWishSchema } from "@shared/schema";
+import { insertPropertySchema, insertPropertySubmissionSchema, insertPropertyNominationSchema, insertPropertyGrantSchema, insertWishSchema, insertServiceBidSchema } from "@shared/schema";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replit_integrations/auth";
@@ -1481,7 +1481,10 @@ export async function registerRoutes(
 
   app.get("/api/wishes", async (req: Request, res: Response) => {
     try {
-      const allWishes = await storage.getWishes();
+      const zipCode = req.query.zipCode as string | undefined;
+      const allWishes = zipCode 
+        ? await storage.getWishesByZipCode(zipCode)
+        : await storage.getWishes();
       res.json(allWishes);
     } catch (error) {
       console.error("Failed to fetch wishes:", error);
@@ -1513,6 +1516,51 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Failed to upvote wish:", error);
       res.status(500).json({ error: "Failed to upvote wish" });
+    }
+  });
+
+  // Service Bids
+  app.get("/api/service-bids", async (req: Request, res: Response) => {
+    try {
+      const zipCode = req.query.zipCode as string | undefined;
+      const bids = zipCode
+        ? await storage.getServiceBidsByZipCode(zipCode)
+        : await storage.getServiceBids();
+      res.json(bids);
+    } catch (error) {
+      console.error("Failed to fetch service bids:", error);
+      res.status(500).json({ error: "Failed to fetch service bids" });
+    }
+  });
+
+  app.post("/api/service-bids", async (req: Request, res: Response) => {
+    try {
+      const parsed = insertServiceBidSchema.parse(req.body);
+      const bid = await storage.createServiceBid(parsed);
+      res.status(201).json(bid);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid service bid data", details: error.errors });
+      }
+      console.error("Failed to create service bid:", error);
+      res.status(500).json({ error: "Failed to create service bid" });
+    }
+  });
+
+  app.patch("/api/service-bids/:id/status", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { status } = req.body;
+      if (!["pending", "approved", "rejected"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+      const bid = await storage.updateServiceBidStatus(req.params.id, status);
+      if (!bid) {
+        return res.status(404).json({ error: "Service bid not found" });
+      }
+      res.json(bid);
+    } catch (error) {
+      console.error("Failed to update service bid status:", error);
+      res.status(500).json({ error: "Failed to update service bid status" });
     }
   });
 

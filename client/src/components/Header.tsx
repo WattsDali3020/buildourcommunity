@@ -14,6 +14,7 @@ const publicNavLinks = [
   { href: "/demand", label: "Demand" },
   { href: "/litepaper", label: "Learn" },
   { href: "/wishlist", label: "Wishlist" },
+  { href: "/services", label: "Services" },
 ];
 
 const authenticatedNavLinks = [

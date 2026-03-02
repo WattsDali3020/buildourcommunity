@@ -10,6 +10,7 @@ const publicNavLinks = [
   { href: "/", label: "Home" },
   { href: "/properties", label: "Explore" },
   { href: "/wishlist", label: "Wishlist" },
+  { href: "/services", label: "Services" },
   { href: "/how-it-works", label: "How It Works" },
   { href: "/litepaper", label: "Learn" },
 ];

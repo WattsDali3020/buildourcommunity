@@ -15,10 +15,12 @@ import {
   type PropertyGrant, type InsertPropertyGrant, type CapitalStackSummary,
   type Waitlist,
   type Wish, type InsertWish,
+  type ServiceBid, type InsertServiceBid,
   PHASE_CONFIG, calculatePhasePrice, getPhaseAllocation,
   users, properties, tokenOfferings, offeringPhases, tokenPurchases, 
   tokenHoldings, proposals, votes, propertySubmissions, submissionDocuments,
-  propertyNominations, desiredUseVotes, privateOfferingInvites, propertyGrants, waitlist, wishes
+  propertyNominations, desiredUseVotes, privateOfferingInvites, propertyGrants, waitlist, wishes,
+  serviceBids
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
@@ -887,10 +889,35 @@ export class DatabaseStorage implements IStorage {
     return entry;
   }
 
+  async getWishesByZipCode(zipCode: string): Promise<Wish[]> {
+    return db.select().from(wishes).where(eq(wishes.zipCode, zipCode)).orderBy(desc(wishes.votes));
+  }
+
   async upvoteWish(id: string): Promise<Wish | undefined> {
     const [updated] = await db.update(wishes)
       .set({ votes: sql`${wishes.votes} + 1` })
       .where(eq(wishes.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async getServiceBids(): Promise<ServiceBid[]> {
+    return db.select().from(serviceBids).orderBy(desc(serviceBids.createdAt));
+  }
+
+  async getServiceBidsByZipCode(zipCode: string): Promise<ServiceBid[]> {
+    return db.select().from(serviceBids).where(eq(serviceBids.zipCode, zipCode)).orderBy(desc(serviceBids.createdAt));
+  }
+
+  async createServiceBid(bid: InsertServiceBid): Promise<ServiceBid> {
+    const [entry] = await db.insert(serviceBids).values(bid).returning();
+    return entry;
+  }
+
+  async updateServiceBidStatus(id: string, status: ServiceBid["status"]): Promise<ServiceBid | undefined> {
+    const [updated] = await db.update(serviceBids)
+      .set({ status })
+      .where(eq(serviceBids.id, id))
       .returning();
     return updated || undefined;
   }

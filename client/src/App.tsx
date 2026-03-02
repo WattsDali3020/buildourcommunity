@@ -29,6 +29,7 @@ import DemandDashboard from "@/pages/demand-dashboard";
 import FounderDashboard from "@/pages/founder-dashboard";
 import Wishlist from "@/pages/wishlist";
 import Treasury from "@/pages/treasury";
+import Services from "@/pages/services";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -57,6 +58,7 @@ function Router() {
       <Route path="/founder" component={FounderDashboard} />
       <Route path="/wishlist" component={Wishlist} />
       <Route path="/treasury" component={Treasury} />
+      <Route path="/services" component={Services} />
       <Route component={NotFound} />
     </Switch>
   );

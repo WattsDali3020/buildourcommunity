@@ -9,6 +9,7 @@ const footerLinks = {
     { href: "/governance", label: "Governance" },
     { href: "/dashboard", label: "Dashboard" },
     { href: "/submit", label: "Submit Project" },
+    { href: "/services", label: "Services" },
   ],
   resources: [
     { href: "/litepaper", label: "Litepaper" },
@@ -114,7 +115,7 @@ export function Footer() {
         <div className="border-t mt-8 pt-8">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
             <p className="text-sm text-muted-foreground">
-              2025 Build Our Community, LLC (Georgia, USA). All rights reserved.
+              2026 Build Our Community, LLC (Georgia, USA). All rights reserved.
             </p>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <Link href="/privacy" className="hover:text-foreground transition-colors" data-testid="link-privacy">
@@ -125,8 +126,8 @@ export function Footer() {
               </Link>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground/70 text-center">
-            Beta: Platform functionality is in development. This is not an offer to sell securities.
+          <p className="text-xs text-muted-foreground/70 text-center max-w-3xl mx-auto">
+            RevitaHub is a technology platform operated by Build Our Community, LLC (Georgia). Each property is held in a separate Special Purpose Vehicle (SPV). Tokens represent interests in property SPVs. All economics enforced by smart contracts — Treasury 1% founder cut is immutable and on-chain. This is not an offer to sell securities. Platform functionality is in development.
           </p>
         </div>
       </div>

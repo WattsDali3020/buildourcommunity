@@ -15,10 +15,12 @@ import {
   type PropertyGrant, type InsertPropertyGrant, type CapitalStackSummary,
   type Waitlist,
   type Wish, type InsertWish,
+  type ServiceBid, type InsertServiceBid,
   PHASE_CONFIG, calculatePhasePrice, getPhaseAllocation,
   users, properties, tokenOfferings, offeringPhases, tokenPurchases, 
   tokenHoldings, proposals, votes, propertySubmissions, submissionDocuments,
-  propertyNominations, desiredUseVotes, privateOfferingInvites, propertyGrants, waitlist, wishes
+  propertyNominations, desiredUseVotes, privateOfferingInvites, propertyGrants, waitlist, wishes,
+  serviceBids
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -148,8 +150,15 @@ export interface IStorage {
 
   // Wishes
   getWishes(): Promise<Wish[]>;
+  getWishesByZipCode(zipCode: string): Promise<Wish[]>;
   createWish(wish: InsertWish): Promise<Wish>;
   upvoteWish(id: string): Promise<Wish | undefined>;
+
+  // Service Bids
+  getServiceBids(): Promise<ServiceBid[]>;
+  getServiceBidsByZipCode(zipCode: string): Promise<ServiceBid[]>;
+  createServiceBid(bid: InsertServiceBid): Promise<ServiceBid>;
+  updateServiceBidStatus(id: string, status: ServiceBid["status"]): Promise<ServiceBid | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -1258,6 +1267,7 @@ export class MemStorage implements IStorage {
       description: wish.description,
       category: wish.category,
       location: wish.location,
+      zipCode: wish.zipCode || null,
       votes: 0,
       email: wish.email || null,
       takeItFurther: wish.takeItFurther || false,
@@ -1267,12 +1277,56 @@ export class MemStorage implements IStorage {
     return entry;
   }
 
+  async getWishesByZipCode(zipCode: string): Promise<Wish[]> {
+    return Array.from(this.wishEntries.values())
+      .filter(w => w.zipCode === zipCode)
+      .sort((a, b) => (b.votes ?? 0) - (a.votes ?? 0));
+  }
+
   async upvoteWish(id: string): Promise<Wish | undefined> {
     const wish = this.wishEntries.get(id);
     if (!wish) return undefined;
     wish.votes = (wish.votes ?? 0) + 1;
     this.wishEntries.set(id, wish);
     return wish;
+  }
+
+  private serviceBidEntries: Map<string, ServiceBid> = new Map();
+
+  async getServiceBids(): Promise<ServiceBid[]> {
+    return Array.from(this.serviceBidEntries.values())
+      .sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0));
+  }
+
+  async getServiceBidsByZipCode(zipCode: string): Promise<ServiceBid[]> {
+    return Array.from(this.serviceBidEntries.values())
+      .filter(b => b.zipCode === zipCode)
+      .sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0));
+  }
+
+  async createServiceBid(bid: InsertServiceBid): Promise<ServiceBid> {
+    const id = randomUUID();
+    const entry: ServiceBid = {
+      id,
+      serviceType: bid.serviceType,
+      zipCode: bid.zipCode,
+      companyName: bid.companyName,
+      contactEmail: bid.contactEmail,
+      description: bid.description,
+      bidAmount: bid.bidAmount,
+      status: "pending",
+      createdAt: new Date(),
+    };
+    this.serviceBidEntries.set(id, entry);
+    return entry;
+  }
+
+  async updateServiceBidStatus(id: string, status: ServiceBid["status"]): Promise<ServiceBid | undefined> {
+    const bid = this.serviceBidEntries.get(id);
+    if (!bid) return undefined;
+    bid.status = status;
+    this.serviceBidEntries.set(id, bid);
+    return bid;
   }
 }
 

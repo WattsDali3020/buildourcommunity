@@ -903,6 +903,7 @@ export const wishes = pgTable("wishes", {
   description: text("description").notNull(),
   category: text("category").notNull(),
   location: text("location").notNull(),
+  zipCode: text("zip_code"),
   votes: integer("votes").notNull().default(0),
   email: text("email"),
   takeItFurther: boolean("take_it_further").default(false),
@@ -917,6 +918,33 @@ export const insertWishSchema = createInsertSchema(wishes).omit({
 
 export type InsertWish = z.infer<typeof insertWishSchema>;
 export type Wish = typeof wishes.$inferSelect;
+
+export const serviceBidStatusEnum = pgEnum("service_bid_status", [
+  "pending",
+  "approved",
+  "rejected"
+]);
+
+export const serviceBids = pgTable("service_bids", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  serviceType: text("service_type").notNull(),
+  zipCode: text("zip_code").notNull(),
+  companyName: text("company_name").notNull(),
+  contactEmail: text("contact_email").notNull(),
+  description: text("description").notNull(),
+  bidAmount: decimal("bid_amount", { precision: 12, scale: 2 }).notNull(),
+  status: serviceBidStatusEnum("status").default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertServiceBidSchema = createInsertSchema(serviceBids).omit({
+  id: true,
+  status: true,
+  createdAt: true,
+});
+
+export type InsertServiceBid = z.infer<typeof insertServiceBidSchema>;
+export type ServiceBid = typeof serviceBids.$inferSelect;
 
 export function calculatePhasePrice(basePrice: number, phase: keyof typeof PHASE_CONFIG): number {
   return Number((basePrice * PHASE_CONFIG[phase].priceMultiplier).toFixed(2));

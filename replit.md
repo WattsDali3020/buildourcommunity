@@ -33,6 +33,8 @@ Preferred communication style: Simple, everyday language.
 - **Token Offerings**: Multi-phase offering system
 - **Governance**: Proposals and token-weighted voting
 - **Purchases/Holdings**: Token ownership tracking
+- **Service Bids**: Service provider marketplace bids (Title Work, Loan Structuring, Property Assessment, etc.)
+- **Wishes**: Community needs with zip-code-driven business voting
 
 ### Design System
 - **Typography**: Inter, JetBrains Mono
@@ -48,7 +50,8 @@ Preferred communication style: Simple, everyday language.
 - **Governance Voting**: API-backed proposals with token-weighted voting and 75% phase engagement meters.
 - **Admin Panel**: Property/nomination approval, KYC management.
 - **Investor Protection API**: 3% APR refund calculation for unfunded properties.
-- **Community Wishlist**: Public page for submitting and voting on community needs across various categories.
+- **Community Wishlist**: Public page with zip-code-driven business voting, predefined business categories (Grocery, Medical, etc.), vote percentages, and community need submission.
+- **Service Provider Marketplace**: `/services` page where realtors, brokers, tax assessors, and firms can bid on property services. Winners selected by governance vote, payments from Treasury.
 - **Interactive Maps**: Leaflet-based map on homepage and Mapbox on properties page with property markers and filtering.
 - **Treasury Page**: Authenticated page with fund allocation, transaction history, and 1% founder sustainability cut (24-month vesting, 90-day cliff).
 - **Achievements/Gamification**: Tracks user engagement and milestones.

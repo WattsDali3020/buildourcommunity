@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Link } from "wouter";
 import {
   ArrowRight,
+  ArrowDown,
   CheckCircle2,
   FileSearch,
   Settings,
@@ -27,6 +28,14 @@ import {
   Building2,
   Clock,
   DollarSign,
+  Search,
+  Vote,
+  Landmark,
+  TrendingUp,
+  Globe,
+  Briefcase,
+  Hammer,
+  Home,
 } from "lucide-react";
 
 interface ProcessStepProps {
@@ -97,6 +106,205 @@ function PhaseCard({
               )}
             </div>
           ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface FlowNodeProps {
+  icon: React.ReactNode;
+  label: string;
+  sublabel?: string;
+  color: string;
+  testId: string;
+}
+
+function FlowNode({ icon, label, sublabel, color, testId }: FlowNodeProps) {
+  return (
+    <div className="flex flex-col items-center gap-1" data-testid={testId}>
+      <div className={`h-12 w-12 rounded-md ${color} flex items-center justify-center`}>
+        {icon}
+      </div>
+      <span className="text-xs font-semibold text-center leading-tight max-w-[90px]">{label}</span>
+      {sublabel && (
+        <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[90px]">{sublabel}</span>
+      )}
+    </div>
+  );
+}
+
+function FlowArrow({ direction = "right" }: { direction?: "right" | "down" }) {
+  if (direction === "down") {
+    return (
+      <div className="flex justify-center py-1">
+        <ArrowDown className="h-4 w-4 text-muted-foreground" />
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center px-1">
+      <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+    </div>
+  );
+}
+
+function PlatformFlowDiagram() {
+  return (
+    <Card className="mb-8" data-testid="card-platform-flow-diagram">
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <Badge className="bg-primary">Visual Overview</Badge>
+          <CardTitle>End-to-End Platform Flow</CardTitle>
+        </div>
+        <p className="text-muted-foreground">
+          How properties move from nomination to community ownership — with parallel paths for property owners and service providers.
+        </p>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-8">
+          <div>
+            <p className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Main Flow</p>
+            <div className="flex flex-wrap items-start gap-2 justify-center md:justify-start">
+              <FlowNode
+                icon={<Users className="h-5 w-5 text-white" />}
+                label="User"
+                color="bg-primary"
+                testId="flow-node-user"
+              />
+              <FlowArrow />
+              <FlowNode
+                icon={<Search className="h-5 w-5 text-white" />}
+                label="Search / Nominate"
+                sublabel="Properties"
+                color="bg-primary"
+                testId="flow-node-search"
+              />
+              <FlowArrow />
+              <FlowNode
+                icon={<Coins className="h-5 w-5 text-white" />}
+                label="PropertyToken"
+                sublabel=".sol — Mint + Phase Pricing"
+                color="bg-chart-3"
+                testId="flow-node-property-token"
+              />
+              <FlowArrow />
+              <FlowNode
+                icon={<Wallet className="h-5 w-5 text-white" />}
+                label="Escrow"
+                sublabel=".sol — Funding + 3% APR"
+                color="bg-chart-3"
+                testId="flow-node-escrow"
+              />
+              <FlowArrow />
+              <FlowNode
+                icon={<Rocket className="h-5 w-5 text-white" />}
+                label="PhaseManager"
+                sublabel=".sol — 75% Auto-Advance"
+                color="bg-chart-3"
+                testId="flow-node-phase-manager"
+              />
+              <FlowArrow />
+              <FlowNode
+                icon={<Vote className="h-5 w-5 text-white" />}
+                label="Governance"
+                sublabel=".sol — DAO + Weighted Voting"
+                color="bg-chart-3"
+                testId="flow-node-governance"
+              />
+              <FlowArrow />
+              <FlowNode
+                icon={<Landmark className="h-5 w-5 text-white" />}
+                label="Treasury"
+                sublabel=".sol — Disburse (1% Founder)"
+                color="bg-chart-3"
+                testId="flow-node-treasury"
+              />
+              <FlowArrow />
+              <FlowNode
+                icon={<TrendingUp className="h-5 w-5 text-white" />}
+                label="Token Holders"
+                sublabel="Earn Revenue"
+                color="bg-primary"
+                testId="flow-node-token-holders"
+              />
+              <FlowArrow />
+              <FlowNode
+                icon={<Building2 className="h-5 w-5 text-white" />}
+                label="Community-Owned"
+                sublabel="Assets"
+                color="bg-primary"
+                testId="flow-node-community-assets"
+              />
+              <FlowArrow />
+              <FlowNode
+                icon={<Globe className="h-5 w-5 text-white" />}
+                label="Platform Scales"
+                color="bg-primary"
+                testId="flow-node-platform-scales"
+              />
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <p className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Parallel Path: Property Owners</p>
+              <div className="flex items-start gap-2 justify-center md:justify-start">
+                <FlowNode
+                  icon={<Home className="h-5 w-5 text-white" />}
+                  label="Property Owners"
+                  color="bg-chart-1"
+                  testId="flow-node-property-owners"
+                />
+                <FlowArrow />
+                <FlowNode
+                  icon={<Coins className="h-5 w-5 text-white" />}
+                  label="Tokenize Asset"
+                  sublabel="Submit Property"
+                  color="bg-chart-1"
+                  testId="flow-node-tokenize-asset"
+                />
+                <FlowArrow />
+                <FlowNode
+                  icon={<Coins className="h-5 w-5 text-white" />}
+                  label="PropertyToken"
+                  sublabel=".sol"
+                  color="bg-chart-3"
+                  testId="flow-node-owner-to-token"
+                />
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Parallel Path: Service Providers</p>
+              <div className="flex items-start gap-2 justify-center md:justify-start">
+                <FlowNode
+                  icon={<Briefcase className="h-5 w-5 text-white" />}
+                  label="Service Providers"
+                  color="bg-chart-4"
+                  testId="flow-node-service-providers"
+                />
+                <FlowArrow />
+                <FlowNode
+                  icon={<Hammer className="h-5 w-5 text-white" />}
+                  label="Bid on Services"
+                  sublabel="Title, Legal, Mgmt"
+                  color="bg-chart-4"
+                  testId="flow-node-bid-services"
+                />
+                <FlowArrow />
+                <FlowNode
+                  icon={<Landmark className="h-5 w-5 text-white" />}
+                  label="Treasury"
+                  sublabel=".sol — Disbursement"
+                  color="bg-chart-3"
+                  testId="flow-node-service-to-treasury"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -375,6 +583,8 @@ export default function TokenizationProcess() {
               <span className="text-muted-foreground">Exit, Distribute</span>
             </div>
           </div>
+
+          <PlatformFlowDiagram />
 
           <Separator className="my-8" />
 
