@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RevitaHub - Build Our Community • Tokenized Real Estate DAO</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f8f9fa; }
+    .section { margin: 40px 0; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    #map { height: 500px; border: 3px solid #1890ff; border-radius: 8px; }
+    .mermaid { background: #f0f5ff; padding: 20px; border-radius: 8px; }
+    button, input { padding: 12px; margin: 8px 0; width: 100%; max-width: 400px; }
+    h1 { color: #1890ff; }
+  </style>
+</head>
+<body>
+  <h1>RevitaHub — Community-Owned Revitalization</h1>
+  <p>Find vacant properties • Nominate • Vote on businesses • Tokenize • Connect with realtors & lenders</p>
+  <p><strong>Platform operator (Georgia LLC). Each property in separate SPV. 1% founder cut on all Treasury disbursements is how the creator profits — auditable on-chain.</strong></p>
+
+  <!-- LIVE US MAP -->
+  <div class="section">
+    <h2>Live US Map — Real-Time Voting, Tokenized Projects & Needs</h2>
+    <div id="map"></div>
+  </div>
+
+  <!-- ZIP + BUSINESS VOTING -->
+  <div class="section">
+    <h2>Choose Your Zip Code & Vote for Businesses You Want</h2>
+    <input type="text" id="zip" placeholder="Enter Zip Code (e.g. 30303)" maxlength="5">
+    <button onclick="searchZip()">Search & Vote</button>
+    <div id="voting-results"></div>
+  </div>
+
+  <!-- PROPERTY NOMINATION -->
+  <div class="section">
+    <h2>Nominate a Vacant Property</h2>
+    <input type="text" id="nominate-address" placeholder="Property Address">
+    <input type="text" id="nominate-zip" placeholder="Zip Code">
+    <button onclick="nominateProperty()">Nominate Property</button>
+  </div>
+
+  <!-- OWNER TOKENIZATION -->
+  <div class="section">
+    <h2>Property Owners: Tokenize Your Distressed Asset</h2>
+    <p>Upload deed → Auto-whitelist → Mint fractional tokens via PropertyToken.sol (phased pricing & 1.5x County voting power).</p>
+    <input type="text" id="tokenize-address" placeholder="Your Property Address">
+    <button onclick="tokenizeProperty()">Start Tokenization Process</button>
+  </div>
+
+  <!-- SERVICE PROVIDERS -->
+  <div class="section">
+    <h2>Realtors, Brokers, Tax Assessors, Foreclosure Firms — Offer Services & Loan Structures</h2>
+    <p>Submit your bid for title work, financing, or assessments. Winners paid from Treasury.sol after Governance vote.</p>
+    <input type="text" id="service-type" placeholder="Service Type (e.g. Loan Structuring)">
+    <input type="text" id="service-zip" placeholder="Service Zip Code">
+    <button onclick="submitServiceBid()">Submit Service Offer</button>
+  </div>
+
+  <!-- EMBEDDED BUSINESS FLOWCHART (Immutable Contracts + Your 1% Profit) -->
+  <div class="section">
+    <h2>How RevitaHub Works — Full Platform Flow</h2>
+    <div id="flowchart" class="mermaid">
+      flowchart TD
+        classDef user fill:#e6f7ff,stroke:#1890ff,stroke-width:2px,color:#000
+        classDef platform fill:#f0f5ff,stroke:#597ef7,stroke-width:2px
+        classDef contract fill:#d9f7be,stroke:#389e0d,stroke-width:2px
+        classDef profit fill:#fff2e8,stroke:#d46b08,stroke-width:3px,font-weight:bold
+
+        A["User / Owner / Service Provider\nVisits buildourcommunity.co"]:::user
+        A --> B["Search / Nominate Vacant Properties\nby Zip Code & Live US Map"]:::platform
+        A --> C["Vote on Desired Local Businesses\nWeighted by Phase (1.5x County)"]:::platform
+        A --> D["Property Owners Tokenize Asset\nvia PropertyToken.sol"]:::platform
+        A --> E["Realtors / Brokers / Tax Assessors / Foreclosure Firms\nOffer Loan Structures & Services"]:::platform
+
+        B --> F["PropertyToken.sol\nFractional Mint + Phase Pricing + 1.5x Vote Weights"]:::contract
+        F --> G["Escrow.sol\n100% Funding Target + 3% APR Refunds if Not Met"]:::contract
+        G --> H["PhaseManager.sol\n75% Engagement Auto-Advance Phases"]:::contract
+        H --> I["Governance.sol\nDAO Proposals & Weighted Voting"]:::contract
+        I --> J["Treasury.sol\nDisburse Funds — 1% Founder Cut Auto-Taken First\nCreator Profit on Every Outflow"]:::profit
+
+        J --> K["Token Holders Earn Quarterly Revenue Share"]:::user
+        J --> E
+        K --> L["Community-Owned Revitalized Properties\nRevenue-Generating Assets"]
+        L --> M["Platform Scales → More Properties → TVL Growth\nFounder 1% Compounds Passively"]
+    </div>
+  </div>
+
+  <footer style="margin-top:50px; text-align:center; font-size:0.9em;">
+    RevitaHub is a technology platform operator (Georgia LLC). Tokens represent interests in separate property SPVs. Not investment advice. All economics enforced by smart contracts — Treasury 1% founder cut is immutable and how the creator profits. Questions? Use the forms above.
+  </footer>
+
+  <script>
+    // Initialize Live US Map (Atlanta focus — your location)
+    const map = L.map('map').setView([33.75, -84.39], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    
+    // Mock real-time pins (will update with real PhaseManager events once live)
+    L.marker([33.75, -84.39]).addTo(map).bindPopup('Atlanta 30303 — 68% Funded • Needs Grocery Store Votes');
+    L.marker([34.05, -84.25]).addTo(map).bindPopup('Roswell — Tokenized • Phase 2 Voting Open');
+    L.marker([33.45, -84.55]).addTo(map).bindPopup('Fulton County Foreclosure — Open for Nominations');
+
+    // Mock functions for interactivity (real calls to contracts later)
+    function searchZip() {
+      const zip = document.getElementById('zip').value;
+      document.getElementById('voting-results').innerHTML = `<p>Results for ${zip}:<br>
+        • Coffee Shop: 142 votes (72%)<br>
+        • Medical Clinic: 89 votes (45%)<br>
+        Click to cast your weighted vote via Governance.sol</p>`;
+    }
+    function nominateProperty() { alert('Nomination recorded — will feed PropertyToken.sol once funded via Escrow.'); }
+    function tokenizeProperty() { alert('Tokenization started — PropertyToken.sol mint ready after KYC & Escrow funding.'); }
+    function submitServiceBid() { alert('Service bid submitted — will route to Governance.sol for community vote and Treasury payment.'); }
+
+    // Render flowchart
+    mermaid.initialize({startOnLoad: true});
+  </script>
+</body>
+</html>
