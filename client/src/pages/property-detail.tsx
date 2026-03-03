@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -16,13 +16,25 @@ import { Progress } from "@/components/ui/progress";
 import { 
   MapPin, Building2, Users, TrendingUp, DollarSign, 
   FileText, Calendar, ExternalLink, Share2, Heart,
-  Briefcase, Home, Leaf, CheckCircle, Lock, Loader2
+  Briefcase, Home, Leaf, CheckCircle, Lock, Loader2,
+  Activity, Shield, ArrowRight, Link2, AlertTriangle
 } from "lucide-react";
 import { useParams, useSearch } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import riverfrontImage from "@assets/generated_images/riverfront_wellness_community_hub.png";
 import { PHASE_CONFIG } from "@shared/schema";
 import type { User, Property, TokenOffering, OfferingPhase } from "@shared/schema";
+import {
+  getCountyByName,
+  getDistressColor,
+  getDistressLabel,
+  calculateImpactMetrics,
+  getInvestmentPreview,
+  formatCurrency,
+  type ImpactMetrics,
+  type InvestmentPreview,
+  type CountyData,
+} from "@/lib/georgia-impact-data";
 
 interface PropertyDetailData {
   property: Property;
@@ -238,6 +250,21 @@ export default function PropertyDetail() {
         : property.communityBenefits)
     : [];
 
+  const countyData = useMemo(() => getCountyByName(property.county || ""), [property.county]);
+  const propertyType = (property.propertyType || "Affordable Housing") as any;
+  const propertyValue = fundingGoal || 500000;
+  const tokenPrice = currentPrice || 12.50;
+
+  const impactMetrics = useMemo(
+    () => calculateImpactMetrics(countyData, propertyType, propertyValue),
+    [countyData, propertyType, propertyValue]
+  );
+
+  const investmentPreview = useMemo(
+    () => getInvestmentPreview(propertyValue, tokenPrice, 1, impactMetrics),
+    [propertyValue, tokenPrice, impactMetrics]
+  );
+
   if (isPrivateOffering && (!accessCheckComplete || isValidatingAccess)) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -360,6 +387,177 @@ export default function PropertyDetail() {
                       <p className="text-2xl font-bold">{property.projectedROI || 0}%</p>
                       <p className="text-xs text-muted-foreground">Est. Annual ROI</p>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card data-testid="card-economic-impact">
+                <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-chart-1" />
+                    Economic Impact Analysis
+                  </CardTitle>
+                  <Badge className={getDistressColor(countyData?.distressLevel || "transitional")} data-testid="badge-distress-level">
+                    {getDistressLabel(countyData?.distressLevel || "transitional")}
+                  </Badge>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-3 rounded-md bg-muted/50" data-testid="gauge-economic-score">
+                      <div className="relative mx-auto mb-2 h-16 w-16">
+                        <svg viewBox="0 0 36 36" className="h-16 w-16 -rotate-90">
+                          <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="3" className="text-muted" />
+                          <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="3"
+                            className="text-chart-1"
+                            strokeDasharray={`${(impactMetrics.economicScore / 10000) * 97.4} 97.4`}
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <span className="absolute inset-0 flex items-center justify-center text-xs font-bold">
+                          {Math.round(impactMetrics.economicScore / 100)}
+                        </span>
+                      </div>
+                      <p className="text-xs font-medium">Economic Score</p>
+                      <p className="text-[10px] text-muted-foreground">Jobs + GDP</p>
+                    </div>
+                    <div className="text-center p-3 rounded-md bg-muted/50" data-testid="gauge-social-score">
+                      <div className="relative mx-auto mb-2 h-16 w-16">
+                        <svg viewBox="0 0 36 36" className="h-16 w-16 -rotate-90">
+                          <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="3" className="text-muted" />
+                          <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="3"
+                            className="text-chart-3"
+                            strokeDasharray={`${(impactMetrics.socialScore / 10000) * 97.4} 97.4`}
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <span className="absolute inset-0 flex items-center justify-center text-xs font-bold">
+                          {Math.round(impactMetrics.socialScore / 100)}
+                        </span>
+                      </div>
+                      <p className="text-xs font-medium">Social Score</p>
+                      <p className="text-[10px] text-muted-foreground">Affordability + Community</p>
+                    </div>
+                    <div className="text-center p-3 rounded-md bg-muted/50" data-testid="gauge-risk-score">
+                      <div className="relative mx-auto mb-2 h-16 w-16">
+                        <svg viewBox="0 0 36 36" className="h-16 w-16 -rotate-90">
+                          <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="3" className="text-muted" />
+                          <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="3"
+                            className="text-chart-4"
+                            strokeDasharray={`${(impactMetrics.riskAdjustedScore / 100) * 97.4} 97.4`}
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <span className="absolute inset-0 flex items-center justify-center text-xs font-bold">
+                          {impactMetrics.riskAdjustedScore}
+                        </span>
+                      </div>
+                      <p className="text-xs font-medium">Risk-Adjusted</p>
+                      <p className="text-[10px] text-muted-foreground">Score 0-100</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 p-3 rounded-md bg-muted/50">
+                    <div data-testid="text-gdp-multiplier">
+                      <p className="text-lg font-bold text-chart-1">{investmentPreview.gdpMultiplier}x Economic Ripple</p>
+                      <p className="text-xs text-muted-foreground">
+                        Every $1 invested generates an estimated ${investmentPreview.gdpMultiplier.toFixed(2)} in local economic activity over 5 years
+                      </p>
+                    </div>
+                    <TrendingUp className="h-8 w-8 text-chart-1 shrink-0" />
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 p-3 rounded-md bg-muted/50">
+                    <div data-testid="text-leverage-rank">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-semibold">Leverage Rank</p>
+                        <Badge variant="outline">{impactMetrics.leverageRank}/10</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {impactMetrics.leverageRank >= 7
+                          ? "High Leverage = Lower Risk per Meadows' framework"
+                          : impactMetrics.leverageRank >= 4
+                            ? "Moderate Leverage — balanced risk-reward profile"
+                            : "Emerging Leverage — higher potential upside"}
+                      </p>
+                    </div>
+                    <Shield className="h-6 w-6 text-chart-4 shrink-0" />
+                  </div>
+
+                  <div className="flex items-center gap-2 p-2 rounded-md bg-muted/30 border border-dashed" data-testid="badge-oracle-proof">
+                    <Link2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium">Chainlink Verified</p>
+                      <p className="text-[10px] text-muted-foreground font-mono">Pending oracle integration</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card data-testid="card-investment-preview">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-chart-3" />
+                    What Your ${tokenPrice.toFixed(2)} Does
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  <div className="flex items-stretch gap-1 overflow-x-auto" data-testid="chain-investment-flow">
+                    <div className="flex-1 min-w-0 p-3 rounded-md bg-muted/50 text-center">
+                      <DollarSign className="h-5 w-5 mx-auto mb-1 text-chart-3" />
+                      <p className="text-sm font-bold">${tokenPrice.toFixed(2)}</p>
+                      <p className="text-[10px] text-muted-foreground">Token Price</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 self-center shrink-0 text-muted-foreground" />
+                    <div className="flex-1 min-w-0 p-3 rounded-md bg-muted/50 text-center">
+                      <Building2 className="h-5 w-5 mx-auto mb-1 text-chart-1" />
+                      <p className="text-sm font-bold">{(((tokenPrice / propertyValue) * 100)).toFixed(4)}%</p>
+                      <p className="text-[10px] text-muted-foreground">Property Share</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 self-center shrink-0 text-muted-foreground" />
+                    <div className="flex-1 min-w-0 p-3 rounded-md bg-muted/50 text-center">
+                      <Users className="h-5 w-5 mx-auto mb-1 text-chart-4" />
+                      <p className="text-sm font-bold">{Math.round((impactMetrics.economicScore / 100) * 0.8)}</p>
+                      <p className="text-[10px] text-muted-foreground">Jobs Supported</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 self-center shrink-0 text-muted-foreground" />
+                    <div className="flex-1 min-w-0 p-3 rounded-md bg-muted/50 text-center">
+                      <TrendingUp className="h-5 w-5 mx-auto mb-1 text-chart-5" />
+                      <p className="text-sm font-bold">{formatCurrency(investmentPreview.fiveYearGDPImpact, true)}</p>
+                      <p className="text-[10px] text-muted-foreground">5-Yr GDP Impact</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 rounded-md bg-muted/50" data-testid="text-year1-dividends">
+                      <p className="text-xs text-muted-foreground mb-1">Projected Year 1 Dividends</p>
+                      <p className="text-lg font-bold text-chart-3">
+                        ${investmentPreview.projectedYear1Dividends.toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="p-3 rounded-md bg-muted/50" data-testid="text-5yr-roi">
+                      <p className="text-xs text-muted-foreground mb-1">Projected 5-Year ROI</p>
+                      <p className="text-lg font-bold text-chart-1">
+                        {investmentPreview.projected5YearROI}%
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2 p-2 rounded-md bg-muted/30" data-testid="text-economic-summary">
+                      <Briefcase className="h-4 w-4 mt-0.5 text-chart-1 shrink-0" />
+                      <p className="text-xs">{investmentPreview.economicSummary}</p>
+                    </div>
+                    <div className="flex items-start gap-2 p-2 rounded-md bg-muted/30" data-testid="text-social-summary">
+                      <Home className="h-4 w-4 mt-0.5 text-chart-3 shrink-0" />
+                      <p className="text-xs">{investmentPreview.socialSummary}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2 pt-2 border-t">
+                    <AlertTriangle className="h-3.5 w-3.5 mt-0.5 text-muted-foreground shrink-0" />
+                    <p className="text-[10px] text-muted-foreground">
+                      Projected returns. Not financial advice. All estimates are hypothetical and based on economic modeling.
+                    </p>
                   </div>
                 </CardContent>
               </Card>

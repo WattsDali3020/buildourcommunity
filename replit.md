@@ -50,6 +50,8 @@ Preferred communication style: Simple, everyday language.
 - **Governance Voting**: API-backed proposals with token-weighted voting and 75% phase engagement meters.
 - **Admin Panel**: Property/nomination approval, KYC management.
 - **Investor Protection API**: 3% APR refund calculation for unfunded properties.
+- **Impact Simulator**: `/impact` page with Georgia county-level adoption scenarios (5%–100%), GDP multiplier projections, randomized sample projects, founder revenue scaling, and smart contract integration explainers. Data module at `client/src/lib/georgia-impact-data.ts`.
+- **Economic Impact Cards**: Property detail pages show county distress level (ARC classification), economic/social/risk scores, GDP multiplier, leverage rank, investment preview with "What Your $12.50 Does" ripple-effect chain, and Chainlink oracle proof placeholder.
 - **Community Wishlist**: Public page with zip-code-driven business voting, predefined business categories (Grocery, Medical, etc.), vote percentages, and community need submission.
 - **Service Provider Marketplace**: `/services` page where realtors, brokers, tax assessors, and firms can bid on property services. Winners selected by governance vote, payments from Treasury.
 - **Interactive Maps**: Leaflet-based map on homepage and Mapbox on properties page with property markers and filtering.

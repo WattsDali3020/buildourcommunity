@@ -14,6 +14,7 @@ const footerLinks = {
   resources: [
     { href: "/litepaper", label: "Litepaper" },
     { href: "/how-it-works", label: "How It Works" },
+    { href: "/impact", label: "Impact Simulator" },
     { href: "/grants", label: "Grants & Funding" },
     { href: "/faq", label: "FAQ" },
   ],

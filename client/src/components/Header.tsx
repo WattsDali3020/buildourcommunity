@@ -11,7 +11,7 @@ const publicNavLinks = [
   { href: "/", label: "Home" },
   { href: "/properties", label: "Explore" },
   { href: "/how-it-works", label: "How It Works" },
-  { href: "/demand", label: "Demand" },
+  { href: "/impact", label: "Impact" },
   { href: "/litepaper", label: "Learn" },
   { href: "/wishlist", label: "Wishlist" },
   { href: "/services", label: "Services" },
