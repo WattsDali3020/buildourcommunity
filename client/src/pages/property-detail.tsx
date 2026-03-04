@@ -19,7 +19,7 @@ import {
   Briefcase, Home, Leaf, CheckCircle, Lock, Loader2,
   Activity, Shield, ArrowRight, Link2, AlertTriangle
 } from "lucide-react";
-import { useParams, useSearch } from "wouter";
+import { useParams, useSearch, Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import riverfrontImage from "@assets/generated_images/riverfront_wellness_community_hub.png";
 import { PHASE_CONFIG } from "@shared/schema";
@@ -35,6 +35,14 @@ import {
   type InvestmentPreview,
   type CountyData,
 } from "@/lib/georgia-impact-data";
+import {
+  generateLeagueCities,
+  getRankBadge,
+  getGlowColor,
+  LEAGUES,
+  type LeagueCity,
+  type LeagueType,
+} from "@/lib/league-data";
 
 interface PropertyDetailData {
   property: Property;
@@ -264,6 +272,14 @@ export default function PropertyDetail() {
     () => getInvestmentPreview(propertyValue, tokenPrice, 1, impactMetrics),
     [propertyValue, tokenPrice, impactMetrics]
   );
+
+  const leagueCities = useMemo(() => generateLeagueCities(20), []);
+  const cityForProperty = useMemo(() => {
+    if (!property) return null;
+    const match = leagueCities.find(c => c.county.name.toLowerCase() === (property.county || "").toLowerCase());
+    if (match) return match;
+    return leagueCities.length > 0 ? { ...leagueCities[0], name: property.name } : null;
+  }, [leagueCities, property]);
 
   if (isPrivateOffering && (!accessCheckComplete || isValidatingAccess)) {
     return (
@@ -684,6 +700,88 @@ export default function PropertyDetail() {
               )}
 
               <CapitalStackDisplay propertyId={property.id} />
+
+              {cityForProperty && (
+                <Card data-testid="card-city-competition">
+                  <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Building2 className="h-5 w-5 text-chart-4" />
+                      City Competition
+                    </CardTitle>
+                    <div
+                      className="h-3 w-3 rounded-full"
+                      style={{
+                        backgroundColor: getGlowColor(cityForProperty.glowIntensity),
+                        boxShadow: `0 0 ${Math.round(cityForProperty.glowIntensity / 10)}px ${getGlowColor(cityForProperty.glowIntensity)}`,
+                      }}
+                      data-testid="indicator-glow-level"
+                    />
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="font-semibold text-sm" data-testid="text-city-name">{cityForProperty.name}</p>
+                        <p className="text-xs text-muted-foreground">{cityForProperty.county.name} County</p>
+                      </div>
+                      <Badge variant="outline" className={getRankBadge(cityForProperty.overallRank).color} data-testid="badge-overall-rank">
+                        {getRankBadge(cityForProperty.overallRank).label}
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-2">
+                      {LEAGUES.filter(l => l.id !== "builder").map((league) => {
+                        const score = cityForProperty.scores[league.id];
+                        const maxScore = Math.max(...leagueCities.map(c => c.scores[league.id]));
+                        const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+                        const sorted = [...leagueCities].sort((a, b) => b.scores[league.id] - a.scores[league.id]);
+                        const rank = sorted.findIndex(c => c.id === cityForProperty.id) + 1;
+                        return (
+                          <div key={league.id} data-testid={`bar-league-${league.id}`}>
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <span className="text-xs text-muted-foreground">{league.name.replace(" League", "")}</span>
+                              <span className="text-xs font-medium">#{rank}</span>
+                            </div>
+                            <Progress value={pct} className="h-1.5" />
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-muted/50">
+                      <div>
+                        <p className="text-xs text-muted-foreground">League Score</p>
+                        <p className="text-sm font-bold" data-testid="text-league-score">
+                          {(cityForProperty.scores.gdp + cityForProperty.scores.social + cityForProperty.scores.engagement).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {cityForProperty.trend === "up" && <TrendingUp className="h-4 w-4 text-chart-3" />}
+                        {cityForProperty.trend === "down" && <TrendingUp className="h-4 w-4 text-red-400 rotate-180" />}
+                        {cityForProperty.trend === "steady" && <Activity className="h-4 w-4 text-muted-foreground" />}
+                        <span className="text-xs text-muted-foreground capitalize" data-testid="text-trend">{cityForProperty.trend}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-muted/50">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Season Trophies</p>
+                        <p className="text-sm font-bold" data-testid="text-season-wins">{cityForProperty.seasonWins}</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <p className="text-xs text-muted-foreground">Glow Level</p>
+                        <span className="text-xs font-semibold" data-testid="text-glow-level">{cityForProperty.glowIntensity}%</span>
+                      </div>
+                    </div>
+
+                    <Link href="/league" data-testid="link-view-leaderboard">
+                      <Button variant="outline" size="sm" className="w-full">
+                        View Full Leaderboard
+                        <ArrowRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              )}
 
               <Card>
                 <CardContent className="p-4">

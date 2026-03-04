@@ -31,6 +31,7 @@ import Wishlist from "@/pages/wishlist";
 import Treasury from "@/pages/treasury";
 import Services from "@/pages/services";
 import ImpactSimulator from "@/pages/impact-simulator";
+import League from "@/pages/league";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -61,6 +62,7 @@ function Router() {
       <Route path="/treasury" component={Treasury} />
       <Route path="/services" component={Services} />
       <Route path="/impact" component={ImpactSimulator} />
+      <Route path="/league" component={League} />
       <Route component={NotFound} />
     </Switch>
   );

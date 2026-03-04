@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -9,10 +10,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Settings, Bell, Wallet, TrendingUp, Vote, DollarSign, Award, Target, Users, Zap, Shield, Star, Lock, CheckCircle } from "lucide-react";
+import { Settings, Bell, Wallet, TrendingUp, Vote, DollarSign, Award, Target, Users, Zap, Shield, Star, Lock, CheckCircle, Trophy, Hammer, Crown, ArrowRight } from "lucide-react";
 import { useAccount } from "wagmi";
 import { WalletButton } from "@/components/WalletButton";
+import { Link } from "wouter";
 import type { User, TokenHolding } from "@shared/schema";
+import { generateLeagueCities, getBuilderProfile, getRankBadge, type BuilderProfile as BuilderProfileType } from "@/lib/league-data";
 
 interface Achievement {
   id: string;
@@ -176,6 +179,117 @@ function AchievementCard({ achievement }: { achievement: Achievement }) {
         )}
       </div>
     </div>
+  );
+}
+
+function BuilderLeagueCard({
+  holdings,
+  totalTokens,
+  totalVotingPower,
+}: {
+  holdings: TokenHolding[];
+  totalTokens: number;
+  totalVotingPower: number;
+}) {
+  const cities = useMemo(() => generateLeagueCities(20), []);
+  const propertiesInvested = holdings.length || 2;
+  const tokensHeld = totalTokens || 45;
+  const votesCount = totalVotingPower > 0 ? Math.max(3, Math.floor(totalVotingPower / 10)) : 3;
+
+  const profile = getBuilderProfile(tokensHeld, propertiesInvested, votesCount, cities);
+  const rankBadge = getRankBadge(profile.rank);
+
+  return (
+    <Card className="mb-8" data-testid="section-builder-league">
+      <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <Hammer className="h-5 w-5 text-primary" />
+            Builder League
+          </CardTitle>
+          <CardDescription>Your personal competition stats across all cities</CardDescription>
+        </div>
+        <Link href="/league">
+          <Button variant="outline" size="sm" data-testid="link-view-league">
+            View Leaderboard
+            <ArrowRight className="h-4 w-4 ml-1" />
+          </Button>
+        </Link>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex items-center gap-3 p-3 rounded-md bg-muted/30 border" data-testid="text-builder-rank">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Crown className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Builder Rank</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-lg font-semibold">#{profile.rank}</p>
+                <Badge variant="outline" className={rankBadge.color}>
+                  {rankBadge.label}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-3 rounded-md bg-muted/30 border" data-testid="text-builder-score">
+            <div className="h-10 w-10 rounded-full bg-chart-2/10 flex items-center justify-center flex-shrink-0">
+              <TrendingUp className="h-5 w-5 text-chart-2" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Total Score</p>
+              <p className="text-lg font-semibold">{profile.totalScore.toLocaleString()}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-3 rounded-md bg-muted/30 border" data-testid="text-cities-contributed">
+            <div className="h-10 w-10 rounded-full bg-chart-3/10 flex items-center justify-center flex-shrink-0">
+              <Users className="h-5 w-5 text-chart-3" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Cities Contributed</p>
+              <p className="text-lg font-semibold">{profile.citiesContributed}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-3 rounded-md bg-muted/30 border" data-testid="text-best-city">
+            <div className="h-10 w-10 rounded-full bg-chart-4/10 flex items-center justify-center flex-shrink-0">
+              <Trophy className="h-5 w-5 text-chart-4" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Best City</p>
+              <p className="text-sm font-semibold truncate">{profile.bestCityName}</p>
+              <p className="text-xs text-muted-foreground">Rank #{profile.bestCityRank}</p>
+            </div>
+          </div>
+        </div>
+
+        {profile.bonusAPR > 0 && (
+          <div className="mt-4 p-3 rounded-md bg-primary/5 border border-primary/20 flex items-center gap-3" data-testid="text-bonus-apr">
+            <Star className="h-5 w-5 text-primary flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium">Season Bonus Active</p>
+              <p className="text-xs text-muted-foreground">
+                Your best city is in the top 50 — you earn <span className="text-primary font-semibold">+{profile.bonusAPR}% APR</span> bonus this season
+              </p>
+            </div>
+          </div>
+        )}
+
+        {profile.bonusAPR === 0 && (
+          <div className="mt-4 p-3 rounded-md bg-muted/30 border flex items-center gap-3" data-testid="text-no-bonus-apr">
+            <Star className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Season Bonus</p>
+              <p className="text-xs text-muted-foreground">
+                Get your best city into the top 50 to earn +0.75% APR bonus
+              </p>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -415,6 +529,12 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
+
+          <BuilderLeagueCard
+            holdings={holdings}
+            totalTokens={totalTokens}
+            totalVotingPower={totalVotingPower}
+          />
 
           <Card data-testid="section-achievements">
             <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">

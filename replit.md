@@ -56,6 +56,7 @@ Preferred communication style: Simple, everyday language.
 - **Service Provider Marketplace**: `/services` page where realtors, brokers, tax assessors, and firms can bid on property services. Winners selected by governance vote, payments from Treasury.
 - **Interactive Maps**: Leaflet-based map on homepage and Mapbox on properties page with property markers and filtering.
 - **Treasury Page**: Authenticated page with fund allocation, transaction history, and 1% founder sustainability cut (24-month vesting, 90-day cliff).
+- **RevitaLeague Competition**: `/league` page with 4 live leagues (GDP Growth, Social Impact, Engagement, Builder), seasonal RevitaCup (90-day seasons), cross-county rivalries, Leaflet competition map with glow-intensity markers, and on-chain integration cards. Builder League profile on dashboard, City Competition card on property detail. Data module at `client/src/lib/league-data.ts`.
 - **Achievements/Gamification**: Tracks user engagement and milestones.
 - **Community Polls**: Non-binding polls that can lead to formal proposals, influencing funding targets.
 - **Gasless Voting**: EIP-712 signature verification for off-chain voting via relayers.

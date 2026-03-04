@@ -10,6 +10,7 @@ const footerLinks = {
     { href: "/dashboard", label: "Dashboard" },
     { href: "/submit", label: "Submit Project" },
     { href: "/services", label: "Services" },
+    { href: "/league", label: "RevitaLeague" },
   ],
   resources: [
     { href: "/litepaper", label: "Litepaper" },
