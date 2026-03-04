@@ -1,7 +1,7 @@
-# RevitaHub - Community Revitalization Platform
+# RevitaHub — AI-Nudged RevitalDAO
 
 ## Overview
-RevitaHub is a community-owned real estate revitalization platform leveraging blockchain tokenization on EVM-compatible chains to enable fractional property ownership. It empowers communities to invest in various property types, transforming them into neighborhood assets. The platform offers low-entry token pricing starting at $12.50, allowing broad financial inclusion. Investors can purchase tokens, participate in DAO governance, and earn dividends. Property offerings require 100% funding within a one-year deadline, with automatic 3% APR refunds if funding targets are not met. The pricing model scales across phases (County, State, National, International) to encourage early community investment.
+RevitaHub is a community-owned real estate revitalization platform built on Base (Coinbase L2). It uses blockchain tokenization to enable fractional property ownership, empowering communities to invest in distressed properties and transform them into neighborhood assets. Key features include a $12.50 minimum token pricing for broad financial inclusion, DAO governance with AI-moderated voting, a 4-phase pricing ramp (County → State → National → International), and transparent 1% founder economics. The platform aims to be a blank-state, pre-launch configuration with empty database tables and API-driven pages.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -11,84 +11,61 @@ Preferred communication style: Simple, everyday language.
 ### Frontend
 - **Framework**: React 18 with TypeScript
 - **Routing**: Wouter
-- **State Management**: TanStack React Query
-- **Styling**: Tailwind CSS with shadcn/ui (New York style)
-- **Build Tool**: Vite
-- **Theme**: Dark/light mode support
+- **State Management**: TanStack React Query v5
+- **Styling**: Tailwind CSS with shadcn/ui (New York style), dark/light mode support
+- **Maps**: Leaflet (homepage, league) and Mapbox GL (properties page)
 
 ### Backend
 - **Runtime**: Node.js with Express
 - **Language**: TypeScript with ESM modules
 - **API Pattern**: RESTful JSON API
-- **Build**: esbuild
+- **Auth**: Replit Auth (OIDC)
+- **File Storage**: Replit Object Storage
 
 ### Data Layer
 - **ORM**: Drizzle ORM with PostgreSQL
-- **Schema**: Shared between client and server (`shared/schema.ts`)
-- **Validation**: Zod schemas generated from Drizzle
-
-### Key Domain Models
-- **Users**: Authentication with wallet address
-- **Properties**: Real estate listings with a lifecycle (draft → approved → live → funded)
-- **Token Offerings**: Multi-phase offering system
-- **Governance**: Proposals and token-weighted voting
-- **Purchases/Holdings**: Token ownership tracking
-- **Service Bids**: Service provider marketplace bids (Title Work, Loan Structuring, Property Assessment, etc.)
-- **Wishes**: Community needs with zip-code-driven business voting
-
-### Design System
-- **Typography**: Inter, JetBrains Mono
-- **Color System**: HSL-based CSS variables
-- **Component Patterns**: Cards, progress indicators, phase badges
-- **Reference Style**: Coinbase, Stripe, Linear
+- **Schema**: Shared between client and server (`shared/schema.ts`, `shared/models/auth.ts`)
+- **Validation**: Zod schemas generated from Drizzle via `drizzle-zod`
+- **Storage Pattern**: `IStorage` interface with `DatabaseStorage` (PostgreSQL) and `MemStorage` (dev fallback)
 
 ### Core Features
 - **Wallet Connection**: RainbowKit + wagmi for Base network.
-- **KYC Verification**: User identity verification with admin approval. `requireKYCApproved` middleware gates all purchase endpoints.
-- **Investor Onboarding Gate**: Linear flow (Auth → KYC Submit → KYC Approved → Risk Disclosure Acknowledged → Purchase Unlocked) enforced in TokenPurchaseModal and SimplePurchaseModal.
-- **Token Purchase Flow**: Includes phase restrictions, per-person limits, payment method selection, and two-phase payment reconciliation (Stripe → pending → blockchain confirm → confirmed).
-- **Investor Dashboard**: Portfolio metrics, voting power, KYC status, My Holdings with per-property phase multipliers, refund request section with 3% APR calculations.
-- **Governance Voting**: API-backed proposals with token-weighted voting and 75% phase engagement meters.
-- **Admin Panel**: Property/nomination approval, KYC management, payment reconciliation dashboard (stuck purchases >10 min).
-- **Investor Protection API**: 3% APR refund calculation for unfunded properties. Refund request UI on dashboard.
-- **Transfers Page**: `/transfers` page for initiating and viewing share transfer requests.
-- **Impact Simulator**: `/impact` page with Georgia county-level adoption scenarios (5%–100%), GDP multiplier projections, randomized sample projects, founder revenue scaling, and smart contract integration explainers. Data module at `client/src/lib/georgia-impact-data.ts`.
-- **Economic Impact Cards**: Property detail pages show county distress level (ARC classification), economic/social/risk scores, GDP multiplier, leverage rank, investment preview with "What Your $12.50 Does" ripple-effect chain, and Chainlink oracle proof placeholder.
-- **Community Wishlist**: Public page with zip-code-driven business voting, predefined business categories (Grocery, Medical, etc.), vote percentages, and community need submission.
-- **Service Provider Marketplace**: `/services` page where realtors, brokers, tax assessors, and firms can bid on property services. Winners selected by governance vote, payments from Treasury.
-- **Interactive Maps**: Leaflet-based map on homepage (API-driven markers) and Mapbox on properties page with property markers and filtering.
-- **Treasury Page**: Authenticated page with fund allocation, transaction history, and 1% founder sustainability cut (24-month vesting, 90-day cliff).
-- **RevitaLeague Competition**: `/league` page with 4 live leagues (GDP Growth, Social Impact, Engagement, Builder), seasonal RevitaCup (90-day seasons), cross-county rivalries, Leaflet competition map with glow-intensity markers, and on-chain integration cards. Builder League profile on dashboard, City Competition card on property detail. Data module at `client/src/lib/league-data.ts`.
-- **Achievements/Gamification**: Tracks user engagement and milestones.
-- **Community Polls**: Non-binding polls that can lead to formal proposals, influencing funding targets.
-- **Gasless Voting**: EIP-712 signature verification for off-chain voting via relayers.
-- **Multi-Sig Treasury**: 2-of-3 multi-sig for operational disbursements.
-- **Regulatory Compliance**: On-chain recording of KYC/AML checks and audit events.
-- **Scheduler Service**: Manages funding deadlines, phase advancements, and proposal statuses.
-- **Email Service**: For purchase confirmations, refund notifications, and proposal alerts. User email preference toggle.
-- **Rate Limiting**: Applied to critical endpoints. Global write rate limit (30 req/min) on all POST/PATCH/DELETE.
-- **Security Headers**: Helmet.js for HSTS, CSP, X-Frame-Options, XSS protection.
-- **Audit Log**: `audit_log` table tracking purchases, votes, KYC changes, admin actions with IP/timestamp.
-- **Soft Delete**: `deletedAt` columns on all financial tables (tokenPurchases, tokenHoldings, tokenOfferings, proposals, tokenRefunds).
-- **Legal Pages**: `/terms`, `/privacy`, `/risk-disclosure` (draft placeholders pending legal counsel).
-- **Risk Disclosure**: Interactive acknowledgment flow that writes timestamp to user record.
+- **KYC Verification**: User identity verification with admin approval, enforced via middleware.
+- **Investor Onboarding Gate**: Linear flow (Auth → KYC Submit → KYC Approved → Risk Disclosure Acknowledged → Purchase Unlocked).
+- **Token Purchase Flow**: Phase restrictions, per-person limits, payment processing, two-phase payment reconciliation.
+- **Investor Dashboard**: Portfolio metrics, voting power, KYC status, holdings, refund requests.
+- **Governance Voting**: API-backed proposals with token-weighted voting.
+- **Admin Panel**: Property/nomination approval, KYC management, payment reconciliation.
+- **Investor Protection API**: 3% APR refund calculation for unfunded properties.
+- **Impact Simulator**: Georgia county-level adoption scenarios, GDP multiplier projections, and founder revenue scaling.
+- **Community Wishlist**: Zip-code-driven business voting and community need submission.
+- **Service Provider Marketplace**: Platform for service providers to bid on property services.
+- **Owner Detection & Contact**: Automated property owner lookup, contact tracking, and owner response portal.
+- **Property Submissions**: Owners can submit properties with document uploads.
+- **Grants System**: Tracking federal/state/local/private/nonprofit grants.
+- **Private Offerings**: Invite-only offerings with access codes and token allocation limits.
+- **Scheduler Service**: Background tasks for funding deadlines, phase advancements, and proposal statuses.
+- **Email Service**: Transactional emails for purchases, refunds, proposals, and phase changes.
+- **Security**: Helmet.js for security headers, session hardening, and rate limiting.
+- **Audit Log**: System-wide event logging in `audit_log` table.
+- **Soft Delete**: `deletedAt` columns on financial tables.
 
 ### Smart Contract Architecture
-- **PropertyToken.sol**: ERC-1155 tokens with phase-based voting power, transfer locks, and burner role for escrow.
+- **PropertyToken.sol**: ERC-1155 tokens with phase-based voting power, transfer locks.
 - **Escrow.sol**: Handles token purchases, 3% APR refunds, and token burning.
-- **Governance.sol**: Manages DAO voting with AI moderation, phase-weighted voting, and community polls.
-- **PhaseManager.sol**: Chainlink Automation for phase advancement based on engagement thresholds.
-- **Treasury.sol**: Manages DAO funds with executor role for governance, dynamic funding targets, relayer reimbursement, and founder vesting.
+- **Governance.sol**: Manages DAO voting with AI moderation, phase-weighted voting.
+- **PhaseManager.sol**: Chainlink Automation for phase advancement.
+- **Treasury.sol**: Manages DAO funds, founder vesting.
 
 ## External Dependencies
 
 ### Database
 - PostgreSQL (via `DATABASE_URL`)
-- Drizzle Kit
+- Drizzle ORM + Drizzle Kit
 
 ### Cloud Services
-- Google Cloud Storage (`@google-cloud/storage`)
-- Uppy (file upload UI)
+- Replit Object Storage
+- Replit Auth
 
 ### Blockchain / Smart Contracts
 - **Target Network**: Base (Coinbase L2)
@@ -97,7 +74,7 @@ Preferred communication style: Simple, everyday language.
 - **Smart Contracts**: PropertyToken.sol, Escrow.sol, Governance.sol, PhaseManager.sol, Treasury.sol
 
 ### Third-Party Integrations
-- Stripe (payment processing)
-- Nodemailer (email notifications)
+- Stripe (payment processing + webhooks)
+- Nodemailer (email notifications via SMTP)
 - OpenAI and Google Generative AI (AI features)
-- Passport.js (authentication)
+- Leaflet + Mapbox GL JS (interactive maps)
