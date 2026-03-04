@@ -35,7 +35,11 @@ import {
   Heart,
   Scale,
   Percent,
-  Landmark
+  Landmark,
+  Trophy,
+  Hammer,
+  MapPin,
+  Store
 } from "lucide-react";
 
 const tableOfContents = [
@@ -49,6 +53,9 @@ const tableOfContents = [
   { id: "tokenization", title: "Tokenization Model", icon: Coins },
   { id: "offering", title: "Community-First Offering", icon: Users },
   { id: "engagement", title: "Engagement & Phase Advancement", icon: Activity },
+  { id: "revitaleague", title: "RevitaLeague Competition", icon: Trophy },
+  { id: "impact", title: "Georgia Impact Simulation", icon: MapPin },
+  { id: "marketplace", title: "Service Marketplace & Wishlist", icon: Store },
   { id: "chainlink", title: "Chainlink Integration", icon: Link2 },
   { id: "governance", title: "DAO Governance", icon: Vote },
   { id: "treasury", title: "Treasury & Founder Economics", icon: Landmark },
@@ -170,7 +177,7 @@ export default function Litepaper() {
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-1.5 text-sm font-medium text-primary mb-6 print:hidden">
                 <FileText className="h-4 w-4" />
-                Technical Litepaper v2.0
+                Technical Litepaper v3.0
               </div>
               
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6" data-testid="litepaper-title">
@@ -187,7 +194,7 @@ export default function Litepaper() {
                 Build Our Community, LLC | Cherokee County, Georgia
               </p>
               <p className="text-xs text-muted-foreground mb-8">
-                February 2026 | Chainlink Build Program Participant | Base Network (Coinbase L2)
+                March 2026 | Chainlink Build Program Participant | Base Network (Coinbase L2)
               </p>
 
               <div className="flex flex-wrap items-center justify-center gap-3 mb-12 print:hidden">
@@ -235,6 +242,18 @@ export default function Litepaper() {
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                   <span className="text-sm">1% capped founder fee — 24-month vesting, 90-day cliff</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <span className="text-sm">RevitaLeague: 4 competitive leagues turning properties into virtual cities</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <span className="text-sm">Georgia county-level GDP impact simulation with Chainlink oracle integration</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <span className="text-sm">Service provider marketplace and community wishlist voting</span>
                 </div>
               </div>
             </div>
@@ -284,9 +303,12 @@ export default function Litepaper() {
                   The platform introduces a novel 4-phase community-first offering model that rewards local investors 
                   with lower prices and amplified voting power. A 75% engagement threshold triggers automatic 
                   phase advancement via Chainlink Automation, creating a gamified "SimCity-like" experience where 
-                  community participation directly drives progress. All treasury operations are governed by a 
-                  2-of-3 multi-sig with a transparent 1% capped founder sustainability fee subject to 24-month 
-                  vesting with a 90-day cliff.
+                  community participation directly drives progress. The RevitaLeague competition layer turns 
+                  every property into a competing virtual city across four live leagues, while the Georgia Impact 
+                  Simulator models GDP growth across 159 counties. A service provider marketplace and community 
+                  wishlist create a full pipeline from neighborhood need to funded project. All treasury operations 
+                  are governed by a 2-of-3 multi-sig with a transparent 1% capped founder sustainability fee 
+                  subject to 24-month vesting with a 90-day cliff.
                 </p>
 
                 <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 p-6 mb-8">
@@ -891,6 +913,330 @@ function _checkPhaseAdvancement(uint256 propertyId, uint256 engagementPercent) i
                       participants 0.5x engagement credit, boosting the property toward the 75% threshold. 
                       Polls with &gt;30% support can be converted into formal governance proposals with a 
                       5% quorum reduction bonus.
+                    </p>
+                  </div>
+                </Subsection>
+              </Section>
+
+              <div className="divider-gradient" />
+
+              <Section id="revitaleague" title="RevitaLeague Competition" icon={Trophy}>
+                <p className="text-lg leading-relaxed mb-8 text-muted-foreground">
+                  RevitaLeague transforms every tokenized property into a competing virtual city, driving 
+                  3-5x engagement through gamified leaderboards, seasonal competitions, and cross-county 
+                  rivalries — all fully on-chain, oracle-driven, and zero extra platform cost.
+                </p>
+
+                <Subsection title="Four Live Leagues">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    Every property is automatically ranked across four competitive leagues, each measuring 
+                    a different dimension of revitalization impact. League scores are calculated from 
+                    on-chain ImpactMetrics via Chainlink Functions running Forrester/Sterman/Meadows 
+                    system dynamics models on public data.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <FeatureCard
+                      title="GDP Growth League"
+                      description="Ranks cities by 5-year projected economic output derived from ImpactMetrics.economicScore and GDP multiplier calculations."
+                      icon={TrendingUp}
+                    />
+                    <FeatureCard
+                      title="Social Impact League"
+                      description="Measures jobs created, affordable units delivered, and community benefit scores — weighted by ARC distress classification."
+                      icon={Heart}
+                    />
+                    <FeatureCard
+                      title="Engagement League"
+                      description="Tracks phase advancement speed and governance voting participation rate — rewarding the most active communities."
+                      icon={Zap}
+                    />
+                    <FeatureCard
+                      title="Builder League"
+                      description="Personal competition — ranks investors by their contribution across all cities: tokens held, properties invested, votes cast."
+                      icon={Hammer}
+                    />
+                  </div>
+                </Subsection>
+
+                <Subsection title="RevitaCup Seasons">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    Every 90 days, a new RevitaCup season begins. The top 10 cities in the combined 
+                    leaderboard split a DAO-voted treasury bonus pool of extra tokens minted via 
+                    PropertyToken. Seasonal trophies are recorded on-chain via the <code className="text-xs bg-muted px-1 py-0.5 rounded">seasonWins</code> mapping.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="p-4 rounded-xl border text-center">
+                      <p className="text-3xl font-bold text-primary mb-1">90 days</p>
+                      <p className="text-sm text-muted-foreground">Season Duration</p>
+                    </div>
+                    <div className="p-4 rounded-xl border text-center">
+                      <p className="text-3xl font-bold text-primary mb-1">Top 10</p>
+                      <p className="text-sm text-muted-foreground">Cities Split Bonus Pool</p>
+                    </div>
+                    <div className="p-4 rounded-xl border text-center">
+                      <p className="text-3xl font-bold text-primary mb-1">+0.75%</p>
+                      <p className="text-sm text-muted-foreground">Bonus APR for Top-50 Cities</p>
+                    </div>
+                  </div>
+                </Subsection>
+
+                <Subsection title="Cross-County Rivalries">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    Rivalries are auto-generated between nearby counties in the same region. Users see 
+                    their city glowing brighter on the competition map the higher it ranks. Click 
+                    "Visit Rival City" to compare progress in real time. At Georgia full adoption 
+                    (159 counties), this creates 79+ active rivalries driving continuous engagement.
+                  </p>
+                </Subsection>
+
+                <Subsection title="On-Chain Integration">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    The competition layer adds minimal gas overhead to existing contracts — just three 
+                    fields and two functions across the five-contract architecture:
+                  </p>
+
+                  <CodeBlock
+                    title="PropertyToken.sol - League Score & Season Wins"
+                    code={`uint256 public leagueScore;           // auto-updated by PhaseManager
+mapping(uint256 => uint256) public seasonWins; // for RevitaCup trophies
+
+function updateLeagueScore(uint256 propertyId, uint256 newScore) 
+    external onlyRole(PHASE_ADVANCER_ROLE) 
+{
+    properties[propertyId].leagueScore = newScore;
+    emit LeagueScoreUpdated(propertyId, newScore);
+}`}
+                  />
+
+                  <CodeBlock
+                    title="PhaseManager.sol - Daily League Update (Chainlink Automation)"
+                    code={`function runLeagueUpdate() external {  // called by Chainlink Automation daily
+    for each tracked property {
+        uint256 score = calculateForresterGDP(...) * socialScore / 10000;
+        propertyToken.updateLeagueScore(propertyId, score);
+        if (score > top10Threshold) emit LeagueLeaderChange(propertyId, score);
+    }
+}`}
+                  />
+
+                  <div className="p-4 rounded-xl bg-muted/30 border">
+                    <p className="text-sm text-muted-foreground">
+                      All league scores are Chainlink-proven and IPFS-visual only. Rewards require 
+                      Governance quorum (no founder discretion). Rankings are projected simulations 
+                      based on public data models — not investment advice.
+                    </p>
+                  </div>
+                </Subsection>
+              </Section>
+
+              <div className="divider-gradient" />
+
+              <Section id="impact" title="Georgia Impact Simulation" icon={MapPin} alternate>
+                <p className="text-lg leading-relaxed mb-8 text-muted-foreground">
+                  RevitaHub includes a comprehensive Georgia county-level impact simulator that models 
+                  GDP growth, job creation, and community benefit across adoption scenarios from 5% 
+                  to 100% of the state's 159 counties. All projections use the Appalachian Regional 
+                  Commission (ARC) distress classification system and Donella Meadows' Leverage Points framework.
+                </p>
+
+                <Subsection title="Impact Metrics (ImpactMetrics Struct)">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    Every property generates an on-chain ImpactMetrics struct that feeds into league 
+                    scoring, property detail cards, and the GDP simulator. These metrics are designed 
+                    to eventually be populated by Chainlink Functions running system dynamics models.
+                  </p>
+
+                  <div className="rounded-xl border overflow-hidden mb-6">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="text-left p-4 font-semibold">Metric</th>
+                          <th className="text-left p-4 font-semibold">Range</th>
+                          <th className="text-left p-4 font-semibold">Description</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-t">
+                          <td className="p-4 font-mono text-xs text-primary">economicScore</td>
+                          <td className="p-4">0–10,000</td>
+                          <td className="p-4 text-muted-foreground">Jobs + GDP impact weighted by county distress</td>
+                        </tr>
+                        <tr className="border-t">
+                          <td className="p-4 font-mono text-xs text-primary">socialScore</td>
+                          <td className="p-4">0–10,000</td>
+                          <td className="p-4 text-muted-foreground">Affordability + community benefit metrics</td>
+                        </tr>
+                        <tr className="border-t">
+                          <td className="p-4 font-mono text-xs text-primary">leverageRank</td>
+                          <td className="p-4">1–10</td>
+                          <td className="p-4 text-muted-foreground">Meadows Leverage Points ranking (higher = more systemic impact)</td>
+                        </tr>
+                        <tr className="border-t">
+                          <td className="p-4 font-mono text-xs text-primary">projectedAnnualROI</td>
+                          <td className="p-4">BPS</td>
+                          <td className="p-4 text-muted-foreground">Basis points ROI projection from revitalization</td>
+                        </tr>
+                        <tr className="border-t">
+                          <td className="p-4 font-mono text-xs text-primary">riskAdjustedScore</td>
+                          <td className="p-4">0–100</td>
+                          <td className="p-4 text-muted-foreground">Combined risk-adjusted viability score</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </Subsection>
+
+                <Subsection title="Adoption Tiers">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    The simulator models four adoption scenarios for Georgia, scaling from distressed 
+                    counties to statewide full saturation. Each tier shows projected GDP impact, 
+                    sample projects, and founder revenue scaling.
+                  </p>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="p-4 rounded-xl border text-center">
+                      <p className="text-2xl font-bold text-primary mb-1">5%</p>
+                      <p className="text-xs text-muted-foreground">7 Counties</p>
+                      <p className="text-xs text-muted-foreground">Pilot — Distressed Only</p>
+                    </div>
+                    <div className="p-4 rounded-xl border text-center">
+                      <p className="text-2xl font-bold text-primary mb-1">20%</p>
+                      <p className="text-xs text-muted-foreground">32 Counties</p>
+                      <p className="text-xs text-muted-foreground">Mid-Adoption</p>
+                    </div>
+                    <div className="p-4 rounded-xl border text-center">
+                      <p className="text-2xl font-bold text-primary mb-1">50%</p>
+                      <p className="text-xs text-muted-foreground">79 Counties</p>
+                      <p className="text-xs text-muted-foreground">Widespread</p>
+                    </div>
+                    <div className="p-4 rounded-xl border text-center">
+                      <p className="text-2xl font-bold text-primary mb-1">100%</p>
+                      <p className="text-xs text-muted-foreground">159 Counties</p>
+                      <p className="text-xs text-muted-foreground">Full Saturation</p>
+                    </div>
+                  </div>
+                </Subsection>
+
+                <Subsection title="Property-Level Economic Impact Cards">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    Each property detail page displays an Economic Impact Analysis card showing the 
+                    county's ARC distress classification, three radial score gauges (economic, social, 
+                    risk-adjusted), GDP multiplier, leverage rank, and a Chainlink oracle proof placeholder. 
+                    A companion "What Your $12.50 Does" card visualizes the ripple-effect chain from 
+                    token purchase through property share, jobs supported, and 5-year GDP impact.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl border">
+                      <h5 className="font-semibold text-sm mb-2">Economic Impact Analysis</h5>
+                      <ul className="space-y-1 text-xs text-muted-foreground">
+                        <li>• County distress level badge (ARC classification)</li>
+                        <li>• Economic, Social, Risk-Adjusted score gauges</li>
+                        <li>• GDP Multiplier ("X.Xx Economic Ripple")</li>
+                        <li>• Leverage Rank (1-10 Meadows scale)</li>
+                        <li>• Chainlink Oracle Proof status badge</li>
+                      </ul>
+                    </div>
+                    <div className="p-4 rounded-xl border">
+                      <h5 className="font-semibold text-sm mb-2">What Your $12.50 Does</h5>
+                      <ul className="space-y-1 text-xs text-muted-foreground">
+                        <li>• Token Price → Property Share → Jobs → GDP Impact</li>
+                        <li>• Projected Year 1 Dividends</li>
+                        <li>• Projected 5-Year ROI</li>
+                        <li>• Economic and social summary</li>
+                        <li>• "Not financial advice" disclaimer</li>
+                      </ul>
+                    </div>
+                  </div>
+                </Subsection>
+              </Section>
+
+              <div className="divider-gradient" />
+
+              <Section id="marketplace" title="Service Marketplace & Community Wishlist" icon={Store}>
+                <Subsection title="Service Provider Marketplace">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    RevitaHub's service marketplace connects properties with qualified professionals — 
+                    realtors, brokers, tax assessors, title companies, and property management firms. 
+                    Service providers submit competitive bids on specific property service categories, 
+                    and winners are selected by DAO governance vote with payments disbursed from the Treasury.
+                  </p>
+
+                  <div className="rounded-xl border overflow-hidden mb-6">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="text-left p-4 font-semibold">Service Category</th>
+                          <th className="text-left p-4 font-semibold">Description</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          ["Title Work", "Title search, insurance, and closing services"],
+                          ["Loan Structuring", "Financing structure and lender coordination"],
+                          ["Property Assessment", "Valuation, inspection, and condition reports"],
+                          ["Legal Services", "SPV formation, regulatory filings, compliance"],
+                          ["Property Management", "Ongoing operations, tenant management, maintenance"],
+                          ["Construction", "Renovation planning, contractor coordination, permits"],
+                        ].map(([cat, desc], i) => (
+                          <tr key={i} className="border-t">
+                            <td className="p-4 font-medium">{cat}</td>
+                            <td className="p-4 text-muted-foreground">{desc}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="flex items-start gap-3 p-4 rounded-xl border">
+                      <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-sm font-medium">Competitive Bidding</span>
+                        <p className="text-xs text-muted-foreground mt-1">Multiple providers bid, driving quality up and costs down</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-4 rounded-xl border">
+                      <Vote className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-sm font-medium">DAO Selection</span>
+                        <p className="text-xs text-muted-foreground mt-1">Token holders vote to select winning bids via governance</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-4 rounded-xl border">
+                      <Landmark className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-sm font-medium">Treasury Payments</span>
+                        <p className="text-xs text-muted-foreground mt-1">Winning bids paid from Treasury via multi-sig approval</p>
+                      </div>
+                    </div>
+                  </div>
+                </Subsection>
+
+                <Subsection title="Community Wishlist">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    The Community Wishlist enables residents to signal what their neighborhoods need most. 
+                    Users search by zip code and vote on predefined business categories — Grocery Store, 
+                    Medical Clinic, Community Center, Daycare, and more. Vote percentages and progress 
+                    bars surface the strongest community demand signals, informing which property types 
+                    to prioritize for tokenization.
+                  </p>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    {["Grocery Store", "Medical Clinic", "Community Center", "Affordable Housing", "Daycare", "Job Training", "Senior Living", "Tech Hub"].map((cat, i) => (
+                      <div key={i} className="p-3 rounded-xl border text-center">
+                        <p className="text-sm font-medium">{cat}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-muted/30 border">
+                    <p className="text-sm text-muted-foreground">
+                      Wishlist votes are non-binding demand signals. When a wish category reaches sufficient 
+                      community support, it can be converted into a formal property nomination or governance 
+                      proposal, creating a pipeline from community need to funded revitalization project.
                     </p>
                   </div>
                 </Subsection>
@@ -1633,8 +1979,12 @@ function getClaimableVested(address founder) public view returns (uint256) {
                     { quarter: "Q1 2026", status: "current", items: [
                       "Smart contract development (PropertyToken, Escrow, Governance, PhaseManager, Treasury)",
                       "Chainlink Build Program integration",
-                      "Platform MVP with interactive property map",
-                      "Community wishlist and nomination system"
+                      "Platform MVP with interactive property maps (Leaflet + Mapbox)",
+                      "Community wishlist with zip-code voting and nomination system",
+                      "Service provider marketplace with competitive bidding",
+                      "Georgia county-level GDP impact simulator (159 counties, 4 adoption tiers)",
+                      "RevitaLeague competition layer (4 leagues, RevitaCup, cross-county rivalries)",
+                      "Economic impact cards on property detail with ARC distress classification"
                     ]},
                     { quarter: "Q2 2026", status: "upcoming", items: [
                       "Security audits (third-party)",
@@ -1736,7 +2086,7 @@ function getClaimableVested(address founder) public view returns (uint256) {
 
               <div className="py-16 text-center">
                 <p className="text-sm text-muted-foreground mb-4">
-                  RevitaHub Technical Litepaper v2.0 — February 2026
+                  RevitaHub Technical Litepaper v3.0 — March 2026
                 </p>
                 <p className="text-xs text-muted-foreground">
                   &copy; {new Date().getFullYear()} Build Our Community, LLC. All rights reserved.
