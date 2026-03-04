@@ -60,103 +60,11 @@ interface CommunityNeed {
   hasVoted: boolean;
 }
 
-// Mock data
-const mockNominations: PropertyNomination[] = [
-  {
-    id: "nom-1",
-    propertyAddress: "245 Mill Street",
-    city: "Canton",
-    county: "Cherokee",
-    state: "Georgia",
-    description: "Abandoned textile mill building from the 1920s with significant historical value",
-    whyThisProperty: "This building has been vacant for 15 years and is a major eyesore in our downtown. It has great bones and could be transformed into something amazing for our community.",
-    currentCondition: "Structurally sound but needs major renovation",
-    estimatedSize: "35,000 sq ft",
-    status: "in_voting",
-    nominationVotes: 234,
-    hasVoted: false,
-  },
-  {
-    id: "nom-2",
-    propertyAddress: "100 River Road",
-    city: "Canton",
-    county: "Cherokee",
-    state: "Georgia",
-    description: "Vacant lot along the Etowah River with potential for waterfront development",
-    whyThisProperty: "This riverfront property has been undeveloped for decades. It's in a prime location and could provide public access to the river while creating economic opportunities.",
-    estimatedSize: "5 acres",
-    status: "in_voting",
-    nominationVotes: 189,
-    hasVoted: true,
-  },
-  {
-    id: "nom-3",
-    propertyAddress: "50 Main Street",
-    city: "Canton",
-    county: "Cherokee",
-    state: "Georgia",
-    description: "Former department store in the heart of downtown",
-    whyThisProperty: "This was once the center of commerce in our town. Revitalizing it would bring life back to Main Street.",
-    currentCondition: "Interior needs complete renovation",
-    estimatedSize: "20,000 sq ft",
-    status: "submitted",
-    nominationVotes: 67,
-    hasVoted: false,
-  },
-];
+const nominations: PropertyNomination[] = [];
 
-const mockUseProposals: UseProposal[] = [
-  {
-    id: "use-1",
-    nominationId: "nom-1",
-    proposedUse: "Mixed-Use Development",
-    description: "Convert the mill into a mixed-use space with affordable apartments on upper floors and local retail/restaurants on ground floor. Include a community gathering space.",
-    estimatedBudget: "8500000",
-    estimatedJobs: 75,
-    estimatedTimeline: "24-36 months",
-    votesFor: 156,
-    votesAgainst: 23,
-    totalVoters: 179,
-    hasVoted: false,
-  },
-  {
-    id: "use-2",
-    nominationId: "nom-1",
-    proposedUse: "Arts & Culture Center",
-    description: "Transform the mill into a regional arts center with galleries, artist studios, performance space, and maker spaces for the creative community.",
-    estimatedBudget: "6000000",
-    estimatedJobs: 45,
-    estimatedTimeline: "18-24 months",
-    votesFor: 89,
-    votesAgainst: 34,
-    totalVoters: 123,
-    hasVoted: false,
-  },
-  {
-    id: "use-3",
-    nominationId: "nom-1",
-    proposedUse: "Workforce Training Center",
-    description: "Partner with local community college to create a workforce training facility focused on manufacturing, healthcare, and technology skills.",
-    estimatedBudget: "5500000",
-    estimatedJobs: 30,
-    estimatedTimeline: "12-18 months",
-    votesFor: 78,
-    votesAgainst: 45,
-    totalVoters: 123,
-    hasVoted: false,
-  },
-];
+const useProposals: UseProposal[] = [];
 
-const mockCommunityNeeds: CommunityNeed[] = [
-  { id: "need-1", category: "Housing", need: "Affordable housing for families", description: "Housing options for families earning under $50,000", voteCount: 456, hasVoted: true },
-  { id: "need-2", category: "Jobs", need: "More local job opportunities", description: "Jobs that pay living wages and don't require long commutes", voteCount: 412, hasVoted: false },
-  { id: "need-3", category: "Healthcare", need: "Accessible healthcare services", description: "Medical facilities closer to downtown", voteCount: 389, hasVoted: false },
-  { id: "need-4", category: "Youth", need: "Youth recreation programs", description: "After-school programs and activities for teenagers", voteCount: 345, hasVoted: true },
-  { id: "need-5", category: "Food", need: "Fresh food access", description: "Grocery options and farmer's market in underserved areas", voteCount: 298, hasVoted: false },
-  { id: "need-6", category: "Childcare", need: "Affordable childcare", description: "Quality childcare options for working parents", voteCount: 276, hasVoted: false },
-  { id: "need-7", category: "Community", need: "Community gathering spaces", description: "Places for community events and meetings", voteCount: 234, hasVoted: false },
-  { id: "need-8", category: "Transportation", need: "Public transit options", description: "Better bus routes connecting neighborhoods", voteCount: 198, hasVoted: false },
-];
+const communityNeeds: CommunityNeed[] = [];
 
 const categoryIcons: Record<string, any> = {
   Housing: Home,
@@ -180,11 +88,11 @@ export default function Community() {
   const [selectedNomination, setSelectedNomination] = useState<PropertyNomination | null>(null);
   const [selectedGenericUses, setSelectedGenericUses] = useState<string[]>([]);
 
-  const mockUserTokenHoldings = {
-    hasTokens: true,
-    totalTokens: 75,
-    votingPower: 112,
-    properties: ["Etowah Riverfront Wellness Village"],
+  const userTokenHoldings = {
+    hasTokens: false,
+    totalTokens: 0,
+    votingPower: 0,
+    properties: [] as string[],
   };
 
   const handleVoteNomination = (nomination: PropertyNomination) => {
@@ -323,7 +231,7 @@ export default function Community() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Tokenized Properties</p>
-                  <p className="text-xl font-semibold">{mockNominations.length}</p>
+                  <p className="text-xl font-semibold">{nominations.length}</p>
                 </div>
               </CardContent>
             </Card>
@@ -334,7 +242,7 @@ export default function Community() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Active Proposals</p>
-                  <p className="text-xl font-semibold">{mockUseProposals.length}</p>
+                  <p className="text-xl font-semibold">{useProposals.length}</p>
                 </div>
               </CardContent>
             </Card>
@@ -345,13 +253,13 @@ export default function Community() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Community Priorities</p>
-                  <p className="text-xl font-semibold">{mockCommunityNeeds.length}</p>
+                  <p className="text-xl font-semibold">{communityNeeds.length}</p>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {mockUserTokenHoldings.hasTokens ? (
+          {userTokenHoldings.hasTokens ? (
             <Card className="mb-6 border-chart-3/30 bg-chart-3/5">
               <CardContent className="p-4">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -360,9 +268,9 @@ export default function Community() {
                       <Vote className="h-5 w-5 text-chart-3" />
                     </div>
                     <div>
-                      <p className="font-medium">Your Voting Power: {mockUserTokenHoldings.votingPower}</p>
+                      <p className="font-medium">Your Voting Power: {userTokenHoldings.votingPower}</p>
                       <p className="text-sm text-muted-foreground">
-                        Based on {mockUserTokenHoldings.totalTokens} tokens in {mockUserTokenHoldings.properties.length} property
+                        Based on {userTokenHoldings.totalTokens} tokens in {userTokenHoldings.properties.length} property
                       </p>
                     </div>
                   </div>
@@ -408,8 +316,8 @@ export default function Community() {
                   <p className="text-sm text-muted-foreground">Vote on decisions for properties you own tokens in</p>
                 </div>
 
-                {mockNominations.filter(n => n.status === "in_voting").map((nomination) => {
-                  const proposals = mockUseProposals.filter(p => p.nominationId === nomination.id);
+                {nominations.filter(n => n.status === "in_voting").map((nomination) => {
+                  const proposals = useProposals.filter(p => p.nominationId === nomination.id);
                   
                   return (
                     <Card key={nomination.id}>
@@ -480,19 +388,19 @@ export default function Community() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    disabled={proposal.hasVoted || !mockUserTokenHoldings.hasTokens}
+                                    disabled={proposal.hasVoted || !userTokenHoldings.hasTokens}
                                     onClick={() => handleVoteProposal(proposal, false)}
                                     data-testid={`button-vote-against-${proposal.id}`}
                                   >
-                                    {!mockUserTokenHoldings.hasTokens ? "Buy Tokens" : "Vote Against"}
+                                    {!userTokenHoldings.hasTokens ? "Buy Tokens" : "Vote Against"}
                                   </Button>
                                   <Button
                                     size="sm"
-                                    disabled={proposal.hasVoted || !mockUserTokenHoldings.hasTokens}
+                                    disabled={proposal.hasVoted || !userTokenHoldings.hasTokens}
                                     onClick={() => handleVoteProposal(proposal, true)}
                                     data-testid={`button-vote-for-${proposal.id}`}
                                   >
-                                    {!mockUserTokenHoldings.hasTokens ? "Buy Tokens" : "Vote For"}
+                                    {!userTokenHoldings.hasTokens ? "Buy Tokens" : "Vote For"}
                                   </Button>
                                 </div>
                               </div>
@@ -523,9 +431,9 @@ export default function Community() {
                 </Card>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {mockCommunityNeeds.map((need, index) => {
+                  {communityNeeds.map((need, index) => {
                     const Icon = categoryIcons[need.category] || Building2;
-                    const maxVotes = Math.max(...mockCommunityNeeds.map(n => n.voteCount));
+                    const maxVotes = Math.max(...communityNeeds.map(n => n.voteCount));
                     const votePercent = Math.round((need.voteCount / maxVotes) * 100);
                     
                     return (
@@ -556,11 +464,11 @@ export default function Community() {
                             <Button
                               variant={need.hasVoted ? "secondary" : "default"}
                               size="sm"
-                              disabled={need.hasVoted || !mockUserTokenHoldings.hasTokens}
+                              disabled={need.hasVoted || !userTokenHoldings.hasTokens}
                               onClick={() => handleVoteNeed(need)}
                               data-testid={`button-vote-need-${need.id}`}
                             >
-                              {!mockUserTokenHoldings.hasTokens ? "Buy Tokens" : need.hasVoted ? "Voted" : "This is Important"}
+                              {!userTokenHoldings.hasTokens ? "Buy Tokens" : need.hasVoted ? "Voted" : "This is Important"}
                             </Button>
                           </div>
                         </CardContent>
@@ -646,7 +554,7 @@ export default function Community() {
                 <Label>Which Community Needs Does This Address?</Label>
                 <p className="text-xs text-muted-foreground mb-2">Select the community priorities this proposal would help address</p>
                 <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-                  {mockCommunityNeeds.slice(0, 6).map((need) => (
+                  {communityNeeds.slice(0, 6).map((need) => (
                     <div key={need.id} className="flex items-center gap-2">
                       <Checkbox id={`need-${need.id}`} data-testid={`checkbox-need-${need.id}`} />
                       <Label htmlFor={`need-${need.id}`} className="text-sm font-normal cursor-pointer">

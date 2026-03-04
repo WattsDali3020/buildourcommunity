@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { CheckCircle, AlertCircle, XCircle, Search } from "lucide-react";
 import { useState } from "react";
 
-// todo: remove mock functionality
 const stateCompliance = [
   { state: "Georgia", status: "approved", securities: "Blue Sky Exemption", realEstate: "Active", blockchain: "HB 859 Favorable" },
   { state: "South Carolina", status: "approved", securities: "Reg D Compliant", realEstate: "Active", blockchain: "Pending" },

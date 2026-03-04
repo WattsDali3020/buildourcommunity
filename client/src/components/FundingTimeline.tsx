@@ -63,11 +63,7 @@ export function FundingTimeline({
 
   const refundDetails = calculateRefundWithInterest();
 
-  const mockActiveProjects = [
-    { id: "proj-1", name: "Downtown Arts District", fundingProgress: 45 },
-    { id: "proj-2", name: "Riverfront Community Hub", fundingProgress: 72 },
-    { id: "proj-3", name: "Historic Mill Renovation", fundingProgress: 38 },
-  ];
+  const activeProjects: { id: string; name: string; fundingProgress: number }[] = [];
 
   return (
     <Card className={isCritical ? "border-destructive/50" : ""}>
@@ -245,7 +241,7 @@ export function FundingTimeline({
                           <SelectValue placeholder="Choose a project..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {mockActiveProjects.map((project) => (
+                          {activeProjects.map((project) => (
                             <SelectItem key={project.id} value={project.id}>
                               <div className="flex items-center justify-between gap-4 w-full">
                                 <span>{project.name}</span>

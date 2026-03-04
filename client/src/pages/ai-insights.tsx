@@ -40,50 +40,13 @@ interface EngagementMetric {
   trend: "up" | "down" | "stable";
 }
 
-const mockAlerts: AIAlert[] = [
-  {
-    id: "1",
-    type: "whale",
-    severity: "medium",
-    title: "Concentration Risk Detected",
-    description: "Address 0x7a3f... holds 8.2% of Property #42 tokens. AI recommends monitoring.",
-    timestamp: "2 hours ago",
-    actionRequired: false,
-  },
-  {
-    id: "2",
-    type: "bias",
-    severity: "low",
-    title: "Voting Pattern Analysis",
-    description: "Proposal #15 shows 73% alignment with early voters. Balanced options suggested.",
-    timestamp: "4 hours ago",
-    actionRequired: true,
-  },
-  {
-    id: "3",
-    type: "engagement",
-    severity: "high",
-    title: "Low Participation Warning",
-    description: "Only 12% of token holders voted on Proposal #14. Nudges activated.",
-    timestamp: "1 day ago",
-    actionRequired: true,
-  },
-  {
-    id: "4",
-    type: "phase",
-    severity: "low",
-    title: "Phase Advancement Ready",
-    description: "Etowah Property reached 85% engagement threshold. Phase 2 can advance early.",
-    timestamp: "2 days ago",
-    actionRequired: false,
-  },
-];
+const alerts: AIAlert[] = [];
 
 const engagementMetrics: EngagementMetric[] = [
-  { label: "Active Voters", value: 847, change: 12.3, trend: "up" },
-  { label: "Avg. Participation", value: 68, change: 5.2, trend: "up" },
-  { label: "Governance Score", value: 82, change: -2.1, trend: "down" },
-  { label: "Community Health", value: 91, change: 0, trend: "stable" },
+  { label: "Active Voters", value: 0, change: 0, trend: "stable" },
+  { label: "Avg. Participation", value: 0, change: 0, trend: "stable" },
+  { label: "Governance Score", value: 0, change: 0, trend: "stable" },
+  { label: "Community Health", value: 0, change: 0, trend: "stable" },
 ];
 
 function AlertCard({ alert }: { alert: AIAlert }) {
@@ -243,7 +206,7 @@ export default function AIInsights() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {mockAlerts.map((alert) => (
+                  {alerts.map((alert) => (
                     <AlertCard key={alert.id} alert={alert} />
                   ))}
                 </CardContent>
@@ -260,37 +223,8 @@ export default function AIInsights() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-6">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">Etowah Property - Phase 1</span>
-                        <span className="text-sm text-muted-foreground">85% Engagement</span>
-                      </div>
-                      <Progress value={85} className="h-2" />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Threshold: 75% | Eligible for early advancement
-                      </p>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">Downtown Revive - Phase 2</span>
-                        <span className="text-sm text-muted-foreground">42% Engagement</span>
-                      </div>
-                      <Progress value={42} className="h-2" />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Threshold: 60% | Nudges activated
-                      </p>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">Heritage Square - Phase 1</span>
-                        <span className="text-sm text-muted-foreground">91% Engagement</span>
-                      </div>
-                      <Progress value={91} className="h-2" />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Threshold: 75% | Ready for Phase 2
-                      </p>
-                    </div>
+                  <div className="text-center py-6 text-muted-foreground">
+                    <p className="text-sm">No active properties yet. Phase engagement data will appear here once properties are live.</p>
                   </div>
                 </CardContent>
               </Card>

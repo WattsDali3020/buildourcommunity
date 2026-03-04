@@ -14,57 +14,6 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import type { Proposal as ProposalType, TokenHolding } from "@shared/schema";
 
-// Fallback mock data when API returns empty
-const mockProposals: Proposal[] = [
-  {
-    id: "prop-1",
-    title: "Add EV Charging Stations to Wellness Village",
-    description: "Proposal to allocate $150,000 from the community treasury to install 8 Level 2 EV charging stations at the Etowah Wellness Village parking area.",
-    propertyName: "Etowah Wellness Village",
-    status: "active",
-    votesFor: 45000,
-    votesAgainst: 12000,
-    totalVoters: 234,
-    deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-    proposer: "0x1234...5678",
-  },
-  {
-    id: "prop-2",
-    title: "Expand Historic Mill Co-Working Space",
-    description: "Convert the unused third floor of the Historic Mill into additional co-working space with 50 new desks and 4 meeting rooms.",
-    propertyName: "Historic Mill",
-    status: "active",
-    votesFor: 32000,
-    votesAgainst: 28000,
-    totalVoters: 189,
-    deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-    proposer: "0xabcd...efgh",
-  },
-  {
-    id: "prop-3",
-    title: "Community Solar Panel Installation",
-    description: "Install 200kW solar array on Main Street District buildings to reduce energy costs and provide green energy credits to token holders.",
-    propertyName: "Main Street District",
-    status: "passed",
-    votesFor: 89000,
-    votesAgainst: 15000,
-    totalVoters: 412,
-    deadline: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    proposer: "0x9876...5432",
-  },
-  {
-    id: "prop-4",
-    title: "Quarterly Dividend Increase",
-    description: "Increase quarterly dividend distribution from 60% to 70% of net operating income across all properties.",
-    propertyName: "All Properties",
-    status: "rejected",
-    votesFor: 35000,
-    votesAgainst: 65000,
-    totalVoters: 356,
-    deadline: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    proposer: "0xijkl...mnop",
-  },
-];
 
 export default function Governance() {
   const [activeTab, setActiveTab] = useState("active");
@@ -80,20 +29,18 @@ export default function Governance() {
 
   const totalVotingPower = holdings.reduce((sum, h) => sum + (h.votingPower || 0), 0);
 
-  const proposals: Proposal[] = apiProposals.length > 0
-    ? apiProposals.map((p) => ({
-        id: p.id.toString(),
-        title: p.title,
-        description: p.description || "",
-        propertyName: "Community Property",
-        status: p.status as "active" | "passed" | "rejected",
-        votesFor: p.votesFor || 0,
-        votesAgainst: p.votesAgainst || 0,
-        totalVoters: p.totalVoters || 0,
-        deadline: p.endsAt ? new Date(p.endsAt) : new Date(),
-        proposer: p.proposerId || "Community",
-      }))
-    : mockProposals;
+  const proposals: Proposal[] = apiProposals.map((p) => ({
+    id: p.id.toString(),
+    title: p.title,
+    description: p.description || "",
+    propertyName: "Community Property",
+    status: p.status as "active" | "passed" | "rejected",
+    votesFor: p.votesFor || 0,
+    votesAgainst: p.votesAgainst || 0,
+    totalVoters: p.totalVoters || 0,
+    deadline: p.endsAt ? new Date(p.endsAt) : new Date(),
+    proposer: p.proposerId || "Community",
+  }));
 
   const filteredProposals = proposals.filter((p) => {
     if (activeTab === "active") return p.status === "active";
@@ -351,56 +298,8 @@ export default function Governance() {
                 When community engagement reaches 75%, the phase auto-advances via PhaseManager smart contract. 
                 No gatekeepers — the community drives momentum.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  { name: "Etowah Wellness Village", phase: "County", engagement: 65, color: "#22c55e" },
-                  { name: "Historic Mill Adaptive Reuse", phase: "State", engagement: 82, color: "#3b82f6" },
-                  { name: "Main Street District", phase: "National", engagement: 78, color: "#a855f7" },
-                ].map((property) => {
-                  const isAboveThreshold = property.engagement >= 75;
-                  return (
-                    <div
-                      key={property.name}
-                      className="p-4 rounded-lg border bg-muted/30"
-                      data-testid={`engagement-meter-${property.name.replace(/\s+/g, '-').toLowerCase()}`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-sm truncate pr-2">{property.name}</h4>
-                        <Badge variant="outline" className="text-xs flex-shrink-0">{property.phase}</Badge>
-                      </div>
-                      <div className="relative mb-2">
-                        <div className="h-4 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-700"
-                            style={{
-                              width: `${property.engagement}%`,
-                              background: property.color,
-                            }}
-                          />
-                        </div>
-                        <div
-                          className="absolute top-0 h-4 w-0.5 bg-foreground/60"
-                          style={{ left: "75%" }}
-                          title="75% threshold"
-                        />
-                      </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">
-                          {property.engagement}% engaged
-                        </span>
-                        {isAboveThreshold ? (
-                          <span className="font-medium" style={{ color: property.color }}>
-                            Ready to advance
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">
-                            {75 - property.engagement}% to threshold
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="text-center py-8 text-muted-foreground" data-testid="text-no-engagement">
+                <p className="text-sm">No active property phases yet. Engagement meters will appear once properties are live.</p>
               </div>
               <div className="mt-4 p-3 rounded-md bg-primary/5 border border-primary/20 flex gap-2">
                 <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />

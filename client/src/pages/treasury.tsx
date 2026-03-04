@@ -23,25 +23,25 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-const treasuryBalance = 2_450_000;
-const monthlyInflow = 185_000;
-const monthlyOutflow = 142_000;
+const treasuryBalance = 0;
+const monthlyInflow = 0;
+const monthlyOutflow = 0;
 
 const founderCutBps = 100;
 const founderCutPercent = founderCutBps / 100;
-const totalDisbursed = 1_420_000;
+const totalDisbursed = 0;
 const founderCutAmount = Math.round(totalDisbursed * (founderCutPercent / 100));
 const vestingMonths = 24;
 const cliffMonths = 3;
-const vestingElapsedMonths = 6;
-const vestedPercent = Math.min(100, Math.round(((vestingElapsedMonths - cliffMonths) / (vestingMonths - cliffMonths)) * 100));
+const vestingElapsedMonths = 0;
+const vestedPercent = 0;
 
 const allocationBreakdown = [
-  { label: "Property Development", percentage: 40, amount: 980_000, color: "bg-primary" },
-  { label: "Community Benefits", percentage: 20, amount: 490_000, color: "bg-chart-1" },
-  { label: "Operating Reserve", percentage: 15, amount: 367_500, color: "bg-chart-3" },
-  { label: "Maintenance Fund", percentage: 15, amount: 367_500, color: "bg-chart-4" },
-  { label: "Emergency Reserve", percentage: 10, amount: 245_000, color: "bg-chart-5" },
+  { label: "Property Development", percentage: 40, amount: 0, color: "bg-primary" },
+  { label: "Community Benefits", percentage: 20, amount: 0, color: "bg-chart-1" },
+  { label: "Operating Reserve", percentage: 15, amount: 0, color: "bg-chart-3" },
+  { label: "Maintenance Fund", percentage: 15, amount: 0, color: "bg-chart-4" },
+  { label: "Emergency Reserve", percentage: 10, amount: 0, color: "bg-chart-5" },
 ];
 
 interface Transaction {
@@ -56,91 +56,7 @@ interface Transaction {
   founderCut?: number;
 }
 
-const recentTransactions: Transaction[] = [
-  {
-    id: "tx-1",
-    type: "inflow",
-    description: "Rental Income - Etowah Wellness Village",
-    amount: 45_000,
-    date: "2025-01-15",
-    category: "Revenue",
-    status: "confirmed",
-    txHash: "0xabc123",
-  },
-  {
-    id: "tx-2",
-    type: "outflow",
-    description: "Contractor Payment - Historic Mill Renovation",
-    amount: 28_500,
-    date: "2025-01-14",
-    category: "Development",
-    status: "confirmed",
-    txHash: "0xdef456",
-    founderCut: 285,
-  },
-  {
-    id: "tx-3",
-    type: "inflow",
-    description: "Token Sale - Main Street District Phase 2",
-    amount: 120_000,
-    date: "2025-01-13",
-    category: "Token Sales",
-    status: "confirmed",
-    txHash: "0xghi789",
-  },
-  {
-    id: "tx-4",
-    type: "outflow",
-    description: "Quarterly Dividend Distribution",
-    amount: 67_200,
-    date: "2025-01-12",
-    category: "Dividends",
-    status: "confirmed",
-    txHash: "0xjkl012",
-    founderCut: 672,
-  },
-  {
-    id: "tx-5",
-    type: "outflow",
-    description: "Insurance Premium - All Properties",
-    amount: 18_750,
-    date: "2025-01-10",
-    category: "Operations",
-    status: "confirmed",
-    txHash: "0xmno345",
-    founderCut: 188,
-  },
-  {
-    id: "tx-6",
-    type: "inflow",
-    description: "Grant Disbursement - Community Development",
-    amount: 75_000,
-    date: "2025-01-09",
-    category: "Grants",
-    status: "confirmed",
-    txHash: "0xpqr678",
-  },
-  {
-    id: "tx-7",
-    type: "outflow",
-    description: "EV Charging Station Installation",
-    amount: 32_000,
-    date: "2025-01-08",
-    category: "Development",
-    status: "pending",
-    founderCut: 320,
-  },
-  {
-    id: "tx-8",
-    type: "inflow",
-    description: "Lease Payment - Harbor View Commercial",
-    amount: 38_500,
-    date: "2025-01-07",
-    category: "Revenue",
-    status: "confirmed",
-    txHash: "0xstu901",
-  },
-];
+const recentTransactions: Transaction[] = [];
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-US", {

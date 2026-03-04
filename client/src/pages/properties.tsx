@@ -9,13 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LayoutGrid, Map as MapIcon, MapPin, Search } from "lucide-react";
+import { LayoutGrid, Map as MapIcon, MapPin, Search, Building2 } from "lucide-react";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import Map, { Marker, NavigationControl } from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import riverfrontImage from "@assets/generated_images/riverfront_wellness_community_hub.png";
-import millImage from "@assets/generated_images/historic_mill_adaptive_reuse.png";
-import downtownImage from "@assets/generated_images/revitalized_downtown_community_district.png";
+import type { Property as DBProperty } from "@shared/schema";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || "";
 
@@ -24,119 +23,8 @@ interface PropertyWithCoords extends Property {
   longitude: number;
 }
 
-const allProperties: PropertyWithCoords[] = [
-  {
-    id: "etowah-wellness-village",
-    name: "Etowah Riverfront Wellness Village",
-    location: { city: "Canton", state: "Georgia" },
-    type: "downtown",
-    image: riverfrontImage,
-    tokenPrice: 12.50,
-    totalTokens: 100000,
-    tokensSold: 42000,
-    fundingGoal: 10000000,
-    fundingRaised: 4200000,
-    projectedROI: 8,
-    communityBenefits: ["50+ affordable housing units", "100+ local jobs", "Riverfront trail access"],
-    latitude: 34.2368,
-    longitude: -84.4908,
-    phase: "County",
-    engagementPercent: 65,
-  },
-  {
-    id: "mill-on-main",
-    name: "Historic Mill Adaptive Reuse",
-    location: { city: "Greenville", state: "South Carolina" },
-    type: "historic_building",
-    image: millImage,
-    tokenPrice: 18.75,
-    totalTokens: 80000,
-    tokensSold: 58000,
-    fundingGoal: 20000000,
-    fundingRaised: 14500000,
-    projectedROI: 9.5,
-    communityBenefits: ["Co-working space", "Local retail incubator", "Event venue"],
-    latitude: 34.8526,
-    longitude: -82.3940,
-    phase: "State",
-    engagementPercent: 82,
-  },
-  {
-    id: "downtown-revitalization",
-    name: "Main Street Revitalization District",
-    location: { city: "Asheville", state: "North Carolina" },
-    type: "commercial",
-    image: downtownImage,
-    tokenPrice: 28.13,
-    totalTokens: 120000,
-    tokensSold: 85000,
-    fundingGoal: 18000000,
-    fundingRaised: 12750000,
-    projectedROI: 7.5,
-    communityBenefits: ["Downtown walkability", "Small business support", "Cultural programming"],
-    latitude: 35.5951,
-    longitude: -82.5515,
-    phase: "National",
-    engagementPercent: 78,
-  },
-  {
-    id: "austin-land-trust",
-    name: "Community Land Trust Initiative",
-    location: { city: "Austin", state: "Texas" },
-    type: "vacant_land",
-    image: riverfrontImage,
-    tokenPrice: 12.50,
-    totalTokens: 200000,
-    tokensSold: 65000,
-    fundingGoal: 15000000,
-    fundingRaised: 4875000,
-    projectedROI: 6.5,
-    communityBenefits: ["Permanently affordable housing", "Community garden", "Youth programs"],
-    latitude: 30.2672,
-    longitude: -97.7431,
-    phase: "County",
-    engagementPercent: 45,
-  },
-  {
-    id: "denver-warehouse",
-    name: "RiNo Arts District Warehouse",
-    location: { city: "Denver", state: "Colorado" },
-    type: "commercial",
-    image: millImage,
-    tokenPrice: 18.75,
-    totalTokens: 100000,
-    tokensSold: 72000,
-    fundingGoal: 20000000,
-    fundingRaised: 14400000,
-    projectedROI: 8.5,
-    communityBenefits: ["Artist studios", "Gallery space", "Maker workshops"],
-    latitude: 39.7645,
-    longitude: -104.9803,
-    phase: "State",
-    engagementPercent: 71,
-  },
-  {
-    id: "phoenix-downtown",
-    name: "Roosevelt Row Revitalization",
-    location: { city: "Phoenix", state: "Arizona" },
-    type: "downtown",
-    image: downtownImage,
-    tokenPrice: 12.50,
-    totalTokens: 160000,
-    tokensSold: 45000,
-    fundingGoal: 20000000,
-    fundingRaised: 5625000,
-    projectedROI: 7.8,
-    communityBenefits: ["Street activation", "Local business incubator", "Public art"],
-    latitude: 33.4620,
-    longitude: -112.0650,
-    phase: "County",
-    engagementPercent: 38,
-  },
-];
-
 function PropertyMarkerPopup({ property }: { property: PropertyWithCoords }) {
-  const fundingPercent = Math.round((property.fundingRaised / property.fundingGoal) * 100);
+  const fundingPercent = Math.round((property.fundingRaised / property.fundingGoal) * 100) || 0;
 
   return (
     <Link href={`/properties/${property.id}`}>
@@ -182,6 +70,27 @@ export default function Properties() {
     zoom: 3.8,
   });
 
+  const { data: dbProperties = [], isLoading } = useQuery<DBProperty[]>({
+    queryKey: ["/api/properties"],
+  });
+
+  const allProperties: PropertyWithCoords[] = dbProperties.map((p) => ({
+    id: p.id,
+    name: p.name,
+    location: { city: p.city, state: p.state },
+    type: p.propertyType as Property["type"],
+    image: p.imageUrl || undefined,
+    tokenPrice: 12.50,
+    totalTokens: 0,
+    tokensSold: 0,
+    fundingGoal: parseFloat(p.fundingGoal || "0"),
+    fundingRaised: 0,
+    projectedROI: parseFloat(p.projectedROI || "0"),
+    communityBenefits: p.communityBenefits || [],
+    latitude: 34.2368,
+    longitude: -84.4908,
+  }));
+
   const handleMarkerClick = useCallback((propertyId: string) => {
     setSelectedMarkerId((prev) => (prev === propertyId ? null : propertyId));
   }, []);
@@ -193,7 +102,7 @@ export default function Properties() {
       const matchesPhase = phaseFilter === "all" || p.phase === phaseFilter;
       return matchesSearch && matchesType && matchesPhase;
     });
-  }, [searchQuery, typeFilter, phaseFilter]);
+  }, [allProperties, searchQuery, typeFilter, phaseFilter]);
 
   const hasMapToken = !!MAPBOX_TOKEN;
 
@@ -270,7 +179,22 @@ export default function Properties() {
             </Select>
           </div>
 
-          {filteredProperties.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-16" data-testid="text-loading">
+              <p className="text-muted-foreground text-lg">Loading properties...</p>
+            </div>
+          ) : allProperties.length === 0 ? (
+            <div className="text-center py-16 rounded-lg border border-dashed" data-testid="text-no-properties">
+              <Building2 className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+              <h3 className="text-lg font-medium mb-2">No Properties Available Yet</h3>
+              <p className="text-muted-foreground max-w-md mx-auto mb-6">
+                Be the first to submit a property for community revitalization. Once approved, properties will appear here for investment.
+              </p>
+              <Link href="/submit">
+                <Button data-testid="button-submit-property">Submit a Property</Button>
+              </Link>
+            </div>
+          ) : filteredProperties.length === 0 ? (
             <div className="text-center py-16" data-testid="text-no-results">
               <p className="text-muted-foreground text-lg">No properties match your filters</p>
               <Button variant="link" onClick={() => { setSearchQuery(""); setTypeFilter("all"); setPhaseFilter("all"); }} data-testid="button-clear-filters">
@@ -337,7 +261,7 @@ export default function Properties() {
               </div>
               <div className="lg:col-span-1 space-y-3 max-h-[600px] overflow-y-auto">
                 {filteredProperties.map((property) => {
-                  const fundingPercent = Math.round((property.fundingRaised / property.fundingGoal) * 100);
+                  const fundingPercent = Math.round((property.fundingRaised / property.fundingGoal) * 100) || 0;
                   const isSelected = selectedMarkerId === property.id;
                   return (
                     <Card

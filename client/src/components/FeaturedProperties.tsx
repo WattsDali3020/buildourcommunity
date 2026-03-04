@@ -1,63 +1,30 @@
 import { PropertyCard, type Property } from "./PropertyCard";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ArrowRight } from "lucide-react";
-import riverfrontImage from "@assets/generated_images/riverfront_wellness_community_hub.png";
-import millImage from "@assets/generated_images/historic_mill_adaptive_reuse.png";
-import downtownImage from "@assets/generated_images/revitalized_downtown_community_district.png";
-
-const mockProperties: Property[] = [
-  {
-    id: "etowah-wellness-village",
-    name: "Etowah Riverfront Wellness Village",
-    location: { city: "Canton", state: "Georgia" },
-    type: "downtown",
-    image: riverfrontImage,
-    tokenPrice: 12.50,
-    totalTokens: 100000,
-    tokensSold: 42000,
-    fundingGoal: 10000000,
-    fundingRaised: 4200000,
-    projectedROI: 8,
-    communityBenefits: ["50+ affordable housing units", "100+ local jobs", "Riverfront trail access"],
-    phase: "County",
-    engagementPercent: 65,
-  },
-  {
-    id: "mill-on-main",
-    name: "Historic Mill Adaptive Reuse",
-    location: { city: "Greenville", state: "South Carolina" },
-    type: "historic_building",
-    image: millImage,
-    tokenPrice: 18.75,
-    totalTokens: 80000,
-    tokensSold: 58000,
-    fundingGoal: 20000000,
-    fundingRaised: 14500000,
-    projectedROI: 9.5,
-    communityBenefits: ["Co-working space", "Local retail incubator", "Event venue"],
-    phase: "State",
-    engagementPercent: 82,
-  },
-  {
-    id: "downtown-revitalization",
-    name: "Main Street Revitalization District",
-    location: { city: "Asheville", state: "North Carolina" },
-    type: "commercial",
-    image: downtownImage,
-    tokenPrice: 28.13,
-    totalTokens: 120000,
-    tokensSold: 85000,
-    fundingGoal: 18000000,
-    fundingRaised: 12750000,
-    projectedROI: 7.5,
-    communityBenefits: ["Downtown walkability", "Small business support", "Cultural programming"],
-    phase: "National",
-    engagementPercent: 78,
-  },
-];
+import { ArrowRight, Building2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import type { Property as DBProperty, TokenOffering } from "@shared/schema";
 
 export function FeaturedProperties() {
+  const { data: dbProperties = [] } = useQuery<DBProperty[]>({
+    queryKey: ["/api/properties"],
+  });
+
+  const properties: Property[] = dbProperties.slice(0, 3).map((p) => ({
+    id: p.id,
+    name: p.name,
+    location: { city: p.city, state: p.state },
+    type: p.propertyType as Property["type"],
+    image: p.imageUrl || undefined,
+    tokenPrice: 12.50,
+    totalTokens: 0,
+    tokensSold: 0,
+    fundingGoal: parseFloat(p.fundingGoal || "0"),
+    fundingRaised: 0,
+    projectedROI: parseFloat(p.projectedROI || "0"),
+    communityBenefits: p.communityBenefits || [],
+  }));
+
   return (
     <section className="py-16 lg:py-24">
       <div className="mx-auto max-w-7xl px-4">
@@ -76,11 +43,24 @@ export function FeaturedProperties() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockProperties.map((property) => (
-            <PropertyCard key={property.id} property={property} />
-          ))}
-        </div>
+        {properties.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {properties.map((property) => (
+              <PropertyCard key={property.id} property={property} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 rounded-lg border border-dashed" data-testid="text-no-featured">
+            <Building2 className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+            <h3 className="text-lg font-medium mb-2">No Properties Yet</h3>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              Be the first to submit a property for community revitalization. Properties will appear here once approved and live.
+            </p>
+            <Link href="/submit">
+              <Button data-testid="button-submit-first-property">Submit a Property</Button>
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

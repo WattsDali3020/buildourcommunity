@@ -3,83 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { ArrowRight, MapPin, Building2, TrendingUp, Users, DollarSign } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-
-const propertyMarkers = [
-  {
-    id: "etowah-wellness-village",
-    name: "Etowah Riverfront Wellness Village",
-    city: "Canton",
-    state: "Georgia",
-    lat: 34.2368,
-    lng: -84.4908,
-    phase: "County",
-    fundingPercent: 42,
-    tokenPrice: 12.50,
-    roi: 8,
-  },
-  {
-    id: "mill-on-main",
-    name: "Historic Mill Adaptive Reuse",
-    city: "Greenville",
-    state: "South Carolina",
-    lat: 34.8526,
-    lng: -82.394,
-    phase: "State",
-    fundingPercent: 72,
-    tokenPrice: 18.75,
-    roi: 9.5,
-  },
-  {
-    id: "downtown-revitalization",
-    name: "Main Street Revitalization District",
-    city: "Asheville",
-    state: "North Carolina",
-    lat: 35.5951,
-    lng: -82.5515,
-    phase: "National",
-    fundingPercent: 71,
-    tokenPrice: 28.13,
-    roi: 7.5,
-  },
-  {
-    id: "austin-land-trust",
-    name: "Community Land Trust Initiative",
-    city: "Austin",
-    state: "Texas",
-    lat: 30.2672,
-    lng: -97.7431,
-    phase: "County",
-    fundingPercent: 33,
-    tokenPrice: 12.50,
-    roi: 6.5,
-  },
-  {
-    id: "denver-warehouse",
-    name: "RiNo Arts District Warehouse",
-    city: "Denver",
-    state: "Colorado",
-    lat: 39.7645,
-    lng: -104.9803,
-    phase: "State",
-    fundingPercent: 72,
-    tokenPrice: 18.75,
-    roi: 8.5,
-  },
-  {
-    id: "phoenix-downtown",
-    name: "Roosevelt Row Revitalization",
-    city: "Phoenix",
-    state: "Arizona",
-    lat: 33.462,
-    lng: -112.065,
-    phase: "County",
-    fundingPercent: 28,
-    tokenPrice: 12.50,
-    roi: 7.8,
-  },
-];
+import type { Property as DBProperty } from "@shared/schema";
 
 const phaseColors: Record<string, string> = {
   County: "#22c55e",
@@ -107,6 +34,10 @@ export function AppleHero() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
 
+  const { data: properties = [] } = useQuery<DBProperty[]>({
+    queryKey: ["/api/properties"],
+  });
+
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
@@ -125,25 +56,40 @@ export function AppleHero() {
 
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
-    propertyMarkers.forEach((prop) => {
-      const marker = L.marker([prop.lat, prop.lng], {
-        icon: createMarkerIcon(prop.phase),
+    mapInstanceRef.current = map;
+
+    return () => {
+      map.remove();
+      mapInstanceRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    const map = mapInstanceRef.current;
+
+    map.eachLayer((layer) => {
+      if (layer instanceof L.Marker) {
+        map.removeLayer(layer);
+      }
+    });
+
+    properties.forEach((prop) => {
+      const lat = parseFloat(prop.city === "Canton" ? "34.2368" : "34.0");
+      const lng = parseFloat(prop.city === "Canton" ? "-84.4908" : "-84.0");
+      const phase = "County";
+
+      const marker = L.marker([lat, lng], {
+        icon: createMarkerIcon(phase),
       }).addTo(map);
 
       const popupContent = `
         <div style="min-width:220px;font-family:system-ui,sans-serif;padding:4px 0;">
           <div style="font-weight:600;font-size:14px;margin-bottom:4px;">${prop.name}</div>
           <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">${prop.city}, ${prop.state}</div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <span style="font-size:11px;color:#94a3b8;">Funded</span>
-            <span style="font-size:12px;font-weight:600;color:${phaseColors[prop.phase]}">${prop.fundingPercent}%</span>
-          </div>
-          <div style="background:#1e293b;border-radius:4px;height:6px;overflow:hidden;margin-bottom:8px;">
-            <div style="background:${phaseColors[prop.phase]};height:100%;width:${prop.fundingPercent}%;border-radius:4px;"></div>
-          </div>
           <div style="display:flex;justify-content:space-between;font-size:12px;">
-            <span style="color:#94a3b8;">$${prop.tokenPrice}/token</span>
-            <span style="color:#22c55e;font-weight:600;">${prop.roi}% ROI</span>
+            <span style="color:#94a3b8;">$12.50/token</span>
+            <span style="color:#22c55e;font-weight:600;">${prop.projectedROI || 0}% ROI</span>
           </div>
         </div>
       `;
@@ -153,14 +99,7 @@ export function AppleHero() {
         closeButton: true,
       });
     });
-
-    mapInstanceRef.current = map;
-
-    return () => {
-      map.remove();
-      mapInstanceRef.current = null;
-    };
-  }, []);
+  }, [properties]);
 
   return (
     <>
@@ -229,7 +168,9 @@ export function AppleHero() {
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium text-foreground">Active Projects</span>
-                <span className="text-xs text-muted-foreground">— click markers for details</span>
+                {properties.length > 0 && (
+                  <span className="text-xs text-muted-foreground">— click markers for details</span>
+                )}
               </div>
               <div className="flex items-center gap-3 flex-wrap">
                 {Object.entries(phaseColors).map(([phase, color]) => (
@@ -255,21 +196,21 @@ export function AppleHero() {
               <div className="text-center" data-testid="stat-properties">
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <Building2 className="h-4 w-4 text-primary" />
-                  <span className="text-2xl sm:text-3xl font-bold text-primary">6</span>
+                  <span className="text-2xl sm:text-3xl font-bold text-primary">{properties.length}</span>
                 </div>
                 <p className="text-sm text-muted-foreground">Active Properties</p>
               </div>
               <div className="text-center" data-testid="stat-funded">
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <TrendingUp className="h-4 w-4 text-chart-3" />
-                  <span className="text-2xl sm:text-3xl font-bold text-chart-3">$56.4M</span>
+                  <span className="text-2xl sm:text-3xl font-bold text-chart-3">$0</span>
                 </div>
                 <p className="text-sm text-muted-foreground">Total Raised</p>
               </div>
               <div className="text-center" data-testid="stat-investors">
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <Users className="h-4 w-4 text-chart-2" />
-                  <span className="text-2xl sm:text-3xl font-bold text-chart-2">2,847</span>
+                  <span className="text-2xl sm:text-3xl font-bold text-chart-2">0</span>
                 </div>
                 <p className="text-sm text-muted-foreground">Community Members</p>
               </div>

@@ -1,24 +1,32 @@
 import { Building2, Users, Leaf, DollarSign, MapPin, Home } from "lucide-react";
-
-// todo: remove mock functionality
-const stats = [
-  { icon: Building2, value: "24", label: "Active Projects", suffix: "" },
-  { icon: MapPin, value: "18", label: "States Represented", suffix: "" },
-  { icon: Users, value: "450+", label: "Jobs Created", suffix: "" },
-  { icon: Home, value: "120", label: "Housing Units", suffix: "" },
-  { icon: DollarSign, value: "2.4M", label: "Community Dividends", suffix: "" },
-  { icon: Leaf, value: "85%", label: "Green Building Certified", suffix: "" },
-];
+import { useQuery } from "@tanstack/react-query";
+import type { Property as DBProperty } from "@shared/schema";
 
 export function ImpactStats() {
+  const { data: properties = [] } = useQuery<DBProperty[]>({
+    queryKey: ["/api/properties"],
+  });
+
+  const totalJobs = properties.reduce((sum, p) => sum + (p.projectedJobs || 0), 0);
+  const totalHousing = properties.reduce((sum, p) => sum + (p.projectedHousingUnits || 0), 0);
+  const uniqueStates = new Set(properties.map(p => p.state)).size;
+
+  const stats = [
+    { icon: Building2, value: properties.length.toString(), label: "Active Projects" },
+    { icon: MapPin, value: uniqueStates.toString(), label: "States Represented" },
+    { icon: Users, value: totalJobs > 0 ? `${totalJobs}+` : "0", label: "Jobs Projected" },
+    { icon: Home, value: totalHousing.toString(), label: "Housing Units" },
+    { icon: DollarSign, value: "$0", label: "Community Dividends" },
+    { icon: Leaf, value: "—", label: "Green Building Certified" },
+  ];
+
   return (
     <section className="py-16 lg:py-24">
       <div className="mx-auto max-w-7xl px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-semibold mb-4">Community Impact</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Real results from real investments. See how tokenized ownership is 
-            transforming communities across America.
+            Track real results from real investments as tokenized ownership transforms communities.
           </p>
         </div>
 
@@ -29,7 +37,7 @@ export function ImpactStats() {
                 <stat.icon className="h-5 w-5 text-primary" />
               </div>
               <div className="text-2xl font-bold mb-1" data-testid={`stat-${stat.label.toLowerCase().replace(/\s/g, "-")}`}>
-                {stat.value}{stat.suffix}
+                {stat.value}
               </div>
               <div className="text-sm text-muted-foreground">{stat.label}</div>
             </div>

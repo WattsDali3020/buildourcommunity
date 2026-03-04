@@ -7,7 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Coins, Scale, Building2, Vote, Shield, BookOpen } from "lucide-react";
 import { useState } from "react";
 
-// todo: remove mock functionality
 const learnArticles: LearnArticle[] = [
   {
     id: "what-is-tokenization",

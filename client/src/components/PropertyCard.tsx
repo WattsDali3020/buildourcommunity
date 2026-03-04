@@ -15,7 +15,7 @@ export interface Property {
     state: string;
   };
   type: PropertyType;
-  image: string;
+  image?: string;
   tokenPrice: number;
   totalTokens: number;
   tokensSold: number;
@@ -103,12 +103,18 @@ export function PropertyCard({ property }: { property: Property }) {
   return (
     <Card className="overflow-hidden hover-elevate active-elevate-2 cursor-pointer group">
       <div className="relative aspect-video overflow-hidden">
-        <img
-          src={property.image}
-          alt={property.name}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          data-testid={`img-property-${property.id}`}
-        />
+        {property.image ? (
+          <img
+            src={property.image}
+            alt={property.name}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            data-testid={`img-property-${property.id}`}
+          />
+        ) : (
+          <div className="w-full h-full bg-muted flex items-center justify-center" data-testid={`img-property-${property.id}`}>
+            <MapPin className="h-12 w-12 text-muted-foreground/30" />
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         <div className="absolute top-3 left-3 flex items-center gap-2">
           <Badge variant="outline" className={`${phaseColors[phase] || "bg-muted/80 text-foreground"} border text-xs font-medium`} data-testid={`badge-phase-${property.id}`}>
