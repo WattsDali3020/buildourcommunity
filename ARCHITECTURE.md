@@ -2,6 +2,8 @@
 
 RevitaHub is a community-owned real estate revitalization platform on Base (Coinbase L2). It uses ERC-1155 tokenization to enable fractional property ownership starting at $12.50/token, DAO governance with phase-weighted voting, and a transparent 1% founder sustainability cut. Built by Build Our Community, LLC.
 
+> **Platform Status**: Pre-launch / blank-state configuration. All database tables are empty, all pages are API-driven with proper empty-state handling, and no seed or mock data exists.
+
 ---
 
 ## Tech Stack
@@ -11,7 +13,7 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 | Frontend | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui (New York style) |
 | Routing | Wouter |
 | State | TanStack React Query v5 |
-| Maps | Leaflet (homepage), Mapbox via react-map-gl (properties/nominate) |
+| Maps | Leaflet (homepage, league), Mapbox via react-map-gl (properties, nominate) |
 | Charts | Recharts |
 | Animations | Framer Motion |
 | Backend | Node.js, Express, TypeScript (ESM) |
@@ -21,8 +23,8 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 | Blockchain | Base L2, wagmi, RainbowKit, Solidity 0.8.20 |
 | Contracts | OpenZeppelin (ERC-1155, AccessControl), Chainlink (Automation, Functions) |
 | Payments | Stripe |
-| Email | Nodemailer |
-| File Storage | Google Cloud Storage + Uppy |
+| Email | Nodemailer (SMTP) |
+| File Storage | Replit Object Storage |
 | Build | Vite (frontend), esbuild (backend) |
 
 ---
@@ -33,17 +35,17 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 /
 ├── client/
 │   └── src/
-│       ├── App.tsx                  # Router — all page routes registered here
+│       ├── App.tsx                  # Router — all 30 page routes registered here
 │       ├── main.tsx                 # React entry point
 │       ├── index.css                # Tailwind + HSL color variables (dark/light)
 │       ├── pages/
-│       │   ├── home.tsx             # Landing page with AppleHero map
-│       │   ├── properties.tsx       # Property listing with Mapbox map
+│       │   ├── home.tsx             # Landing: AppleHero Leaflet map, stats, CTAs
+│       │   ├── properties.tsx       # Property listing with Mapbox map + filters
 │       │   ├── property-detail.tsx  # Full property view: offerings, impact cards, city competition
-│       │   ├── dashboard.tsx        # Investor dashboard: portfolio, holdings, achievements, builder league
+│       │   ├── dashboard.tsx        # Investor: portfolio, holdings, achievements, refund requests
 │       │   ├── governance.tsx       # Proposals list + voting
 │       │   ├── community.tsx        # Community priorities voting
-│       │   ├── league.tsx           # RevitaLeague: 4 leagues, leaderboards, rivalries, competition map
+│       │   ├── league.tsx           # RevitaLeague: 4 leagues, leaderboards, rivalries, map
 │       │   ├── impact-simulator.tsx # Georgia GDP impact simulator with adoption tiers
 │       │   ├── services.tsx         # Service provider marketplace (bid submission)
 │       │   ├── wishlist.tsx         # Zip-code business voting
@@ -51,18 +53,22 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 │       │   ├── nominate.tsx         # Property nomination with Mapbox geocoding
 │       │   ├── submit.tsx           # Property submission form
 │       │   ├── tokenize.tsx         # Tokenization wizard
-│       │   ├── admin.tsx            # Admin panel: property/KYC/nomination management
+│       │   ├── admin.tsx            # Admin panel: properties, KYC, nominations, reconciliation
 │       │   ├── litepaper.tsx        # Platform litepaper
 │       │   ├── tokenization-process.tsx # How-it-works flow diagram
 │       │   ├── faq.tsx              # FAQ page
 │       │   ├── about.tsx            # About / team
 │       │   ├── learn.tsx            # Educational content
 │       │   ├── grants.tsx           # Grant funding info
-│       │   ├── ai-insights.tsx      # AI-powered insights
+│       │   ├── ai-insights.tsx      # AI-powered engagement analytics
 │       │   ├── business-layer.tsx   # Business model details
 │       │   ├── demand-dashboard.tsx # Market demand analytics
 │       │   ├── founder-dashboard.tsx # Founder-specific metrics
 │       │   ├── owner-response.tsx   # Owner response to nomination (token-based)
+│       │   ├── transfers.tsx        # Share transfer requests and history
+│       │   ├── terms.tsx            # Terms of Service (draft placeholder)
+│       │   ├── privacy.tsx          # Privacy Policy (draft placeholder)
+│       │   ├── risk-disclosure.tsx  # Risk disclosure with interactive acknowledgment
 │       │   └── not-found.tsx        # 404 page
 │       ├── components/
 │       │   ├── Header.tsx           # Main nav: public + authenticated links
@@ -70,10 +76,11 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 │       │   ├── AppleHero.tsx        # Homepage hero with Leaflet map + phase-colored markers
 │       │   ├── WalletButton.tsx     # RainbowKit connect button
 │       │   ├── WalletProvider.tsx   # wagmi + RainbowKit provider (Base network)
-│       │   ├── ThemeProvider.tsx     # Dark/light mode toggle
+│       │   ├── ThemeProvider.tsx    # Dark/light mode toggle
 │       │   ├── ThemeToggle.tsx      # Theme switch button
 │       │   ├── BetaBanner.tsx       # Beta notice banner
 │       │   ├── BehavioralNudge.tsx  # AI-nudged engagement prompts
+│       │   ├── InvestorOnboardingGate.tsx # Linear gate: Auth → KYC → Risk Disclosure → Purchase
 │       │   ├── TokenPurchaseModal.tsx # Token purchase flow modal
 │       │   ├── SimplePurchaseModal.tsx # Simplified purchase
 │       │   ├── PhaseOfferingCard.tsx # Phase-specific offering display
@@ -81,25 +88,31 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 │       │   ├── PortfolioOverview.tsx # Portfolio metrics card
 │       │   ├── TransactionHistory.tsx # Transaction list
 │       │   ├── KYCVerification.tsx  # KYC status + verification
-│       │   ├── PropertyCard.tsx     # Property list item card
+│       │   ├── PropertyCard.tsx     # Property list item card (optional image with placeholder)
 │       │   ├── ProposalCard.tsx     # Governance proposal card
 │       │   ├── ROICalculator.tsx    # ROI projection calculator
 │       │   ├── ShareModal.tsx       # Social share modal
-│       │   ├── ObjectUploader.tsx   # GCS file uploader (Uppy)
+│       │   ├── ObjectUploader.tsx   # Replit Object Storage file uploader
 │       │   ├── PrivateAccessGate.tsx # Access code gate for private offerings
 │       │   ├── StateComplianceTable.tsx # State regulatory compliance
 │       │   ├── StateFilter.tsx      # State filter dropdown
 │       │   ├── WaitlistModal.tsx    # Waitlist signup
-│       │   ├── FeaturedProperties.tsx # Featured property carousel
+│       │   ├── FeaturedProperties.tsx # Featured property carousel (API-driven)
 │       │   ├── HowItWorks.tsx       # Step-by-step explainer
 │       │   ├── CTASection.tsx       # Call-to-action sections
 │       │   ├── FourStepCTA.tsx      # 4-step CTA flow
 │       │   ├── FundingTimeline.tsx  # Funding deadline timeline
-│       │   ├── ImpactStats.tsx      # Impact statistics display
+│       │   ├── ImpactStats.tsx      # Impact statistics display (API-driven)
 │       │   ├── TrustSection.tsx     # Trust/security badges
 │       │   ├── StatCard.tsx         # Metric stat card
 │       │   ├── LearnCard.tsx        # Educational card
 │       │   ├── SummaryPanel.tsx     # Summary panel
+│       │   ├── SimpleHeader.tsx     # Simplified header variant
+│       │   ├── HeroSection.tsx      # Hero section variant
+│       │   ├── AIInsightsBanner.tsx # AI insights banner
+│       │   ├── NominatePropertyCTA.tsx # Nominate property CTA
+│       │   ├── TokenizePropertyCTA.tsx # Tokenize property CTA
+│       │   ├── TokenOfferingTimeline.tsx # Token offering timeline
 │       │   └── ui/                  # shadcn/ui primitives (40+ components)
 │       ├── lib/
 │       │   ├── queryClient.ts       # TanStack Query client + apiRequest helper
@@ -115,24 +128,35 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 │           ├── use-mobile.tsx       # Mobile breakpoint hook
 │           └── use-upload.ts        # File upload hook
 ├── server/
-│   ├── index.ts                     # Express app bootstrap + server start
-│   ├── routes.ts                    # All API route handlers (~60 endpoints)
+│   ├── index.ts                     # Express app bootstrap + Helmet.js (CSP disabled) + server start
+│   ├── routes.ts                    # All API route handlers (79 endpoints)
 │   ├── storage.ts                   # IStorage interface + MemStorage fallback
-│   ├── databaseStorage.ts          # DatabaseStorage — PostgreSQL implementation of IStorage
+│   ├── databaseStorage.ts           # DatabaseStorage — PostgreSQL implementation of IStorage
 │   ├── db.ts                        # Drizzle client setup (DATABASE_URL)
 │   ├── vite.ts                      # Vite dev server middleware
 │   ├── static.ts                    # Static file serving (production)
 │   ├── middleware/
-│   │   └── rateLimit.ts             # Rate limiting middleware
+│   │   └── rateLimit.ts             # purchaseRateLimit, voteRateLimit, authRateLimit, globalWriteRateLimit
 │   ├── services/
-│   │   ├── blockchain.ts            # Web3 contract interaction
+│   │   ├── auditLog.ts              # logAuditEvent() — system-wide event logging
+│   │   ├── blockchain.ts            # Web3 contract interaction (deploy, mint, read)
 │   │   ├── email.ts                 # Nodemailer email service (SMTP)
 │   │   ├── notifications.ts         # Notification dispatch
 │   │   ├── payments.ts              # Stripe payment processing
 │   │   ├── scheduler.ts             # Funding deadlines, phase advances, proposal status
 │   │   ├── ownerDetection.ts        # Property owner lookup
 │   │   └── tokenizationOrchestrator.ts # End-to-end tokenization workflow
-│   └── replit_integrations/         # Replit auth (OpenID Connect)
+│   └── replit_integrations/
+│       ├── auth/
+│       │   ├── index.ts             # Exports isAuthenticated, requireKYCApproved, isAdmin
+│       │   ├── replitAuth.ts        # Passport OIDC setup, session hardening, KYC middleware, auth routes
+│       │   ├── routes.ts            # Auth route wrapper
+│       │   └── storage.ts           # Auth user upsert
+│       └── object_storage/
+│           ├── index.ts             # Object storage client
+│           ├── objectStorage.ts     # Storage operations
+│           ├── objectAcl.ts         # Access control
+│           └── routes.ts            # POST /api/uploads/request-url, GET /objects/:objectPath(*)
 ├── shared/
 │   ├── schema.ts                    # All Drizzle tables, enums, Zod schemas, types, config constants
 │   └── models/
@@ -140,8 +164,8 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 ├── contracts/
 │   ├── PropertyToken.sol            # ERC-1155 with phase pricing, transfer locks, voting power
 │   ├── Escrow.sol                   # Purchase handling, 3% APR refunds, token burning
-│   ├── Governance.sol               # DAO voting, AI moderation, gasless signatures, polls
-│   ├── PhaseManager.sol             # Chainlink Automation for phase advancement
+│   ├── Governance.sol               # DAO voting, gasless signatures, polls
+│   ├── PhaseManager.sol             # Chainlink Automation for engagement-driven phase advancement
 │   └── Treasury.sol                 # Multi-sig treasury, founder vesting, reserve verification
 ├── drizzle.config.ts                # Drizzle Kit config
 ├── vite.config.ts                   # Vite config (aliases: @/, @shared/, @assets/)
@@ -152,96 +176,204 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 
 ---
 
-## Database Schema (shared/schema.ts)
+## Middleware & Security
 
-### Enums
+### Security Headers (server/index.ts)
+- **Helmet.js**: HSTS, X-Frame-Options, X-XSS-Protection, X-Content-Type-Options
+- **CSP**: Currently disabled (`contentSecurityPolicy: false`)
+- **Additional middleware**: JSON body parsing with raw-body verify (for Stripe webhooks), URL encoding, API request logging, error handler
+
+### Session Hardening (server/replit_integrations/auth/replitAuth.ts)
+- `sameSite: 'lax'` cookie policy
+- 8-hour `maxAge` session expiration
+- `SESSION_SECRET` environment variable for encryption
+
+### Rate Limiting (server/middleware/rateLimit.ts)
+
+| Middleware | Scope | Limit |
+|-----------|-------|-------|
+| `globalWriteRateLimit` | All POST/PATCH/PUT/DELETE requests | 30 req/min per IP |
+| `purchaseRateLimit` | Purchase endpoints | Endpoint-specific |
+| `voteRateLimit` | Vote endpoints | Endpoint-specific |
+| `authRateLimit` | Auth endpoints | Endpoint-specific |
+
+### Auth Middleware (server/replit_integrations/auth/)
+
+| Middleware | Check | Used On |
+|-----------|-------|---------|
+| `isAuthenticated` | Active session exists | All user-specific endpoints |
+| `requireKYCApproved` | `user.kycStatus === "verified"` | All purchase endpoints |
+| `isAdmin` | `user.role === "admin"` | All admin endpoints |
+
+### Additional Security
+- **Risk Disclosure Enforcement**: Server-side check for `riskDisclosureAcknowledgedAt` on purchase endpoints
+- **IDOR Prevention**: Purchase endpoints use session `userId` (not request body)
+- **Soft Deletes**: `deletedAt` columns on financial tables (tokenPurchases, tokenHoldings, tokenOfferings, proposals, tokenRefunds)
+- **Audit Log**: All significant actions logged to `audit_log` table with userId, action, IP, timestamp
+
+---
+
+## Database Schema (shared/schema.ts + shared/models/auth.ts)
+
+### Enums (26 total)
 | Enum | Values |
 |------|--------|
-| `kycStatus` | pending, submitted, approved, rejected |
-| `propertyType` | residential, commercial, mixed_use, land, industrial |
-| `propertyStatus` | draft, pending, approved, live, funded, closed |
+| `kycStatus` | pending, submitted, verified, rejected |
+| `propertyType` | vacant_land, historic_building, commercial, downtown |
+| `propertyStatus` | draft, submitted, under_review, approved, tokenizing, live, funded, rejected |
 | `offeringPhase` | county, state, national, international |
 | `offeringType` | public, private |
-| `offeringStatus` | draft, active, paused, completed, failed |
-| `fundingOutcome` | pending, success, failed, refunded |
+| `offeringStatus` | upcoming, active, completed, cancelled, failed_funding |
+| `fundingOutcome` | in_progress, funded, failed, refunded |
 | `purchaseStatus` | pending, confirmed, failed, refunded |
+| `reconciliationStatus` | pending_payment, payment_received, minting, confirmed, failed_mint, refund_initiated |
 | `refundStatus` | pending, processing, completed, failed |
 | `shareTransferStatus` | pending, approved, completed, rejected |
 | `proposalStatus` | draft, active, passed, rejected, executed |
-| `nominationStatus` | pending, approved, rejected, contacted, accepted, declined |
+| `nominationStatus` | submitted, under_review, approved, in_voting, selected, rejected |
 | `ownerDetectionStatus` | pending, searching, found, not_found, verified |
+| `useProposalStatus` | proposed, in_voting, approved, rejected |
 | `submissionStatus` | draft, submitted, under_review, approved, rejected, needs_revision |
-| `inviteStatus` | pending, accepted, expired, revoked |
-| `waitlistRole` | investor, property_owner, service_provider, community_member |
-| `grantLevel` | federal, state, local, private |
-| `grantStatus` | identified, applied, approved, received, rejected |
-| `grantType` | grant, tax_credit, loan, subsidy, incentive |
-| `contactMethod` | email, letter, phone, in_person, public_notice |
-| `contactStatus` | pending, sent, delivered, responded, failed |
-| `deploymentStatus` | pending, deploying, deployed, failed |
+| `inviteStatus` | pending, sent, accepted, declined, expired |
+| `waitlistRole` | investor, property_owner, community_member, other |
+| `grantLevel` | city, county, state, federal |
+| `grantStatus` | identified, applied, under_review, awarded, disbursed, rejected, expired |
+| `grantType` | community_development, historic_preservation, brownfield_remediation, affordable_housing, economic_development, infrastructure, environmental, opportunity_zone, tax_credit, other |
+| `contactMethod` | email, sms, phone, mail, portal_link |
+| `contactStatus` | pending, sent, delivered, opened, responded, bounced, failed |
+| `deploymentStatus` | pending, deploying, deployed, verified, failed |
 | `serviceBidStatus` | pending, approved, rejected |
+| `userRole` | user, admin |
 
-### Core Tables
+### Tables (29 total)
 
 **users** (via shared/models/auth.ts — Replit Auth)
-- `id` (varchar PK), `email`, `firstName`, `lastName`, `profileImageUrl`, `kycStatus`, `walletAddress`, `createdAt`, `updatedAt`
+- `id` (varchar PK), `email`, `firstName`, `lastName`, `profileImageUrl`, `walletAddress`, `county`, `state`, `country`, `kycStatus` (text, default "pending"), `kycVerifiedAt`, `role` (userRole enum, default "user"), `riskDisclosureAcknowledgedAt`, `emailNotificationsEnabled` (boolean, default true), `createdAt`, `updatedAt`
+
+**sessions** (via shared/models/auth.ts)
+- `sid` (varchar PK), `sess` (text, JSON), `expire` (timestamp)
 
 **properties**
-- `id` (varchar PK, UUID), `name`, `description`, `address`, `city`, `state`, `zipCode`, `county`
-- `propertyType` (enum), `status` (enum), `latitude`, `longitude`
-- `estimatedValue`, `targetFunding`, `imageUrl`, `createdBy`
-- `submittedAt`, `approvedAt`, `createdAt`, `updatedAt`
+- `id` (varchar PK, UUID), `ownerId`, `name`, `description`, `propertyType` (enum), `status` (enum, default "draft")
+- `streetAddress`, `city`, `county`, `state`, `zipCode`, `parcelNumber`
+- `acreage`, `squareFootage`, `yearBuilt`, `currentUse`, `proposedUse`
+- `estimatedValue`, `fundingGoal`, `communityBenefits`, `projectedROI`, `projectedJobs`, `projectedHousingUnits`
+- `imageUrl`, `documentUrls`, `submittedAt`, `approvedAt`, `createdAt`
 
 **tokenOfferings**
-- `id` (varchar PK), `propertyId` (FK), `totalTokenSupply`, `baseTokenPrice` ($12.50)
-- `offeringType` (public/private), `status`, `fundingOutcome`, `fundingDeadline`
-- `tokensSold`, `totalFundingRaised`, `contractAddress`
+- `id` (varchar PK), `propertyId` (FK), `tokenSymbol`, `tokenName`, `totalSupply`, `tokensSold`
+- `contractAddress`, `currentPhase` (enum), `status` (enum), `fundingOutcome` (enum)
+- `minimumFundingThreshold`, `fundingDeadline`, `totalFundingRaised`, `interestRateOnRefund`
+- `offeringType` (public/private), `accessCode`, `deletedAt`, `createdAt`
 
 **offeringPhases**
-- `id`, `offeringId` (FK), `phase` (county/state/national/international)
-- `tokenAllocation`, `pricePerToken`, `maxPerPerson`, `tokensSold`
-- `startDate`, `endDate`, `engagementThreshold` (75%), `isActive`
+- `id`, `offeringId` (FK), `phase` (county/state/national/international), `phaseOrder`
+- `basePrice`, `currentPrice`, `priceMultiplier`, `tokenAllocation`, `tokensSold`, `maxTokensPerPerson`
+- `eligibilityCounty`, `eligibilityState`, `eligibilityCountry`
+- `startsAt`, `endsAt`, `isActive`
+
+**fundEscrow**
+- `id`, `offeringId` (FK), `totalUsdcDeposited`, `totalYieldEarned`, `currentYieldRate` (default "3.00")
+- `yieldProtocol` (default "aave_v3"), `yieldContractAddress`, `lastYieldAccrualAt`
+- `escrowWalletAddress`, `isActive` (boolean), `createdAt`
 
 **tokenPurchases**
 - `id`, `userId`, `offeringId`, `phaseId`, `tokenCount`, `pricePerToken`, `totalAmount`
-- `paymentMethod` (stripe/crypto/wire), `status`, `transactionHash`, `paymentIntentId`
+- `paymentMethod`, `paymentIntentId`, `status` (purchaseStatus enum), `reconciliationStatus` (enum)
+- `deletedAt`, `purchasedAt`
 
 **tokenHoldings**
 - `id`, `userId`, `offeringId`, `tokenCount`, `averagePurchasePrice`, `votingPower`
-
-**fundEscrow**
-- `id`, `offeringId`, `totalDeposited`, `totalRefunded`, `status`
-- `refundInterestRate` (default "3.00"), `lastInterestCalculation`
+- `lastUpdated`, `deletedAt`
 
 **tokenRefunds**
-- `id`, `userId`, `offeringId`, `tokenCount`, `refundAmount`, `interestAmount`
-- `totalRefund`, `status`, `transactionHash`
+- `id`, `userId`, `offeringId`, `tokenCount`, `originalAmount`, `interestEarned`, `totalRefundAmount`
+- `refundTransactionHash`, `status` (enum), `requestedAt`, `processedAt`, `deletedAt`
+
+**shareTransfers**
+- `id`, `userId`, `fromOfferingId` (FK), `toOfferingId` (FK), `tokenCount`
+- `originalValue`, `transferValue`, `status` (enum), `requestedAt`, `completedAt`
 
 **proposals**
-- `id`, `offeringId`, `title`, `description`, `proposedBy`
-- `votesFor`, `votesAgainst`, `quorumRequired`, `status`
-- `executionData`, `executionTransactionHash`, `votingEndsAt`
+- `id`, `propertyId`, `offeringId`, `proposerId`, `title`, `description`
+- `status` (enum), `votesFor`, `votesAgainst`, `totalVoters`, `quorumRequired`
+- `startsAt`, `endsAt`, `deletedAt`, `createdAt`
 
 **votes**
-- `id`, `proposalId`, `userId`, `voteDirection` (boolean), `votingPower`
+- `id`, `proposalId`, `userId`, `offeringId`, `voteDirection`, `tokenBalance`, `votingPower`, `votedAt`
 
 **propertyNominations**
-- `id`, `nominatorId`, `propertyAddress`, `latitude`, `longitude`, `city`, `state`, `zipCode`
-- `ownerDetectionStatus`, `detectedOwnerName/Type/Address/Email/Phone`
-- `ownerNotifiedAt`, `ownerResponseStatus`, `status`, `adminNotes`, `voteCount`, `desiredUses`
+- `id`, `nominatorId` (FK), `propertyAddress`, `city`, `county`, `state`, `zipCode`
+- `latitude`, `longitude`, `parcelId`
+- `description`, `whyThisProperty`, `currentCondition`, `estimatedSize`
+- `desiredUses` (text array), `topVotedUse`
+- `ownerDetectionStatus` (enum), `detectedOwnerName`, `detectedOwnerType`, `detectedOwnerAddress`, `detectedOwnerEmail`, `detectedOwnerPhone`
+- `ownerDataSource`, `ownerDataConfidence` (0-100)
+- `ownerNotifiedAt`, `ownerNotificationLink`, `ownerResponseStatus` (text: pending/interested/not_interested)
+- `status` (enum, default "submitted"), `nominationVotes`, `createdAt`
+
+**nominationVotes**
+- `id`, `nominationId`, `userId`, `createdAt`
+
+**propertyUseProposals**
+- `id`, `nominationId`, `userId`, `proposedUse`, `description`
+- `estimatedBudget`, `estimatedJobs`, `estimatedTimeline`
+- `status` (enum), `votesFor`, `votesAgainst`, `totalVoters`, `createdAt`
+
+**useProposalVotes**
+- `id`, `proposalId`, `userId`, `voteDirection`, `createdAt`
+
+**communityNeeds**
+- `id`, `zipCode`, `category`, `need`, `description`, `voteCount`, `createdAt`
+
+**communityNeedVotes**
+- `id`, `needId`, `userId`, `createdAt`
+
+**desiredUseVotes**
+- `id`, `nominationId`, `userId`, `desiredUse`, `createdAt`
+
+**propertyGrants**
+- `id`, `propertyId`, `grantName`, `grantingAgency`, `amount`, `level` (enum), `grantType` (enum), `status` (enum)
+- `applicationDeadline`, `matchRequirement`, `isStackable`, `maxPerProperty`
+- `eligibilityCriteria`, `notes`, `appliedAt`, `awardedAt`, `createdAt`
+
+**ownerContactAttempts**
+- `id`, `nominationId` (FK), `method` (enum), `recipient`, `subject`, `messagePreview`
+- `portalLinkToken`, `status` (enum), `sentAt`, `deliveredAt`, `openedAt`, `respondedAt`, `response`, `createdAt`
+
+**blockchainDeployments**
+- `id`, `offeringId` (FK), `propertyId` (FK), `contractType` (ERC20/ERC1155)
+- `contractAddress`, `deployerAddress`, `networkId` (default 8453 / Base mainnet), `networkName` (default "Base")
+- `deploymentTxHash`, `blockNumber`, `tokenName`, `tokenSymbol`, `totalSupply`, `decimals`
+- `status` (enum), `verificationUrl`, `errorMessage`, `deployedAt`, `verifiedAt`, `createdAt`
 
 **propertySubmissions**
-- `id`, `ownerId`, `propertyAddress`, `status`, `estimatedValue`, `targetFunding`
-- `reviewedBy`, `reviewNotes`, `submittedAt`, `reviewedAt`
+- `id`, `userId`, `propertyName`, `description`, `propertyType` (enum)
+- `streetAddress`, `city`, `county`, `state`, `zipCode`, `status` (enum)
+- `acreage`, `squareFootage`, `yearBuilt`, `currentUse`, `proposedUse`
+- `estimatedValue`, `fundingGoal`, `communityBenefits`, `projectedROI`, `projectedJobs`, `projectedHousingUnits`
+- `additionalNotes`, `reviewNotes`, `submittedAt`, `reviewedAt`, `createdAt`
+
+**submissionDocuments**
+- `id`, `submissionId`, `fileName`, `fileUrl`, `fileType`, `uploadedAt`
+
+**privateOfferingInvites**
+- `id`, `offeringId`, `email`, `inviteCode`, `status` (enum), `invitedBy`
+- `maxTokens`, `tokensUsed`, `expiresAt`, `acceptedAt`, `createdAt`
+
+**waitlist**
+- `id`, `email` (unique), `role` (waitlistRole enum), `message` (varchar 250), `createdAt`
 
 **wishes** (Community Wishlist)
-- `id`, `category`, `description`, `votes`, `zipCode`, `createdAt`
+- `id`, `title`, `description`, `category`, `location`, `zipCode`
+- `votes` (default 0), `email`, `takeItFurther` (boolean), `createdAt`
 
 **serviceBids** (Service Provider Marketplace)
-- `id`, `propertyId`, `providerName`, `serviceType`, `bidAmount`
-- `description`, `contactEmail`, `status`, `createdAt`
+- `id`, `serviceType`, `zipCode`, `companyName`, `contactEmail`, `description`
+- `bidAmount`, `status` (enum), `createdAt`
 
-**Other tables**: `sessions`, `shareTransfers`, `blockchainDeployments`, `ownerContactAttempts`, `submissionDocuments`, `privateOfferingInvites`, `waitlist`, `communityNeeds`, `propertyUseProposals`, `nominationVotes`, `useProposalVotes`, `communityNeedVotes`, `desiredUseVotes`, `propertyGrants`
+**auditLog**
+- `id` (serial), `userId`, `action`, `targetTable`, `targetId`, `metadata`, `ipAddress`, `timestamp`
 
 ### Key Constants (shared/schema.ts)
 
@@ -255,16 +387,26 @@ PHASE_CONFIG = {
 // Base price: $12.50 → $18.75 → $28.13 → $37.50
 
 FUNDING_TIMELINE_CONFIG = {
-  maxDurationDays: 365,
-  refundAPR: 3.0,     // 3% APR refund if funding fails
-  minPhaseDurationDays: 7,
+  totalDurationDays: 365,
+  phaseDurations: {
+    county:        { daysMin: 30, daysMax: 90,  targetPercent: 25  },
+    state:         { daysMin: 45, daysMax: 120, targetPercent: 50  },
+    national:      { daysMin: 60, daysMax: 120, targetPercent: 75  },
+    international: { daysMin: 30, daysMax: 35,  targetPercent: 100 },
+  },
+  refundAPR: 3.0,
   engagementThreshold: 0.75,
 }
 ```
 
 ---
 
-## API Routes (server/routes.ts)
+## API Routes (server/routes.ts — 79 endpoints)
+
+### Platform
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/stats` | No | Platform statistics (properties, raised, investors) |
 
 ### Properties
 | Method | Path | Auth | Description |
@@ -286,24 +428,43 @@ FUNDING_TIMELINE_CONFIG = {
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | POST | `/api/purchases/check-eligibility` | No | Check purchase eligibility |
-| POST | `/api/purchases` | No | Create purchase (rate-limited) |
-| POST | `/api/purchase` | Yes | Authenticated purchase |
-| POST | `/api/purchase/confirm` | Yes | Confirm purchase |
+| POST | `/api/purchases` | Yes + KYC + Rate | Create purchase |
+| POST | `/api/purchase` | Yes + KYC + Rate | Authenticated purchase (primary flow) |
+| POST | `/api/purchase/confirm` | Yes + KYC + Rate | Confirm purchase (two-phase reconciliation) |
 | GET | `/api/users/:userId/holdings` | No | Get user holdings |
 | GET | `/api/users/:userId/voting-power/:offeringId` | No | Get voting power |
-| GET | `/api/user/holdings` | Yes | Get authenticated user holdings |
+
+### User Endpoints
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/user` | Yes | Current user profile |
+| GET | `/api/user/holdings` | Yes | Authenticated user holdings |
+| GET | `/api/user/purchases` | Yes | User purchase history |
+| POST | `/api/user/kyc` | Yes | Submit KYC verification |
+| POST | `/api/user/wallet` | Yes | Save wallet address |
+| POST | `/api/user/acknowledge-risks` | Yes | Acknowledge risk disclosure |
+| PATCH | `/api/user/email-preferences` | Yes | Toggle email notifications |
+
+### Transfers & Refunds
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/user/transfers` | Yes | Get user transfer history |
+| POST | `/api/transfers` | Yes | Request share transfer |
+| GET | `/api/user/refunds` | Yes | Get user refund history |
+| POST | `/api/refunds` | Yes | Request refund |
 
 ### Governance
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/api/proposals` | No | List proposals (optional offeringId filter) |
 | GET | `/api/proposals/:id` | No | Get proposal detail |
-| POST | `/api/proposals/:id/vote` | Yes | Cast vote (rate-limited) |
+| POST | `/api/proposals` | Yes | Create proposal |
+| POST | `/api/proposals/:id/vote` | Yes + Rate | Cast vote (rate-limited) |
 
 ### Property Submissions (Owner Flow)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/api/property-submissions` | No | Create submission |
+| POST | `/api/property-submissions` | Yes | Create submission |
 | GET | `/api/property-submissions/:id` | No | Get submission |
 | GET | `/api/property-submissions` | No | List submissions |
 | PATCH | `/api/property-submissions/:id` | No | Update submission |
@@ -312,11 +473,12 @@ FUNDING_TIMELINE_CONFIG = {
 | POST | `/api/property-submissions/:id/documents` | No | Add document |
 | GET | `/api/property-submissions/:id/documents` | No | List documents |
 | DELETE | `/api/property-submissions/:submissionId/documents/:docId` | No | Delete document |
+| GET | `/api/submissions` | No | List submissions (alternate) |
 
 ### Property Nominations (Community Flow)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/api/nominations` | No | Create nomination |
+| POST | `/api/nominations` | Yes | Create nomination |
 | GET | `/api/nominations` | No | List nominations |
 | GET | `/api/nominations/:id` | No | Get nomination |
 | POST | `/api/nominations/:id/vote` | No | Vote on nomination |
@@ -326,12 +488,40 @@ FUNDING_TIMELINE_CONFIG = {
 | GET | `/api/owner-response/:token` | No | Get owner response page |
 | POST | `/api/owner-response/:token` | No | Submit owner response |
 
+### Owner Lookup
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/owner-lookup/address` | No | Owner lookup by address |
+| POST | `/api/owner-lookup/coordinates` | No | Owner lookup by coordinates |
+
 ### Tokenization & Blockchain
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | POST | `/api/tokenize` | No | Start tokenization process |
 | GET | `/api/tokenization-status/:propertyId` | No | Check tokenization status |
 | GET | `/api/blockchain/explorer/:type/:value` | No | Block explorer lookup |
+
+### Grants & Capital Stack
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/properties/:propertyId/grants` | No | List grants for property |
+| GET | `/api/properties/:propertyId/capital-stack` | No | Capital stack summary |
+| POST | `/api/properties/:propertyId/grants` | Yes | Add grant |
+| PATCH | `/api/grants/:grantId` | Yes | Update grant |
+| DELETE | `/api/grants/:grantId` | Yes | Delete grant |
+
+### Private Offerings
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/private-offerings/:offeringId/invites` | Yes | Create invite |
+| GET | `/api/private-offerings/:offeringId/invites` | Yes | List invites |
+| POST | `/api/private-offerings/validate-access` | No | Validate access code |
+| POST | `/api/private-offerings/invites/:inviteId/accept` | Yes | Accept invite |
+
+### Investor Protection
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/investor-protection/:propertyId` | No | 3% APR refund calculation |
 
 ### Community Features
 | Method | Path | Auth | Description |
@@ -341,22 +531,32 @@ FUNDING_TIMELINE_CONFIG = {
 | POST | `/api/wishes/:id/vote` | No | Vote on wish |
 | GET | `/api/service-bids` | No | List service bids |
 | POST | `/api/service-bids` | No | Submit service bid |
-| PATCH | `/api/service-bids/:id/status` | Yes+Admin | Update bid status |
+| PATCH | `/api/service-bids/:id/status` | Yes + Admin | Update bid status |
+
+### Admin Endpoints
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/admin/kyc-pending` | Admin | List pending KYC verifications |
+| POST | `/api/admin/kyc/:userId/approve` | Admin | Approve KYC |
+| POST | `/api/admin/kyc/:userId/reject` | Admin | Reject KYC |
+| GET | `/api/admin/reconciliation/stuck` | Admin | List stuck purchases (>10 min pending) |
+| GET | `/api/admin/reconciliation/all` | Admin | List all purchases with reconciliation status |
+| POST | `/api/admin/reconciliation/:purchaseId/retry` | Admin | Retry stuck purchase |
+| POST | `/api/admin/reconciliation/:purchaseId/refund` | Admin | Refund stuck purchase |
+
+### Object Storage (Replit Integration)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/uploads/request-url` | No | Request signed upload URL |
+| GET | `/objects/:objectPath(*)` | No | Serve stored object/file |
 
 ### Other
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/stats` | No | Platform statistics |
-| GET | `/api/user` | Yes | Current user profile |
 | POST | `/api/waitlist` | No | Join waitlist |
 | POST | `/api/webhooks/stripe` | No | Stripe webhook handler |
-| POST | `/api/owner-lookup/address` | No | Owner lookup by address |
-| POST | `/api/owner-lookup/coordinates` | No | Owner lookup by coordinates |
-| POST/GET | `/api/private-offerings/*` | Yes | Private offering invite management |
-| POST/GET/PATCH/DELETE | `/api/properties/:propertyId/grants` | Mixed | Grant management |
-| GET | `/api/properties/:propertyId/capital-stack` | No | Capital stack summary |
 
-### Auth Routes (Replit Integration)
+### Auth Routes (Replit Integration — replitAuth.ts)
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/auth/user` | Get current authenticated user |
@@ -366,14 +566,14 @@ FUNDING_TIMELINE_CONFIG = {
 
 ---
 
-## Frontend Pages & Routes
+## Frontend Pages & Routes (30 total)
 
 | Route | Page File | Purpose |
 |-------|-----------|---------|
 | `/` | home.tsx | Landing: AppleHero Leaflet map, featured properties, stats, CTAs |
 | `/properties` | properties.tsx | Property listing with Mapbox map + filters |
 | `/properties/:id` | property-detail.tsx | Full property view: offerings, phases, economic impact cards, city competition |
-| `/dashboard` | dashboard.tsx | Investor: portfolio, holdings, achievements, builder league |
+| `/dashboard` | dashboard.tsx | Investor: portfolio, holdings, achievements, refund requests |
 | `/governance` | governance.tsx | Proposal list + voting |
 | `/community` | community.tsx | Community priorities and needs voting |
 | `/league` | league.tsx | RevitaLeague: 4 leagues, leaderboards, rivalries, map, RevitaCup |
@@ -384,18 +584,22 @@ FUNDING_TIMELINE_CONFIG = {
 | `/nominate` | nominate.tsx | Property nomination with Mapbox geocoding |
 | `/submit` | submit.tsx | Property owner submission form |
 | `/tokenize` | tokenize.tsx | Tokenization wizard |
-| `/admin` | admin.tsx | Admin panel: properties, KYC, nominations |
+| `/admin` | admin.tsx | Admin panel: properties, KYC, nominations, reconciliation |
 | `/litepaper` | litepaper.tsx | Platform litepaper |
 | `/how-it-works` | tokenization-process.tsx | Tokenization flow diagram |
 | `/faq` | faq.tsx | FAQ |
 | `/about` | about.tsx | About/team/contact |
 | `/learn` | learn.tsx | Educational content |
 | `/grants` | grants.tsx | Grant funding info |
-| `/ai-insights` | ai-insights.tsx | AI-powered insights |
+| `/ai-insights` | ai-insights.tsx | AI-powered engagement analytics |
 | `/business` | business-layer.tsx | Business model details |
 | `/demand` | demand-dashboard.tsx | Market demand analytics |
 | `/founder` | founder-dashboard.tsx | Founder-specific metrics |
 | `/owner-response/:token` | owner-response.tsx | Owner response to nomination |
+| `/transfers` | transfers.tsx | Share transfer requests and history |
+| `/terms` | terms.tsx | Terms of Service (draft placeholder) |
+| `/privacy` | privacy.tsx | Privacy Policy (draft placeholder) |
+| `/risk-disclosure` | risk-disclosure.tsx | Risk categories with interactive acknowledgment |
 
 ---
 
@@ -432,14 +636,14 @@ FUNDING_TIMELINE_CONFIG = {
 
 | Service | File | Purpose |
 |---------|------|---------|
+| Audit Log | `server/services/auditLog.ts` | `logAuditEvent()` helper for system-wide event logging |
 | Blockchain | `server/services/blockchain.ts` | Web3 contract interaction (deploy, mint, read) |
-| Email | `server/services/email.ts` | SMTP via Nodemailer (purchase confirmations, refund notifications, proposal alerts) |
+| Email | `server/services/email.ts` | SMTP via Nodemailer (purchase confirmations, refund notifications, proposal alerts, phase change notices) |
+| Notifications | `server/services/notifications.ts` | Notification dispatch layer |
+| Owner Detection | `server/services/ownerDetection.ts` | Property owner lookup by address/coordinates |
 | Payments | `server/services/payments.ts` | Stripe payment intents, webhook processing |
 | Scheduler | `server/services/scheduler.ts` | Cron-like service for funding deadlines, phase auto-advance, proposal status updates |
-| Owner Detection | `server/services/ownerDetection.ts` | Property owner lookup by address/coordinates |
 | Tokenization | `server/services/tokenizationOrchestrator.ts` | End-to-end: create offering → deploy contract → set phases → go live |
-| Notifications | `server/services/notifications.ts` | Notification dispatch layer |
-| Rate Limiting | `server/middleware/rateLimit.ts` | Applied to purchase and voting endpoints |
 
 ---
 
@@ -447,66 +651,95 @@ FUNDING_TIMELINE_CONFIG = {
 
 ### PropertyToken.sol (ERC-1155)
 - **Roles**: DEFAULT_ADMIN, MINTER, PAUSER, WHITELIST_ADMIN, PHASE_ADVANCER, BURNER
-- **Property struct**: id, name, uri, totalSupply, mintedSupply, fundingTarget, fundingDeadline, currentPhase, isActive, isFunded, leagueScore
+- **Property struct**: id, name, uri, totalSupply, mintedSupply, fundingTarget, fundingDeadline, currentPhase, isActive, isFunded
 - **Phase pricing**: County 1.0x → State 1.5x → National 2.25x → International 3.0x (base $12.50)
 - **Voting power**: Phase multipliers — County 1.5x, State 1.25x, National 1.0x, International 0.75x
 - **Transfer locks**: Whitelist-only transfers until property is funded
-- **Key functions**: `mintTokens()`, `advancePhase()`, `markFunded()`, `updateLeagueScore()`, `burnFromOnFailure()`
-- **RevitaLeague**: `leagueScore` field + `seasonWins` mapping updated by PhaseManager
+- **Key functions**: `createProperty()`, `mintTokens()`, `advancePhase()`, `markFunded()`, `burnFromOnFailure()`, `getCurrentPrice()`, `getVotingPower()`, `addToWhitelist()`, `autoWhitelist()`
 
 ### Escrow.sol
-- **Roles**: DEFAULT_ADMIN
-- **Core**: Holds ETH deposits per property, tracks per-user contributions
-- **Purchase flow**: `purchase()` → mint tokens via PropertyToken → update league score
-- **Refund flow**: 3% APR calculated from deposit timestamp, tokens burned on refund
-- **Automation**: Chainlink AutomationCompatible for deadline monitoring
-- **Key functions**: `purchase()`, `processRefund()`, `checkUpkeep()`, `performUpkeep()`
+- **Roles**: DEFAULT_ADMIN, OPERATOR
+- **Core**: Holds ETH deposits per property, tracks per-user contributions, demand-adjusted targets
+- **Purchase flow**: `purchase()` → mint tokens via PropertyToken
+- **Refund flow**: 3% APR calculated from deposit timestamp, tokens burned on refund via `processRefunds()`
+- **Automation**: Chainlink AutomationCompatible for deadline monitoring (`checkUpkeep()`/`performUpkeep()`)
+- **Key functions**: `initializeEscrow()`, `purchase()`, `processRefunds()`, `calculateRefund()`, `releaseFunds()`, `updatePollDemand()`, `getDemandAdjustedTarget()`, `reportSuspiciousActivity()`
 
 ### Governance.sol
 - **Roles**: PROPOSER, EXECUTOR, RELAYER
 - **Voting**: Phase-weighted via PropertyToken.getVotingPower()
-- **Gasless voting**: EIP-712 typed signatures, relayer submits on behalf of voters
-- **Community polls**: Non-binding polls that can escalate to formal proposals
-- **AI moderation**: Proposal content screening before activation
-- **Key functions**: `createProposal()`, `castVote()`, `castVoteWithSignature()`, `executeProposal()`
-- **RevitaLeague**: Top-10 city proposals auto-mint bonus tokens; +0.75% APR for top-50 cities
+- **Gasless voting**: EIP-712 typed signatures via `castVoteBySignature()`, relayer submits on behalf of voters
+- **Vote-to-earn**: `getVoteToEarnBonus()` for participation incentives
+- **Key functions**: `createProposal()`, `castVote()`, `castVoteBySignature()`, `finalizeProposal()`, `executeProposal()`, `cancelProposal()`, `getActiveProposals()`
 
 ### PhaseManager.sol
-- **Roles**: DEFAULT_ADMIN
+- **Roles**: DEFAULT_ADMIN, OPERATOR
 - **Automation**: Chainlink Automation calls `checkUpkeep()`/`performUpkeep()` to auto-advance phases
-- **Threshold**: 75% engagement (ENGAGEMENT_THRESHOLD = 7500 BPS) + 7-day minimum per phase
-- **League updates**: `runLeagueUpdate()` called daily — calculates Forrester GDP scores, updates PropertyToken.leagueScore
-- **Key functions**: `registerProperty()`, `checkUpkeep()`, `performUpkeep()`, `runLeagueUpdate()`
+- **Threshold**: 75% engagement (ENGAGEMENT_THRESHOLD = 7500 BPS) + minimum phase duration
+- **Engagement tracking**: `startTracking()`, `updateEngagement()`, `calculateEngagement()` with nudge system
+- **Poll integration**: `recordPollParticipation()`, `updateEngagementWithPolls()`, `claimPollBoostBonus()`
+- **Key functions**: `startTracking()`, `updateEngagement()`, `checkSubscriptionAdvancement()`, `claimEngagementBonus()`, `getCommunityHealth()`
 
 ### Treasury.sol
-- **Roles**: EXECUTOR, SIGNER
-- **Multi-sig**: 2-of-3 confirmations required for disbursements
-- **Founder cut**: 1% (FOUNDER_CUT_BPS = 100), 24-month vesting, 90-day cliff
-- **Reserve verification**: Chainlink Functions oracle for on-chain reserve proof
-- **Competition fees**: 0.35% competition fee + 0.1% visit fee on RevitaLeague events
-- **Key functions**: `submitTransaction()`, `confirmTransaction()`, `executeTransaction()`, `claimFounderVesting()`
+- **Roles**: DEFAULT_ADMIN, SIGNER, EXECUTOR
+- **Multi-sig**: Configurable required confirmations for disbursements
+- **Founder cut**: 1% (FOUNDER_CUT_BPS = 100), accrued via `_accrueVestedCut()`, claimed via `claimVestedCuts()`
+- **Reserve verification**: Chainlink oracle via `verifyReserves()` and `verifyAndRecordReserves()`
+- **Key functions**: `submitTransaction()`, `confirmTransaction()`, `executeTransaction()`, `revokeConfirmation()`, `claimVestedCuts()`, `getClaimableVested()`, `verifyReserves()`
 
 ### Contract Interaction Flow
 ```
 User Purchase → Escrow.purchase()
   → PropertyToken.mintTokens() (mints ERC-1155)
-  → PropertyToken.updateLeagueScore() (boost rank)
   → Treasury receives funds
-  → Treasury auto-deducts 1% founder cut (vested)
+  → Treasury._accrueVestedCut() (1% founder cut accrued)
 
 Phase Advance → PhaseManager.performUpkeep() (Chainlink Automation)
   → PropertyToken.advancePhase()
   → Price increases (1.0x → 1.5x → 2.25x → 3.0x)
 
-Funding Failure → Escrow.processRefund()
-  → 3% APR interest calculated
+Funding Failure → Escrow.processRefunds()
+  → 3% APR interest calculated via calculateRefund()
   → PropertyToken.burnFromOnFailure() (burns tokens)
   → ETH + interest returned to investor
 
 Governance → Governance.createProposal()
-  → castVote() with phase-weighted voting power
-  → executeProposal() → Treasury.submitTransaction()
+  → castVote() or castVoteBySignature() with phase-weighted voting power
+  → finalizeProposal() → executeProposal() → Treasury.submitTransaction()
 ```
+
+---
+
+## Core Features
+
+### Investor Onboarding Gate
+Linear flow enforced by `InvestorOnboardingGate` component and server middleware:
+1. **Authenticate** via Replit Auth
+2. **Submit KYC** verification
+3. **Admin approves** KYC (status → `verified`)
+4. **Acknowledge risk disclosure** (writes timestamp to user record)
+5. **Purchase unlocked** — can now buy tokens
+
+### Token Purchase & Reconciliation
+Two-phase payment reconciliation:
+1. `POST /api/purchase` — create Stripe payment intent, purchase record with `reconciliationStatus: pending_payment`
+2. Stripe webhook confirms payment → `payment_received`
+3. Blockchain minting → `minting`
+4. Confirmation → `confirmed`
+5. Failure path: `failed_mint` or `refund_initiated` (only marks refunded after Stripe confirms)
+
+### Admin Reconciliation Dashboard
+- Lists stuck purchases (>10 minutes in pending state)
+- Retry action: re-attempts minting
+- Refund action: initiates Stripe refund
+
+### Email Notifications
+Transactional emails via SMTP/Nodemailer for:
+- Purchase confirmations
+- Refund notifications
+- Proposal alerts
+- Phase advancement notices
+- User can toggle via `emailNotificationsEnabled` preference
 
 ---
 
@@ -532,9 +765,9 @@ Governance → Governance.createProposal()
 | `SMTP_PORT` | Email server port |
 | `SMTP_USER` | Email username |
 | `SMTP_PASS` | Email password |
-| `DEFAULT_OBJECT_STORAGE_BUCKET_ID` | GCS bucket ID |
-| `PUBLIC_OBJECT_SEARCH_PATHS` | GCS public paths |
-| `PRIVATE_OBJECT_DIR` | GCS private directory |
+| `DEFAULT_OBJECT_STORAGE_BUCKET_ID` | Replit Object Storage bucket ID |
+| `PUBLIC_OBJECT_SEARCH_PATHS` | Object Storage public paths |
+| `PRIVATE_OBJECT_DIR` | Object Storage private directory |
 | `PRIVATE_KEY` | Blockchain wallet private key (for contract deployment) |
 
 ---
@@ -542,9 +775,13 @@ Governance → Governance.createProposal()
 ## Key Patterns
 
 - **Data flow**: Frontend → TanStack Query → `fetch(/api/...)` → Express route → IStorage → Drizzle → PostgreSQL
+- **Storage**: `IStorage` interface with `DatabaseStorage` (primary, PostgreSQL) and `MemStorage` (dev fallback) in `server/storage.ts`
 - **Cache invalidation**: `queryClient.invalidateQueries({ queryKey: [...] })` after mutations
 - **Form handling**: react-hook-form + zodResolver with Drizzle insert schemas
 - **Component imports**: `@/components/ui/*` (shadcn), `@/components/*` (app), `@/lib/*` (utils), `@shared/*` (schema)
 - **Styling**: Tailwind utility classes + HSL CSS variables for theming. Always use explicit `dark:` variants when not using configured utility classes
 - **Maps**: Leaflet for lightweight/homepage use, Mapbox for geocoding/advanced features
 - **Icons**: lucide-react for UI icons, react-icons/si for brand logos
+- **KYC note**: `kycStatus` is a `text` column (not enum) in `users` table, with values managed application-side. `requireKYCApproved` checks `kycStatus !== "verified"`
+- **Leaflet version**: react-leaflet@4.2.1 (v5 requires React 19, project uses React 18)
+- **db:push workaround**: If drizzle-kit push fails on enum prompts, use `psql "$DATABASE_URL" -c "..."` directly
