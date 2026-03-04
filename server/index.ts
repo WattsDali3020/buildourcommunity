@@ -8,7 +8,36 @@ import { startScheduler, stopScheduler } from "./services/scheduler";
 const app = express();
 
 app.use(helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "blob:", "https:", "http:"],
+      fontSrc: ["'self'", "data:"],
+      connectSrc: [
+        "'self'",
+        "https://*.mapbox.com",
+        "https://*.replit.com",
+        "wss://*.replit.com",
+        "https://api.stripe.com",
+        "https://*.base.org",
+        "https://mainnet.base.org",
+        "https://*.infura.io",
+        "https://*.alchemy.com",
+        "https://*.walletconnect.com",
+        "wss://*.walletconnect.com",
+        "https://*.walletconnect.org",
+        "wss://*.walletconnect.org",
+      ],
+      frameSrc: ["'self'", "https://js.stripe.com"],
+      workerSrc: ["'self'", "blob:"],
+      childSrc: ["'self'", "blob:"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+    },
+  },
   crossOriginEmbedderPolicy: false,
 }));
 const httpServer = createServer(app);

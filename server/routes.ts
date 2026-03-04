@@ -106,11 +106,13 @@ export async function registerRoutes(
     });
   });
 
-  app.post("/api/properties", async (req: Request, res: Response) => {
+  app.post("/api/properties", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const validatedData = insertPropertySchema.parse(req.body);
+      const validatedData = insertPropertySchema.parse({
+        ...req.body,
+        ownerId: req.session.userId,
+      });
       const property = await storage.createProperty(validatedData);
-      res.status(201).json(property);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Invalid property data", details: error.errors });
@@ -312,7 +314,10 @@ export async function registerRoutes(
   // Property Submissions API
   app.post("/api/property-submissions", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const validatedData = insertPropertySubmissionSchema.parse(req.body);
+      const validatedData = insertPropertySubmissionSchema.parse({
+        ...req.body,
+        userId: req.session.userId,
+      });
       const submission = await storage.createPropertySubmission(validatedData);
       res.status(201).json(submission);
     } catch (error) {
@@ -349,11 +354,14 @@ export async function registerRoutes(
     res.json(submissions);
   });
 
-  app.patch("/api/property-submissions/:id", async (req: Request, res: Response) => {
+  app.patch("/api/property-submissions/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const submission = await storage.getPropertySubmission(req.params.id);
       if (!submission) {
         return res.status(404).json({ error: "Submission not found" });
+      }
+      if (submission.userId !== req.session.userId) {
+        return res.status(403).json({ error: "You can only edit your own submissions" });
       }
       
       const updated = await storage.updatePropertySubmission(req.params.id, req.body);
@@ -363,11 +371,14 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/property-submissions/:id/submit", async (req: Request, res: Response) => {
+  app.post("/api/property-submissions/:id/submit", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const submission = await storage.getPropertySubmission(req.params.id);
       if (!submission) {
         return res.status(404).json({ error: "Submission not found" });
+      }
+      if (submission.userId !== req.session.userId) {
+        return res.status(403).json({ error: "You can only submit your own submissions" });
       }
       
       if (!submission.ownershipConfirmed || !submission.termsAccepted) {
@@ -381,7 +392,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/property-submissions/:id/status", async (req: Request, res: Response) => {
+  app.patch("/api/property-submissions/:id/status", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     try {
       const { status, reviewNotes, reviewedBy } = req.body;
       
@@ -407,11 +418,14 @@ export async function registerRoutes(
   });
 
   // Submission Documents API
-  app.post("/api/property-submissions/:id/documents", async (req: Request, res: Response) => {
+  app.post("/api/property-submissions/:id/documents", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const submission = await storage.getPropertySubmission(req.params.id);
       if (!submission) {
         return res.status(404).json({ error: "Submission not found" });
+      }
+      if (submission.userId !== req.session.userId) {
+        return res.status(403).json({ error: "You can only add documents to your own submissions" });
       }
       
       const { fileName, fileType, fileSize, storageKey, documentType } = req.body;
@@ -440,7 +454,14 @@ export async function registerRoutes(
     res.json(documents);
   });
 
-  app.delete("/api/property-submissions/:submissionId/documents/:docId", async (req: Request, res: Response) => {
+  app.delete("/api/property-submissions/:submissionId/documents/:docId", isAuthenticated, async (req: Request, res: Response) => {
+    const submission = await storage.getPropertySubmission(req.params.submissionId);
+    if (!submission) {
+      return res.status(404).json({ error: "Submission not found" });
+    }
+    if (submission.userId !== req.session.userId) {
+      return res.status(403).json({ error: "You can only delete documents from your own submissions" });
+    }
     const deleted = await storage.deleteSubmissionDocument(req.params.docId);
     if (!deleted) {
       return res.status(404).json({ error: "Document not found" });
@@ -451,7 +472,10 @@ export async function registerRoutes(
   // Property Nominations API
   app.post("/api/nominations", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const validatedData = insertPropertyNominationSchema.parse(req.body);
+      const validatedData = insertPropertyNominationSchema.parse({
+        ...req.body,
+        nominatorId: req.session.userId,
+      });
       const nomination = await storage.createPropertyNomination(validatedData);
       res.status(201).json(nomination);
     } catch (error) {
@@ -505,7 +529,7 @@ export async function registerRoutes(
   });
 
   // Owner detection routes
-  app.post("/api/owner-lookup/address", async (req: Request, res: Response) => {
+  app.post("/api/owner-lookup/address", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     const { address, city, state } = req.body;
     
     if (!address || !city || !state) {
@@ -516,7 +540,7 @@ export async function registerRoutes(
     res.json(result);
   });
 
-  app.post("/api/owner-lookup/coordinates", async (req: Request, res: Response) => {
+  app.post("/api/owner-lookup/coordinates", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     const { latitude, longitude } = req.body;
     
     if (typeof latitude !== "number" || typeof longitude !== "number") {
@@ -528,7 +552,7 @@ export async function registerRoutes(
   });
 
   // Admin route to approve a nomination for tokenization
-  app.post("/api/nominations/:id/approve", async (req: Request, res: Response) => {
+  app.post("/api/nominations/:id/approve", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     try {
       const nomination = await storage.getPropertyNomination(req.params.id);
       if (!nomination) {
@@ -555,7 +579,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/nominations/:id/lookup-owner", async (req: Request, res: Response) => {
+  app.post("/api/nominations/:id/lookup-owner", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     const nominationId = req.params.id;
     const nomination = await storage.getPropertyNomination(nominationId);
     
@@ -592,7 +616,7 @@ export async function registerRoutes(
     res.json(result);
   });
 
-  app.post("/api/nominations/:id/notify-owner", async (req: Request, res: Response) => {
+  app.post("/api/nominations/:id/notify-owner", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     const nominationId = req.params.id;
     const nomination = await storage.getPropertyNomination(nominationId);
     
@@ -718,7 +742,7 @@ export async function registerRoutes(
   });
 
   // Tokenization routes
-  app.post("/api/tokenize", async (req: Request, res: Response) => {
+  app.post("/api/tokenize", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     const { nominationId, propertyValue, tokenName, tokenSymbol, totalTokens } = req.body;
     
     if (!nominationId || !propertyValue || !tokenName || !tokenSymbol || !totalTokens) {
@@ -745,7 +769,7 @@ export async function registerRoutes(
     res.json(status);
   });
 
-  app.post("/api/offerings/:offeringId/advance-phase", async (req: Request, res: Response) => {
+  app.post("/api/offerings/:offeringId/advance-phase", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     const result = await advancePhase(req.params.offeringId);
     
     if (!result.success) {
@@ -778,7 +802,7 @@ export async function registerRoutes(
     res.json(result);
   });
 
-  app.post("/api/offerings/:offeringId/process-refunds", async (req: Request, res: Response) => {
+  app.post("/api/offerings/:offeringId/process-refunds", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     const result = await processRefunds(req.params.offeringId);
     
     if (!result.success) {

@@ -46,14 +46,14 @@ Preferred communication style: Simple, everyday language.
 - **Private Offerings**: Invite-only offerings with access codes and token allocation limits.
 - **Scheduler Service**: Background tasks for funding deadlines, phase advancements, and proposal statuses.
 - **Email Service**: Transactional emails for purchases, refunds, proposals, and phase changes.
-- **Security**: Helmet.js for security headers, session hardening, and rate limiting.
+- **Security**: Helmet.js with CSP enabled (self + Mapbox/Stripe/WalletConnect/Base), session hardening, rate limiting, auth middleware on all write endpoints.
 - **Audit Log**: System-wide event logging in `audit_log` table.
 - **Soft Delete**: `deletedAt` columns on financial tables.
 
 ### Smart Contract Architecture
 - **PropertyToken.sol**: ERC-1155 tokens with phase-based voting power, transfer locks.
 - **Escrow.sol**: Handles token purchases, 3% APR refunds, and token burning.
-- **Governance.sol**: Manages DAO voting with AI moderation, phase-weighted voting.
+- **Governance.sol**: Manages DAO voting with phase-weighted voting, gasless signatures.
 - **PhaseManager.sol**: Chainlink Automation for phase advancement.
 - **Treasury.sol**: Manages DAO funds, founder vesting.
 

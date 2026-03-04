@@ -128,7 +128,7 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 │           ├── use-mobile.tsx       # Mobile breakpoint hook
 │           └── use-upload.ts        # File upload hook
 ├── server/
-│   ├── index.ts                     # Express app bootstrap + Helmet.js (CSP disabled) + server start
+│   ├── index.ts                     # Express app bootstrap + Helmet.js (CSP enabled) + server start
 │   ├── routes.ts                    # All API route handlers (79 endpoints)
 │   ├── storage.ts                   # IStorage interface + MemStorage fallback
 │   ├── databaseStorage.ts           # DatabaseStorage — PostgreSQL implementation of IStorage
@@ -180,7 +180,7 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 
 ### Security Headers (server/index.ts)
 - **Helmet.js**: HSTS, X-Frame-Options, X-XSS-Protection, X-Content-Type-Options
-- **CSP**: Currently disabled (`contentSecurityPolicy: false`)
+- **CSP**: Enabled with directives: `default-src 'self'`, `script-src 'self' 'unsafe-inline' 'unsafe-eval'`, `style-src 'self' 'unsafe-inline'`, `img-src 'self' data: blob: https: http:`, `connect-src 'self' + Mapbox/Replit/Stripe/Base/WalletConnect domains`, `frame-src 'self' https://js.stripe.com`, `worker-src 'self' blob:`, `object-src 'none'`
 - **Additional middleware**: JSON body parsing with raw-body verify (for Stripe webhooks), URL encoding, API request logging, error handler
 
 ### Session Hardening (server/replit_integrations/auth/replitAuth.ts)
@@ -273,9 +273,7 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 - `startsAt`, `endsAt`, `isActive`
 
 **fundEscrow**
-- `id`, `offeringId` (FK), `totalUsdcDeposited`, `totalYieldEarned`, `currentYieldRate` (default "3.00")
-- `yieldProtocol` (default "aave_v3"), `yieldContractAddress`, `lastYieldAccrualAt`
-- `escrowWalletAddress`, `isActive` (boolean), `createdAt`
+- `id`, `offeringId` (FK), `totalUsdcDeposited`, `escrowWalletAddress`, `isActive` (boolean), `createdAt`
 
 **tokenPurchases**
 - `id`, `userId`, `offeringId`, `phaseId`, `tokenCount`, `pricePerToken`, `totalAmount`
@@ -413,7 +411,7 @@ FUNDING_TIMELINE_CONFIG = {
 |--------|------|------|-------------|
 | GET | `/api/properties` | No | List all properties |
 | GET | `/api/properties/:id` | No | Get property detail |
-| POST | `/api/properties` | No | Create property |
+| POST | `/api/properties` | Yes | Create property |
 
 ### Token Offerings & Phases
 | Method | Path | Auth | Description |
@@ -421,8 +419,8 @@ FUNDING_TIMELINE_CONFIG = {
 | GET | `/api/offerings/:offeringId/phases` | No | List phases for offering |
 | GET | `/api/offerings/:offeringId/active-phase` | No | Get current active phase |
 | GET | `/api/offerings/:offeringId/with-access` | No | Get offering with access check |
-| POST | `/api/offerings/:offeringId/advance-phase` | No | Advance to next phase |
-| POST | `/api/offerings/:offeringId/process-refunds` | No | Process 3% APR refunds |
+| POST | `/api/offerings/:offeringId/advance-phase` | Yes + Admin | Advance to next phase |
+| POST | `/api/offerings/:offeringId/process-refunds` | Yes + Admin | Process 3% APR refunds |
 
 ### Purchases & Holdings
 | Method | Path | Auth | Description |
@@ -467,12 +465,12 @@ FUNDING_TIMELINE_CONFIG = {
 | POST | `/api/property-submissions` | Yes | Create submission |
 | GET | `/api/property-submissions/:id` | No | Get submission |
 | GET | `/api/property-submissions` | No | List submissions |
-| PATCH | `/api/property-submissions/:id` | No | Update submission |
-| POST | `/api/property-submissions/:id/submit` | No | Submit for review |
-| PATCH | `/api/property-submissions/:id/status` | No | Update status (admin) |
-| POST | `/api/property-submissions/:id/documents` | No | Add document |
+| PATCH | `/api/property-submissions/:id` | Yes | Update submission |
+| POST | `/api/property-submissions/:id/submit` | Yes | Submit for review |
+| PATCH | `/api/property-submissions/:id/status` | Yes + Admin | Update status (admin) |
+| POST | `/api/property-submissions/:id/documents` | Yes | Add document |
 | GET | `/api/property-submissions/:id/documents` | No | List documents |
-| DELETE | `/api/property-submissions/:submissionId/documents/:docId` | No | Delete document |
+| DELETE | `/api/property-submissions/:submissionId/documents/:docId` | Yes | Delete document |
 | GET | `/api/submissions` | No | List submissions (alternate) |
 
 ### Property Nominations (Community Flow)
@@ -482,22 +480,22 @@ FUNDING_TIMELINE_CONFIG = {
 | GET | `/api/nominations` | No | List nominations |
 | GET | `/api/nominations/:id` | No | Get nomination |
 | POST | `/api/nominations/:id/vote` | No | Vote on nomination |
-| POST | `/api/nominations/:id/approve` | No | Approve nomination (admin) |
-| POST | `/api/nominations/:id/lookup-owner` | No | Trigger owner detection |
-| POST | `/api/nominations/:id/notify-owner` | No | Send owner notification |
+| POST | `/api/nominations/:id/approve` | Yes + Admin | Approve nomination |
+| POST | `/api/nominations/:id/lookup-owner` | Yes + Admin | Trigger owner detection |
+| POST | `/api/nominations/:id/notify-owner` | Yes + Admin | Send owner notification |
 | GET | `/api/owner-response/:token` | No | Get owner response page |
 | POST | `/api/owner-response/:token` | No | Submit owner response |
 
 ### Owner Lookup
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/api/owner-lookup/address` | No | Owner lookup by address |
-| POST | `/api/owner-lookup/coordinates` | No | Owner lookup by coordinates |
+| POST | `/api/owner-lookup/address` | Yes + Admin | Owner lookup by address |
+| POST | `/api/owner-lookup/coordinates` | Yes + Admin | Owner lookup by coordinates |
 
 ### Tokenization & Blockchain
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/api/tokenize` | No | Start tokenization process |
+| POST | `/api/tokenize` | Yes + Admin | Start tokenization process |
 | GET | `/api/tokenization-status/:propertyId` | No | Check tokenization status |
 | GET | `/api/blockchain/explorer/:type/:value` | No | Block explorer lookup |
 
