@@ -207,7 +207,8 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 
 ### Additional Security
 - **Risk Disclosure Enforcement**: Server-side check for `riskDisclosureAcknowledgedAt` on purchase endpoints
-- **IDOR Prevention**: Purchase endpoints use session `userId` (not request body)
+- **IDOR Prevention**: All create endpoints inject identity from session — `POST /api/properties` sets `ownerId`, `POST /api/property-submissions` sets `userId`, `POST /api/nominations` sets `nominatorId`, `POST /api/purchases` sets `userId` from `req.session.userId`. Client-supplied identity fields are overridden server-side.
+- **Ownership Authorization**: Property submission mutations (`PATCH`, `submit`, `documents`, `delete document`) verify `submission.userId === req.session.userId` and return 403 if the requesting user is not the submission owner.
 - **Soft Deletes**: `deletedAt` columns on financial tables (tokenPurchases, tokenHoldings, tokenOfferings, proposals, tokenRefunds)
 - **Audit Log**: All significant actions logged to `audit_log` table with userId, action, IP, timestamp
 
@@ -411,7 +412,7 @@ FUNDING_TIMELINE_CONFIG = {
 |--------|------|------|-------------|
 | GET | `/api/properties` | No | List all properties |
 | GET | `/api/properties/:id` | No | Get property detail |
-| POST | `/api/properties` | Yes | Create property |
+| POST | `/api/properties` | Yes | Create property (ownerId set from session) |
 
 ### Token Offerings & Phases
 | Method | Path | Auth | Description |
@@ -462,21 +463,21 @@ FUNDING_TIMELINE_CONFIG = {
 ### Property Submissions (Owner Flow)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/api/property-submissions` | Yes | Create submission |
+| POST | `/api/property-submissions` | Yes | Create submission (userId set from session) |
 | GET | `/api/property-submissions/:id` | No | Get submission |
 | GET | `/api/property-submissions` | No | List submissions |
-| PATCH | `/api/property-submissions/:id` | Yes | Update submission |
-| POST | `/api/property-submissions/:id/submit` | Yes | Submit for review |
+| PATCH | `/api/property-submissions/:id` | Yes + Owner | Update submission (owner-only) |
+| POST | `/api/property-submissions/:id/submit` | Yes + Owner | Submit for review (owner-only) |
 | PATCH | `/api/property-submissions/:id/status` | Yes + Admin | Update status (admin) |
-| POST | `/api/property-submissions/:id/documents` | Yes | Add document |
+| POST | `/api/property-submissions/:id/documents` | Yes + Owner | Add document (owner-only) |
 | GET | `/api/property-submissions/:id/documents` | No | List documents |
-| DELETE | `/api/property-submissions/:submissionId/documents/:docId` | Yes | Delete document |
+| DELETE | `/api/property-submissions/:submissionId/documents/:docId` | Yes + Owner | Delete document (owner-only) |
 | GET | `/api/submissions` | No | List submissions (alternate) |
 
 ### Property Nominations (Community Flow)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/api/nominations` | Yes | Create nomination |
+| POST | `/api/nominations` | Yes | Create nomination (nominatorId set from session) |
 | GET | `/api/nominations` | No | List nominations |
 | GET | `/api/nominations/:id` | No | Get nomination |
 | POST | `/api/nominations/:id/vote` | No | Vote on nomination |

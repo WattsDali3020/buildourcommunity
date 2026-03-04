@@ -46,7 +46,7 @@ Preferred communication style: Simple, everyday language.
 - **Private Offerings**: Invite-only offerings with access codes and token allocation limits.
 - **Scheduler Service**: Background tasks for funding deadlines, phase advancements, and proposal statuses.
 - **Email Service**: Transactional emails for purchases, refunds, proposals, and phase changes.
-- **Security**: Helmet.js with CSP enabled (self + Mapbox/Stripe/WalletConnect/Base), session hardening, rate limiting, auth middleware on all write endpoints.
+- **Security**: Helmet.js with CSP enabled (self + Mapbox/Stripe/WalletConnect/Base), session hardening, rate limiting, auth middleware on all write endpoints, server-side userId injection on all create endpoints (properties, submissions, nominations, purchases), ownership authorization on submission mutations (403 for non-owners), owner-lookup endpoints restricted to admin-only.
 - **Audit Log**: System-wide event logging in `audit_log` table.
 - **Soft Delete**: `deletedAt` columns on financial tables.
 
