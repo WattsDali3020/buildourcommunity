@@ -177,7 +177,7 @@ export default function Litepaper() {
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-1.5 text-sm font-medium text-primary mb-6 print:hidden">
                 <FileText className="h-4 w-4" />
-                Technical Litepaper v3.0
+                Technical Litepaper v3.1
               </div>
               
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6" data-testid="litepaper-title">
@@ -1628,17 +1628,19 @@ function getClaimableVested(address founder) public view returns (uint256) {
                 <Subsection title="Additional Security Measures">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[
-                      "Multi-party computation for key management",
+                      "OpenZeppelin v5.0 security libraries (AccessControl, ReentrancyGuard, ERC-1155)",
+                      "Chainlink Proof of Reserve verification for treasury audits",
+                      "Content Security Policy (CSP) preventing XSS and unauthorized resource loading",
+                      "Server-side identity injection on key create endpoints — prevents impersonation on properties, submissions, nominations, and purchases",
+                      "Ownership authorization on submission mutations — only resource owners can edit, submit, or manage documents",
+                      "Stripe webhook signature verification with constructEvent",
+                      "Rate limiting on purchases, votes, and global writes (30 req/min per IP)",
+                      "Authenticated file uploads — no anonymous storage access",
                       "Third-party smart contract audits (planned)",
-                      "Bug bounty program (up to $100,000)",
-                      "OpenZeppelin v5.0 security libraries",
-                      "ReentrancyGuard on all state-changing functions",
-                      "AccessControl for role-based permissions",
-                      "Chainlink Proof of Reserve verification",
-                      "24/7 monitoring and incident response"
+                      "Bug bounty program (up to $100,000)"
                     ].map((item, i) => (
-                      <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                        <CheckCircle2 className="h-4 w-4 text-primary" />
+                      <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                        <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                         <span className="text-sm">{item}</span>
                       </div>
                     ))}
@@ -1812,8 +1814,8 @@ function getClaimableVested(address founder) public view returns (uint256) {
                   />
                 </Subsection>
 
-                <Subsection title="Security Practices">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Subsection title="Smart Contract Security">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                     {[
                       "ReentrancyGuard on all state-changing functions",
                       "AccessControl with granular role management",
@@ -1824,6 +1826,32 @@ function getClaimableVested(address founder) public view returns (uint256) {
                     ].map((item, i) => (
                       <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
                         <CheckCircle2 className="h-4 w-4 text-primary" />
+                        <span className="text-sm">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Subsection>
+
+                <Subsection title="Platform Security">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    Beyond smart contracts, the platform backend enforces defense-in-depth security at every layer 
+                    of the API and data access pipeline.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      "Content Security Policy (CSP) enabled via Helmet.js — restricts script, style, connect, and frame sources to trusted domains only",
+                      "Auth middleware on sensitive write endpoints — property creation, submissions, nominations, purchases, governance proposals, and admin actions require authenticated session",
+                      "Server-side identity injection on key create endpoints — userId, ownerId, and nominatorId set from session on properties, submissions, nominations, and purchases",
+                      "Ownership authorization on submission mutations — edit, submit, document upload, and document delete verify resource ownership and return 403 for non-owners",
+                      "Admin-only gating — owner lookup, tokenization, phase advancement, refund processing, KYC management, and reconciliation restricted to admin role",
+                      "Stripe webhook signature verification via constructEvent with STRIPE_WEBHOOK_SECRET and raw body capture",
+                      "Rate limiting — global write rate limit (30 req/min per IP), plus endpoint-specific limits on purchases and votes",
+                      "Session hardening — sameSite lax cookies, 8-hour expiration, encrypted with SESSION_SECRET",
+                      "Authenticated file uploads — signed upload URLs require login, preventing anonymous storage abuse",
+                      "Audit logging — significant actions logged to audit_log table with userId, action, IP, and timestamp"
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                        <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                         <span className="text-sm">{item}</span>
                       </div>
                     ))}
@@ -1984,7 +2012,8 @@ function getClaimableVested(address founder) public view returns (uint256) {
                       "Service provider marketplace with competitive bidding",
                       "Georgia county-level GDP impact simulator (159 counties, 4 adoption tiers)",
                       "RevitaLeague competition layer (4 leagues, RevitaCup, cross-county rivalries)",
-                      "Economic impact cards on property detail with ARC distress classification"
+                      "Economic impact cards on property detail with ARC distress classification",
+                      "Platform security hardening — CSP, auth middleware on all write endpoints, ownership authorization, server-side identity injection, Stripe webhook verification, authenticated file uploads"
                     ]},
                     { quarter: "Q2 2026", status: "upcoming", items: [
                       "Security audits (third-party)",
@@ -2086,7 +2115,7 @@ function getClaimableVested(address founder) public view returns (uint256) {
 
               <div className="py-16 text-center">
                 <p className="text-sm text-muted-foreground mb-4">
-                  RevitaHub Technical Litepaper v3.0 — March 2026
+                  RevitaHub Technical Litepaper v3.1 — March 2026
                 </p>
                 <p className="text-xs text-muted-foreground">
                   &copy; {new Date().getFullYear()} Build Our Community, LLC. All rights reserved.

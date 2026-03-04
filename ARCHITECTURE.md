@@ -207,7 +207,7 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 
 ### Additional Security
 - **Risk Disclosure Enforcement**: Server-side check for `riskDisclosureAcknowledgedAt` on purchase endpoints
-- **IDOR Prevention**: All create endpoints inject identity from session — `POST /api/properties` sets `ownerId`, `POST /api/property-submissions` sets `userId`, `POST /api/nominations` sets `nominatorId`, `POST /api/purchases` sets `userId` from `req.session.userId`. Client-supplied identity fields are overridden server-side.
+- **IDOR Prevention**: Key create endpoints inject identity from session — `POST /api/properties` sets `ownerId`, `POST /api/property-submissions` sets `userId`, `POST /api/nominations` sets `nominatorId`, `POST /api/purchases` sets `userId` from `req.session.userId`. Client-supplied identity fields are overridden server-side.
 - **Ownership Authorization**: Property submission mutations (`PATCH`, `submit`, `documents`, `delete document`) verify `submission.userId === req.session.userId` and return 403 if the requesting user is not the submission owner.
 - **Soft Deletes**: `deletedAt` columns on financial tables (tokenPurchases, tokenHoldings, tokenOfferings, proposals, tokenRefunds)
 - **Stripe Webhook Verification**: `POST /api/webhooks/stripe` uses `stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET)` for signature verification. Raw body captured via Express JSON `verify` callback. Returns 400 on invalid signature. Includes idempotency check to prevent duplicate payment processing.
