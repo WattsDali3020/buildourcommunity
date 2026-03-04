@@ -41,7 +41,7 @@ const sections = [
     title: "4. Platform Disclaimers",
     content: [
       "RevitaHub is a technology platform operated by Build Our Community, LLC, a Georgia limited liability company. It is not a registered broker-dealer, investment advisor, or securities exchange.",
-      "The platform is currently in beta development. Features, functionality, and availability may change without notice.",
+      "The platform is currently in alpha development. Features, functionality, and availability may change without notice.",
       "Build Our Community, LLC does not guarantee the accuracy, completeness, or timeliness of any information provided on the platform, including property valuations, projected returns, or community impact estimates.",
       "AI-generated insights, governance nudges, and impact simulations are provided for informational purposes only and should not be relied upon as the sole basis for investment decisions.",
       "The platform relies on third-party services including blockchain networks, oracle providers (Chainlink), and payment processors. Disruptions to these services may affect platform functionality.",

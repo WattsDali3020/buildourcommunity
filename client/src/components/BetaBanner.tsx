@@ -14,7 +14,7 @@ export function BetaBanner() {
       <div className="bg-primary text-primary-foreground py-2 px-4 text-center text-sm relative z-50">
         <div className="mx-auto max-w-7xl flex items-center justify-center gap-4 flex-wrap">
           <span className="font-medium">
-            Beta Prototype - Join the waitlist for updates and early access
+            Alpha Prototype - Join the waitlist for updates and early access
           </span>
           <Button 
             size="sm" 
