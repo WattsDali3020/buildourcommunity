@@ -44,12 +44,14 @@ Preferred communication style: Simple, everyday language.
 
 ### Core Features
 - **Wallet Connection**: RainbowKit + wagmi for Base network.
-- **KYC Verification**: User identity verification with admin approval.
-- **Token Purchase Flow**: Includes phase restrictions, per-person limits, and payment method selection.
-- **Investor Dashboard**: Portfolio metrics, voting power, KYC status, My Holdings with per-property phase multipliers.
+- **KYC Verification**: User identity verification with admin approval. `requireKYCApproved` middleware gates all purchase endpoints.
+- **Investor Onboarding Gate**: Linear flow (Auth → KYC Submit → KYC Approved → Risk Disclosure Acknowledged → Purchase Unlocked) enforced in TokenPurchaseModal and SimplePurchaseModal.
+- **Token Purchase Flow**: Includes phase restrictions, per-person limits, payment method selection, and two-phase payment reconciliation (Stripe → pending → blockchain confirm → confirmed).
+- **Investor Dashboard**: Portfolio metrics, voting power, KYC status, My Holdings with per-property phase multipliers, refund request section with 3% APR calculations.
 - **Governance Voting**: API-backed proposals with token-weighted voting and 75% phase engagement meters.
-- **Admin Panel**: Property/nomination approval, KYC management.
-- **Investor Protection API**: 3% APR refund calculation for unfunded properties.
+- **Admin Panel**: Property/nomination approval, KYC management, payment reconciliation dashboard (stuck purchases >10 min).
+- **Investor Protection API**: 3% APR refund calculation for unfunded properties. Refund request UI on dashboard.
+- **Transfers Page**: `/transfers` page for initiating and viewing share transfer requests.
 - **Impact Simulator**: `/impact` page with Georgia county-level adoption scenarios (5%–100%), GDP multiplier projections, randomized sample projects, founder revenue scaling, and smart contract integration explainers. Data module at `client/src/lib/georgia-impact-data.ts`.
 - **Economic Impact Cards**: Property detail pages show county distress level (ARC classification), economic/social/risk scores, GDP multiplier, leverage rank, investment preview with "What Your $12.50 Does" ripple-effect chain, and Chainlink oracle proof placeholder.
 - **Community Wishlist**: Public page with zip-code-driven business voting, predefined business categories (Grocery, Medical, etc.), vote percentages, and community need submission.
@@ -63,8 +65,13 @@ Preferred communication style: Simple, everyday language.
 - **Multi-Sig Treasury**: 2-of-3 multi-sig for operational disbursements.
 - **Regulatory Compliance**: On-chain recording of KYC/AML checks and audit events.
 - **Scheduler Service**: Manages funding deadlines, phase advancements, and proposal statuses.
-- **Email Service**: For purchase confirmations, refund notifications, and proposal alerts.
-- **Rate Limiting**: Applied to critical endpoints.
+- **Email Service**: For purchase confirmations, refund notifications, and proposal alerts. User email preference toggle.
+- **Rate Limiting**: Applied to critical endpoints. Global write rate limit (30 req/min) on all POST/PATCH/DELETE.
+- **Security Headers**: Helmet.js for HSTS, CSP, X-Frame-Options, XSS protection.
+- **Audit Log**: `audit_log` table tracking purchases, votes, KYC changes, admin actions with IP/timestamp.
+- **Soft Delete**: `deletedAt` columns on all financial tables (tokenPurchases, tokenHoldings, tokenOfferings, proposals, tokenRefunds).
+- **Legal Pages**: `/terms`, `/privacy`, `/risk-disclosure` (draft placeholders pending legal counsel).
+- **Risk Disclosure**: Interactive acknowledgment flow that writes timestamp to user record.
 
 ### Smart Contract Architecture
 - **PropertyToken.sol**: ERC-1155 tokens with phase-based voting power, transfer locks, and burner role for escrow.

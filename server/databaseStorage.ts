@@ -16,11 +16,13 @@ import {
   type Waitlist,
   type Wish, type InsertWish,
   type ServiceBid, type InsertServiceBid,
+  type ShareTransfer,
+  type TokenRefund,
   PHASE_CONFIG, calculatePhasePrice, getPhaseAllocation,
   users, properties, tokenOfferings, offeringPhases, tokenPurchases, 
   tokenHoldings, proposals, votes, propertySubmissions, submissionDocuments,
   propertyNominations, desiredUseVotes, privateOfferingInvites, propertyGrants, waitlist, wishes,
-  serviceBids
+  serviceBids, shareTransfers, tokenRefunds
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
@@ -920,5 +922,62 @@ export class DatabaseStorage implements IStorage {
       .where(eq(serviceBids.id, id))
       .returning();
     return updated || undefined;
+  }
+
+  async getUserShareTransfers(userId: string): Promise<ShareTransfer[]> {
+    return db.select().from(shareTransfers).where(eq(shareTransfers.userId, userId)).orderBy(desc(shareTransfers.requestedAt));
+  }
+
+  async createShareTransfer(transfer: { userId: string; fromOfferingId: string; toOfferingId: string; tokenCount: number; originalValue: string; transferValue: string; recipientWalletAddress?: string }): Promise<ShareTransfer> {
+    const [entry] = await db.insert(shareTransfers).values({
+      userId: transfer.userId,
+      fromOfferingId: transfer.fromOfferingId,
+      toOfferingId: transfer.toOfferingId,
+      tokenCount: transfer.tokenCount,
+      originalValue: transfer.originalValue,
+      transferValue: transfer.transferValue,
+    }).returning();
+    return entry;
+  }
+
+  async getUserRefunds(userId: string): Promise<TokenRefund[]> {
+    return db.select().from(tokenRefunds).where(eq(tokenRefunds.userId, userId)).orderBy(desc(tokenRefunds.requestedAt));
+  }
+
+  async createRefundRequest(refund: { userId: string; offeringId: string; tokenCount: number; originalAmount: string; interestEarned: string; totalRefundAmount: string }): Promise<TokenRefund> {
+    const [entry] = await db.insert(tokenRefunds).values({
+      userId: refund.userId,
+      offeringId: refund.offeringId,
+      tokenCount: refund.tokenCount,
+      originalAmount: refund.originalAmount,
+      interestEarned: refund.interestEarned,
+      totalRefundAmount: refund.totalRefundAmount,
+    }).returning();
+    return entry;
+  }
+
+  async updatePurchaseReconciliationStatus(id: string, reconciliationStatus: TokenPurchase["reconciliationStatus"]): Promise<TokenPurchase | undefined> {
+    const [updated] = await db
+      .update(tokenPurchases)
+      .set({ reconciliationStatus })
+      .where(eq(tokenPurchases.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async getStuckPurchases(minutesThreshold: number): Promise<TokenPurchase[]> {
+    const cutoff = new Date(Date.now() - minutesThreshold * 60 * 1000);
+    return db.select().from(tokenPurchases)
+      .where(
+        and(
+          sql`${tokenPurchases.reconciliationStatus} IN ('pending_payment', 'payment_received', 'minting')`,
+          sql`${tokenPurchases.purchasedAt} < ${cutoff}`
+        )
+      )
+      .orderBy(desc(tokenPurchases.purchasedAt));
+  }
+
+  async getAllPurchases(): Promise<TokenPurchase[]> {
+    return db.select().from(tokenPurchases).orderBy(desc(tokenPurchases.purchasedAt));
   }
 }

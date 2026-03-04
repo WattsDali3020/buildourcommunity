@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PortfolioOverview } from "@/components/PortfolioOverview";
@@ -10,11 +10,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Settings, Bell, Wallet, TrendingUp, Vote, DollarSign, Award, Target, Users, Zap, Shield, Star, Lock, CheckCircle, Trophy, Hammer, Crown, ArrowRight } from "lucide-react";
+import { Settings, Bell, Wallet, TrendingUp, Vote, DollarSign, Award, Target, Users, Zap, Shield, Star, Lock, CheckCircle, Trophy, Hammer, Crown, ArrowRight, RefreshCw, ArrowRightLeft } from "lucide-react";
 import { useAccount } from "wagmi";
 import { WalletButton } from "@/components/WalletButton";
 import { Link } from "wouter";
-import type { User, TokenHolding } from "@shared/schema";
+import type { User, TokenHolding, TokenRefund } from "@shared/schema";
+import { calculateRefundWithInterest } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { generateLeagueCities, getBuilderProfile, getRankBadge, type BuilderProfile as BuilderProfileType } from "@/lib/league-data";
 
 interface Achievement {
@@ -293,6 +296,131 @@ function BuilderLeagueCard({
   );
 }
 
+function RefundRequestSection({ holdings, user }: { holdings: TokenHolding[]; user: User | null | undefined }) {
+  const { toast } = useToast();
+
+  const { data: refunds = [] } = useQuery<TokenRefund[]>({
+    queryKey: ["/api/user/refunds"],
+    enabled: !!user,
+  });
+
+  const refundMutation = useMutation({
+    mutationFn: async (data: { offeringId: string; tokenCount: number }) => {
+      const res = await apiRequest("POST", "/api/refunds", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Refund request submitted", description: "Your refund request is being processed." });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/refunds"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Refund request failed", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const eligibleHoldings = holdings.map((h) => {
+    const originalAmount = h.tokenCount * parseFloat(h.averagePurchasePrice || "0");
+    const purchaseDate = h.updatedAt ? new Date(h.updatedAt) : new Date();
+    const { interest, total } = calculateRefundWithInterest(originalAmount, purchaseDate);
+    return { holding: h, originalAmount, interest, total };
+  });
+
+  if (eligibleHoldings.length === 0 && refunds.length === 0) return null;
+
+  return (
+    <Card className="mb-8" data-testid="section-refund-requests">
+      <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <RefreshCw className="h-5 w-5 text-primary" />
+            Refund Requests
+          </CardTitle>
+          <CardDescription>
+            Request a refund for unfunded properties. Refunds include 3% APR compensation.
+          </CardDescription>
+        </div>
+        <Link href="/transfers">
+          <Button variant="outline" size="sm" data-testid="link-view-transfers">
+            <ArrowRightLeft className="h-4 w-4 mr-1" />
+            Transfer Instead
+          </Button>
+        </Link>
+      </CardHeader>
+      <CardContent>
+        {eligibleHoldings.length > 0 && (
+          <div className="space-y-3 mb-6">
+            <p className="text-sm font-medium text-muted-foreground">Eligible Holdings</p>
+            {eligibleHoldings.map(({ holding, originalAmount, interest, total }, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between gap-4 p-4 rounded-md bg-muted/30 border"
+                data-testid={`refund-eligible-${index}`}
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-sm">Property #{holding.offeringId.slice(0, 8)}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {holding.tokenCount} tokens @ ${parseFloat(holding.averagePurchasePrice || "0").toFixed(2)}/token
+                  </p>
+                  <div className="flex items-center gap-3 mt-1 flex-wrap">
+                    <span className="text-xs text-muted-foreground">
+                      Original: ${originalAmount.toFixed(2)}
+                    </span>
+                    <span className="text-xs text-primary font-medium">
+                      +${interest.toFixed(2)} interest (3% APR)
+                    </span>
+                    <span className="text-sm font-semibold" data-testid={`text-refund-total-${index}`}>
+                      Total: ${total.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => refundMutation.mutate({ offeringId: holding.offeringId, tokenCount: holding.tokenCount })}
+                  disabled={refundMutation.isPending}
+                  data-testid={`button-request-refund-${index}`}
+                >
+                  Request Refund
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {refunds.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-muted-foreground">Previous Refund Requests</p>
+            {refunds.map((refund, index) => (
+              <div
+                key={refund.id}
+                className="flex items-center justify-between gap-3 p-3 rounded-md bg-muted/30 border"
+                data-testid={`refund-history-${index}`}
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{refund.tokenCount} tokens</p>
+                  <p className="text-xs text-muted-foreground">
+                    {refund.requestedAt ? new Date(refund.requestedAt).toLocaleDateString() : "Pending"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-sm font-medium">
+                    ${parseFloat(refund.totalRefundAmount || "0").toFixed(2)}
+                  </span>
+                  <Badge
+                    variant={refund.status === "completed" ? "default" : refund.status === "failed" ? "destructive" : "secondary"}
+                  >
+                    {refund.status}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Dashboard() {
   const { address, isConnected } = useAccount();
 
@@ -470,7 +598,7 @@ export default function Dashboard() {
               {holdings.length > 0 ? (
                 <div className="space-y-3">
                   {holdings.map((h, index) => {
-                    const phase = h.purchasePhase || "county";
+                    const phase = (h as any).purchasePhase || "county";
                     const multiplierMap: Record<string, { label: string; value: number; color: string }> = {
                       county: { label: "County", value: 1.5, color: "text-green-500" },
                       state: { label: "State", value: 1.25, color: "text-blue-500" },
@@ -491,7 +619,7 @@ export default function Dashboard() {
                             <DollarSign className="h-5 w-5 text-primary" />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-medium text-sm truncate">Property #{h.propertyId}</p>
+                            <p className="font-medium text-sm truncate">Property #{(h as any).propertyId || h.offeringId.slice(0, 8)}</p>
                             <div className="flex items-center gap-2 mt-0.5">
                               <Badge variant="outline" className="text-xs">
                                 {phaseInfo.label}
@@ -529,6 +657,8 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
+
+          <RefundRequestSection holdings={holdings} user={user} />
 
           <BuilderLeagueCard
             holdings={holdings}

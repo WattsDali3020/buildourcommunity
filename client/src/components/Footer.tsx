@@ -119,12 +119,15 @@ export function Footer() {
             <p className="text-sm text-muted-foreground">
               2026 Build Our Community, LLC (Georgia, USA). All rights reserved.
             </p>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center flex-wrap gap-4 text-sm text-muted-foreground">
               <Link href="/privacy" className="hover:text-foreground transition-colors" data-testid="link-privacy">
                 Privacy Policy
               </Link>
               <Link href="/terms" className="hover:text-foreground transition-colors" data-testid="link-terms">
                 Terms of Service
+              </Link>
+              <Link href="/risk-disclosure" className="hover:text-foreground transition-colors" data-testid="link-risk-disclosure">
+                Risk Disclosure
               </Link>
             </div>
           </div>

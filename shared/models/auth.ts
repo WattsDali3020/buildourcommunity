@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, varchar, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, varchar, pgEnum, boolean } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
@@ -16,6 +16,8 @@ export const users = pgTable("users", {
   role: userRoleEnum("role").default("user"),
   kycStatus: text("kyc_status").default("pending"),
   kycVerifiedAt: timestamp("kyc_verified_at"),
+  riskDisclosureAcknowledgedAt: timestamp("risk_disclosure_acknowledged_at"),
+  emailNotificationsEnabled: boolean("email_notifications_enabled").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

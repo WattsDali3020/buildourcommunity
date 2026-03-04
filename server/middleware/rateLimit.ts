@@ -54,6 +54,12 @@ export const authRateLimit = rateLimit({
   message: "Too many authentication attempts, please try again later",
 });
 
+export const globalWriteRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  maxRequests: 30,
+  message: "Too many requests, please try again later",
+});
+
 setInterval(() => {
   const now = Date.now();
   const keys = Array.from(rateLimitStore.keys());

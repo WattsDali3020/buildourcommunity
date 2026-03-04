@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, decimal, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, decimal, timestamp, boolean, pgEnum, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { users, sessions, type User, type UpsertUser } from "./models/auth";
@@ -118,6 +118,7 @@ export const tokenOfferings = pgTable("token_offerings", {
   offeringType: offeringTypeEnum("offering_type").default("public"),
   accessCode: text("access_code"),
   createdAt: timestamp("created_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertTokenOfferingSchema = createInsertSchema(tokenOfferings).omit({
@@ -184,6 +185,15 @@ export const purchaseStatusEnum = pgEnum("purchase_status", [
   "refunded"
 ]);
 
+export const reconciliationStatusEnum = pgEnum("reconciliation_status", [
+  "pending_payment",
+  "payment_received",
+  "minting",
+  "confirmed",
+  "failed_mint",
+  "refund_initiated"
+]);
+
 export const tokenPurchases = pgTable("token_purchases", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id).notNull(),
@@ -199,7 +209,9 @@ export const tokenPurchases = pgTable("token_purchases", {
   transactionHash: text("transaction_hash"),
   usdcTransactionHash: text("usdc_transaction_hash"),
   status: purchaseStatusEnum("status").default("pending"),
+  reconciliationStatus: reconciliationStatusEnum("reconciliation_status").default("pending_payment"),
   purchasedAt: timestamp("purchased_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertTokenPurchaseSchema = createInsertSchema(tokenPurchases).omit({
@@ -221,6 +233,7 @@ export const tokenHoldings = pgTable("token_holdings", {
   averagePurchasePrice: decimal("average_purchase_price", { precision: 10, scale: 2 }).notNull(),
   votingPower: integer("voting_power").notNull(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export type TokenHolding = typeof tokenHoldings.$inferSelect;
@@ -245,6 +258,7 @@ export const tokenRefunds = pgTable("token_refunds", {
   status: refundStatusEnum("status").default("pending"),
   requestedAt: timestamp("requested_at").defaultNow(),
   processedAt: timestamp("processed_at"),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export type TokenRefund = typeof tokenRefunds.$inferSelect;
@@ -337,6 +351,7 @@ export const proposals = pgTable("proposals", {
   startsAt: timestamp("starts_at"),
   endsAt: timestamp("ends_at"),
   createdAt: timestamp("created_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertProposalSchema = createInsertSchema(proposals).omit({
@@ -953,3 +968,16 @@ export function calculatePhasePrice(basePrice: number, phase: keyof typeof PHASE
 export function getPhaseAllocation(totalSupply: number, phase: keyof typeof PHASE_CONFIG): number {
   return Math.floor(totalSupply * (PHASE_CONFIG[phase].allocationPercent / 100));
 }
+
+export const auditLog = pgTable("audit_log", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id"),
+  action: varchar("action", { length: 255 }).notNull(),
+  targetTable: varchar("target_table", { length: 255 }),
+  targetId: varchar("target_id", { length: 255 }),
+  metadata: text("metadata"),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+export type AuditLog = typeof auditLog.$inferSelect;

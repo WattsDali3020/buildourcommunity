@@ -18,6 +18,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Wallet, AlertCircle, Loader2 } from "lucide-react";
+import { InvestorOnboardingGate } from "@/components/InvestorOnboardingGate";
 import type { TokenOffering, OfferingPhase, User } from "@shared/schema";
 
 interface TokenPurchaseModalProps {
@@ -76,8 +77,8 @@ export function TokenPurchaseModal({
     },
   });
 
-  const isKYCVerified = user?.kycStatus === "verified";
-  const canPurchase = isKYCVerified && activePhase?.isActive;
+  const isOnboardingComplete = !!user && user.kycStatus === "verified" && !!user.riskDisclosureAcknowledgedAt;
+  const canPurchase = isOnboardingComplete && activePhase?.isActive;
 
   const getPhaseInfo = () => {
     if (!activePhase) return null;
@@ -100,129 +101,115 @@ export function TokenPurchaseModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          {activePhase && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Current Phase</span>
-              <Badge variant="secondary">{getPhaseInfo()}</Badge>
-            </div>
-          )}
+        <InvestorOnboardingGate user={user}>
+          <div className="space-y-4 py-4">
+            {activePhase && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Current Phase</span>
+                <Badge variant="secondary">{getPhaseInfo()}</Badge>
+              </div>
+            )}
 
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Price per Token</span>
-            <span className="font-semibold">${pricePerToken.toFixed(2)}</span>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Price per Token</span>
+              <span className="font-semibold">${pricePerToken.toFixed(2)}</span>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <Label htmlFor="tokenCount">Number of Tokens</Label>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setTokenCount(Math.max(1, tokenCount - 1))}
+                  disabled={tokenCount <= 1}
+                >
+                  -
+                </Button>
+                <Input
+                  id="tokenCount"
+                  type="number"
+                  min={1}
+                  max={maxTokens}
+                  value={tokenCount}
+                  onChange={(e) =>
+                    setTokenCount(Math.min(maxTokens, Math.max(1, parseInt(e.target.value) || 1)))
+                  }
+                  className="w-24 text-center"
+                  data-testid="input-token-count"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setTokenCount(Math.min(maxTokens, tokenCount + 1))}
+                  disabled={tokenCount >= maxTokens}
+                >
+                  +
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Max {maxTokens} tokens per person in this phase
+              </p>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <Label>Payment Method</Label>
+              <RadioGroup
+                value={paymentMethod}
+                onValueChange={(value) => setPaymentMethod(value as "card" | "usdc")}
+              >
+                <div className="flex items-center space-x-2 p-3 border rounded-md hover-elevate">
+                  <RadioGroupItem value="card" id="card" data-testid="radio-payment-card" />
+                  <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer flex-1">
+                    <CreditCard className="h-4 w-4" />
+                    Credit/Debit Card
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 p-3 border rounded-md hover-elevate">
+                  <RadioGroupItem value="usdc" id="usdc" data-testid="radio-payment-usdc" />
+                  <Label htmlFor="usdc" className="flex items-center gap-2 cursor-pointer flex-1">
+                    <Wallet className="h-4 w-4" />
+                    USDC (Crypto)
+                    {!isConnected && (
+                      <Badge variant="outline" className="ml-auto">Connect Wallet</Badge>
+                    )}
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between text-lg font-semibold">
+              <span>Total</span>
+              <span data-testid="text-total-amount">${totalAmount.toFixed(2)}</span>
+            </div>
           </div>
 
-          {!isKYCVerified && (
-            <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-md">
-              <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium text-destructive">Verification Required</p>
-                <p className="text-muted-foreground">
-                  Complete identity verification in your dashboard before purchasing.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {isKYCVerified && (
-            <>
-              <Separator />
-
-              <div className="space-y-2">
-                <Label htmlFor="tokenCount">Number of Tokens</Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setTokenCount(Math.max(1, tokenCount - 1))}
-                    disabled={tokenCount <= 1}
-                  >
-                    -
-                  </Button>
-                  <Input
-                    id="tokenCount"
-                    type="number"
-                    min={1}
-                    max={maxTokens}
-                    value={tokenCount}
-                    onChange={(e) =>
-                      setTokenCount(Math.min(maxTokens, Math.max(1, parseInt(e.target.value) || 1)))
-                    }
-                    className="w-24 text-center"
-                    data-testid="input-token-count"
-                  />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setTokenCount(Math.min(maxTokens, tokenCount + 1))}
-                    disabled={tokenCount >= maxTokens}
-                  >
-                    +
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Max {maxTokens} tokens per person in this phase
-                </p>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <Label>Payment Method</Label>
-                <RadioGroup
-                  value={paymentMethod}
-                  onValueChange={(value) => setPaymentMethod(value as "card" | "usdc")}
-                >
-                  <div className="flex items-center space-x-2 p-3 border rounded-md hover-elevate">
-                    <RadioGroupItem value="card" id="card" data-testid="radio-payment-card" />
-                    <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer flex-1">
-                      <CreditCard className="h-4 w-4" />
-                      Credit/Debit Card
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2 p-3 border rounded-md hover-elevate">
-                    <RadioGroupItem value="usdc" id="usdc" data-testid="radio-payment-usdc" />
-                    <Label htmlFor="usdc" className="flex items-center gap-2 cursor-pointer flex-1">
-                      <Wallet className="h-4 w-4" />
-                      USDC (Crypto)
-                      {!isConnected && (
-                        <Badge variant="outline" className="ml-auto">Connect Wallet</Badge>
-                      )}
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between text-lg font-semibold">
-                <span>Total</span>
-                <span data-testid="text-total-amount">${totalAmount.toFixed(2)}</span>
-              </div>
-            </>
-          )}
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => purchaseMutation.mutate()}
-            disabled={!canPurchase || purchaseMutation.isPending}
-            data-testid="button-confirm-purchase"
-          >
-            {purchaseMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              "Confirm Purchase"
-            )}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => purchaseMutation.mutate()}
+              disabled={!canPurchase || purchaseMutation.isPending}
+              data-testid="button-confirm-purchase"
+            >
+              {purchaseMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Confirm Purchase"
+              )}
+            </Button>
+          </DialogFooter>
+        </InvestorOnboardingGate>
       </DialogContent>
     </Dialog>
   );

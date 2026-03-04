@@ -25,8 +25,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Building2, FileText, Users, CheckCircle, XCircle, Eye, RefreshCw } from "lucide-react";
-import type { Property, PropertyNomination, PropertySubmission } from "@shared/schema";
+import { Building2, FileText, Users, CheckCircle, XCircle, Eye, RefreshCw, AlertTriangle, DollarSign } from "lucide-react";
+import type { Property, PropertyNomination, PropertySubmission, TokenPurchase } from "@shared/schema";
+
+interface ReconciliationPurchase extends TokenPurchase {
+  propertyName: string;
+  tokenSymbol: string;
+  userEmail: string;
+  userName: string;
+}
 
 export default function AdminPanel() {
   const { toast } = useToast();
@@ -43,6 +50,11 @@ export default function AdminPanel() {
 
   const { data: submissions = [], isLoading: submissionsLoading } = useQuery<PropertySubmission[]>({
     queryKey: ["/api/submissions"],
+  });
+
+  const { data: stuckPurchases = [], isLoading: stuckLoading } = useQuery<ReconciliationPurchase[]>({
+    queryKey: ["/api/admin/reconciliation/stuck"],
+    refetchInterval: 30000,
   });
 
   const approveNominationMutation = useMutation({
@@ -74,6 +86,32 @@ export default function AdminPanel() {
     },
   });
 
+  const retryPurchaseMutation = useMutation({
+    mutationFn: async (purchaseId: string) => {
+      return apiRequest("POST", `/api/admin/reconciliation/${purchaseId}/retry`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/reconciliation/stuck"] });
+      toast({ title: "Retry initiated", description: "Purchase has been marked for retry." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to retry purchase", variant: "destructive" });
+    },
+  });
+
+  const refundPurchaseMutation = useMutation({
+    mutationFn: async (purchaseId: string) => {
+      return apiRequest("POST", `/api/admin/reconciliation/${purchaseId}/refund`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/reconciliation/stuck"] });
+      toast({ title: "Refund initiated", description: "Refund has been initiated for the failed purchase." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to initiate refund", variant: "destructive" });
+    },
+  });
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       submitted: "secondary",
@@ -86,16 +124,40 @@ export default function AdminPanel() {
     return <Badge variant={variants[status] || "outline"}>{status.replace("_", " ")}</Badge>;
   };
 
+  const getReconciliationBadge = (status: string) => {
+    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+      pending_payment: "outline",
+      payment_received: "secondary",
+      minting: "secondary",
+      confirmed: "default",
+      failed_mint: "destructive",
+      refund_initiated: "destructive",
+    };
+    return <Badge variant={variants[status] || "outline"} data-testid={`badge-reconciliation-${status}`}>{status.replace(/_/g, " ")}</Badge>;
+  };
+
+  const formatTimeSince = (date: string | Date | null) => {
+    if (!date) return "Unknown";
+    const now = new Date();
+    const then = new Date(date);
+    const diffMs = now.getTime() - then.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${Math.floor(diffHours / 24)}d ago`;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold" data-testid="text-admin-title">Admin Panel</h1>
-          <p className="text-muted-foreground mt-2">Manage properties, nominations, and submissions</p>
+          <p className="text-muted-foreground mt-2">Manage properties, nominations, submissions, and payment reconciliation</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Properties</CardTitle>
@@ -125,13 +187,30 @@ export default function AdminPanel() {
               <div className="text-2xl font-bold">--</div>
             </CardContent>
           </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Stuck Purchases</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold" data-testid="text-stuck-count">
+                {stuckPurchases.length}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <Tabs defaultValue="nominations" className="w-full">
-          <TabsList>
+          <TabsList className="flex-wrap">
             <TabsTrigger value="nominations" data-testid="tab-nominations">Nominations</TabsTrigger>
             <TabsTrigger value="properties" data-testid="tab-properties">Properties</TabsTrigger>
             <TabsTrigger value="submissions" data-testid="tab-submissions">Submissions</TabsTrigger>
+            <TabsTrigger value="reconciliation" data-testid="tab-reconciliation">
+              Reconciliation
+              {stuckPurchases.length > 0 && (
+                <Badge variant="destructive" className="ml-2">{stuckPurchases.length}</Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="nominations" className="mt-6">
@@ -276,11 +355,105 @@ export default function AdminPanel() {
                         <TableRow key={submission.id} data-testid={`row-submission-${submission.id}`}>
                           <TableCell className="font-medium">{submission.name}</TableCell>
                           <TableCell>{submission.streetAddress}, {submission.city}</TableCell>
-                          <TableCell>{getStatusBadge(submission.status)}</TableCell>
+                          <TableCell>{getStatusBadge(submission.status || "draft")}</TableCell>
                           <TableCell>
                             {submission.submittedAt
                               ? new Date(submission.submittedAt).toLocaleDateString()
                               : "Not submitted"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="reconciliation" className="mt-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between gap-2">
+                <div>
+                  <CardTitle>Payment Reconciliation</CardTitle>
+                  <CardDescription>Purchases stuck in pending state for more than 10 minutes</CardDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/admin/reconciliation/stuck"] })}
+                  data-testid="button-refresh-reconciliation"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {stuckLoading ? (
+                  <div className="text-center py-8 text-muted-foreground">Loading stuck purchases...</div>
+                ) : stuckPurchases.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground" data-testid="text-no-stuck">
+                    No stuck purchases found. All payments are reconciled.
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>User</TableHead>
+                        <TableHead>Property</TableHead>
+                        <TableHead>Tokens</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Reconciliation</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {stuckPurchases.map((purchase) => (
+                        <TableRow key={purchase.id} data-testid={`row-stuck-purchase-${purchase.id}`}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium" data-testid={`text-user-${purchase.id}`}>{purchase.userName}</div>
+                              <div className="text-sm text-muted-foreground">{purchase.userEmail}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell data-testid={`text-property-${purchase.id}`}>{purchase.propertyName}</TableCell>
+                          <TableCell data-testid={`text-tokens-${purchase.id}`}>
+                            {purchase.tokenCount} {purchase.tokenSymbol}
+                          </TableCell>
+                          <TableCell data-testid={`text-amount-${purchase.id}`}>
+                            ${Number(purchase.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </TableCell>
+                          <TableCell>{getStatusBadge(purchase.status || "pending")}</TableCell>
+                          <TableCell>{getReconciliationBadge(purchase.reconciliationStatus || "pending_payment")}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">
+                            {formatTimeSince(purchase.purchasedAt)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              {(purchase.reconciliationStatus === "failed_mint" || purchase.reconciliationStatus === "minting") && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => retryPurchaseMutation.mutate(purchase.id)}
+                                  disabled={retryPurchaseMutation.isPending}
+                                  data-testid={`button-retry-${purchase.id}`}
+                                >
+                                  <RefreshCw className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {purchase.reconciliationStatus === "failed_mint" && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => refundPurchaseMutation.mutate(purchase.id)}
+                                  disabled={refundPurchaseMutation.isPending}
+                                  data-testid={`button-refund-${purchase.id}`}
+                                >
+                                  <DollarSign className="h-4 w-4 text-destructive" />
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}

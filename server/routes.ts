@@ -4,10 +4,10 @@ import { storage } from "./storage";
 import { insertPropertySchema, insertPropertySubmissionSchema, insertPropertyNominationSchema, insertPropertyGrantSchema, insertWishSchema, insertServiceBidSchema } from "@shared/schema";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
-import { setupAuth, isAuthenticated, isAdmin } from "./replit_integrations/auth";
+import { setupAuth, isAuthenticated, isAdmin, requireKYCApproved } from "./replit_integrations/auth";
 import { createPaymentIntent, isStripeConfigured, verifyPaymentAndGetMetadata, constructWebhookEvent } from "./services/payments";
-import { purchaseRateLimit, voteRateLimit } from "./middleware/rateLimit";
-import { sendPurchaseConfirmation, sendWaitlistNotification } from "./services/email";
+import { purchaseRateLimit, voteRateLimit, globalWriteRateLimit } from "./middleware/rateLimit";
+import { sendPurchaseConfirmation, sendWaitlistNotification, sendPhaseAdvancementNotification, sendRefundNotification, sendProposalNotification } from "./services/email";
 import { 
   lookupOwnerByAddress, 
   lookupOwnerByCoordinates, 
@@ -22,12 +22,20 @@ import {
   processRefunds 
 } from "./services/tokenizationOrchestrator";
 import { getExplorerUrl } from "./services/blockchain";
+import { logAuditEvent } from "./services/auditLog";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   await setupAuth(app);
+
+  app.use((req, res, next) => {
+    if (["POST", "PATCH", "PUT", "DELETE"].includes(req.method)) {
+      return globalWriteRateLimit(req, res, next);
+    }
+    next();
+  });
 
   app.get("/api/stats", async (req: Request, res: Response) => {
     try {
@@ -145,11 +153,17 @@ export async function registerRoutes(
     res.json(result);
   });
 
-  app.post("/api/purchases", purchaseRateLimit, async (req: Request, res: Response) => {
-    const { userId, offeringId, phaseId, tokenCount, pricePerToken } = req.body;
+  app.post("/api/purchases", isAuthenticated, requireKYCApproved, purchaseRateLimit, async (req: Request, res: Response) => {
+    const userId = req.session.userId!;
+    const { offeringId, phaseId, tokenCount, pricePerToken } = req.body;
 
-    if (!userId || !offeringId || !phaseId || !tokenCount || !pricePerToken) {
+    if (!offeringId || !phaseId || !tokenCount || !pricePerToken) {
       return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const user = await storage.getUser(userId);
+    if (!user?.riskDisclosureAcknowledgedAt) {
+      return res.status(403).json({ error: "Risk disclosure acknowledgment required before purchasing" });
     }
 
     const eligibility = await storage.canUserPurchase(userId, phaseId, tokenCount);
@@ -166,6 +180,15 @@ export async function registerRoutes(
       tokenCount,
       pricePerToken: pricePerToken.toString(),
       totalAmount,
+    });
+
+    await logAuditEvent({
+      userId,
+      action: "token_purchase",
+      targetTable: "token_purchases",
+      targetId: purchase.id,
+      metadata: { offeringId, phaseId, tokenCount, totalAmount },
+      req,
     });
 
     res.status(201).json(purchase);
@@ -193,6 +216,55 @@ export async function registerRoutes(
       return res.status(404).json({ error: "Proposal not found" });
     }
     res.json(proposal);
+  });
+
+  app.post("/api/proposals", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { offeringId, title, description, quorumRequired, startsAt, endsAt } = req.body;
+      if (!offeringId || !title || !description || !quorumRequired) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const proposal = await storage.createProposal({
+        offeringId,
+        proposerId: userId,
+        title,
+        description,
+        quorumRequired,
+        startsAt: startsAt ? new Date(startsAt) : undefined,
+        endsAt: endsAt ? new Date(endsAt) : undefined,
+      });
+
+      try {
+        const offering = await storage.getTokenOffering(offeringId);
+        if (offering) {
+          const property = await storage.getProperty(offering.propertyId);
+          const holdings = await storage.getHoldingsByOffering(offeringId);
+          for (const holding of holdings) {
+            const user = await storage.getUser(holding.userId);
+            if (user?.email && user.emailNotificationsEnabled !== false) {
+              await sendProposalNotification(
+                user.email,
+                title,
+                property?.name || "Property"
+              );
+            }
+          }
+        }
+      } catch (emailErr) {
+        console.error("[Email] Failed to send proposal notifications:", emailErr);
+      }
+
+      res.status(201).json(proposal);
+    } catch (error) {
+      console.error("Error creating proposal:", error);
+      res.status(500).json({ error: "Failed to create proposal" });
+    }
   });
 
   app.post("/api/proposals/:id/vote", isAuthenticated, voteRateLimit, async (req: Request, res: Response) => {
@@ -224,11 +296,21 @@ export async function registerRoutes(
     }
 
     const vote = await storage.castVote(proposalId, userId, voteDirection, votingPower);
+
+    await logAuditEvent({
+      userId,
+      action: "governance_vote",
+      targetTable: "votes",
+      targetId: vote.id,
+      metadata: { proposalId, voteDirection, votingPower },
+      req,
+    });
+
     res.status(201).json(vote);
   });
 
   // Property Submissions API
-  app.post("/api/property-submissions", async (req: Request, res: Response) => {
+  app.post("/api/property-submissions", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const validatedData = insertPropertySubmissionSchema.parse(req.body);
       const submission = await storage.createPropertySubmission(validatedData);
@@ -367,7 +449,7 @@ export async function registerRoutes(
   });
 
   // Property Nominations API
-  app.post("/api/nominations", async (req: Request, res: Response) => {
+  app.post("/api/nominations", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const validatedData = insertPropertyNominationSchema.parse(req.body);
       const nomination = await storage.createPropertyNomination(validatedData);
@@ -669,6 +751,29 @@ export async function registerRoutes(
     if (!result.success) {
       return res.status(400).json({ error: result.error });
     }
+
+    try {
+      if (result.newPhase) {
+        const offering = await storage.getTokenOffering(req.params.offeringId);
+        if (offering) {
+          const property = await storage.getProperty(offering.propertyId);
+          const holdings = await storage.getHoldingsByOffering(req.params.offeringId);
+          for (const holding of holdings) {
+            const user = await storage.getUser(holding.userId);
+            if (user?.email && user.emailNotificationsEnabled !== false) {
+              await sendPhaseAdvancementNotification(
+                user.email,
+                property?.name || "Property",
+                result.newPhase,
+                holding.tokenCount
+              );
+            }
+          }
+        }
+      }
+    } catch (emailErr) {
+      console.error("[Email] Failed to send phase advancement notifications:", emailErr);
+    }
     
     res.json(result);
   });
@@ -678,6 +783,32 @@ export async function registerRoutes(
     
     if (!result.success) {
       return res.status(400).json({ error: result.error });
+    }
+
+    try {
+      if (result.refundsProcessed > 0) {
+        const offering = await storage.getTokenOffering(req.params.offeringId);
+        if (offering) {
+          const property = await storage.getProperty(offering.propertyId);
+          const holdings = await storage.getHoldingsByOffering(req.params.offeringId);
+          for (const holding of holdings) {
+            const user = await storage.getUser(holding.userId);
+            if (user?.email && user.emailNotificationsEnabled !== false) {
+              const detail = result.refundDetails.find(d => d.purchaseId);
+              const interest = detail?.interest || 0;
+              const total = detail?.total || 0;
+              await sendRefundNotification(
+                user.email,
+                property?.name || "Property",
+                total,
+                interest
+              );
+            }
+          }
+        }
+      }
+    } catch (emailErr) {
+      console.error("[Email] Failed to send refund notifications:", emailErr);
     }
     
     res.json(result);
@@ -758,6 +889,22 @@ export async function registerRoutes(
     res.json({ success: true, user });
   });
 
+  app.post("/api/user/acknowledge-risks", isAuthenticated, async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const currentUser = await storage.getUser(userId);
+    const user = await storage.upsertUser({
+      id: userId,
+      email: currentUser?.email,
+      riskDisclosureAcknowledgedAt: new Date(),
+    });
+
+    res.json({ success: true, user });
+  });
+
   app.get("/api/user/purchases", isAuthenticated, async (req: Request, res: Response) => {
     const userId = req.session.userId;
     if (!userId) {
@@ -776,6 +923,24 @@ export async function registerRoutes(
     }));
     
     res.json(purchasesWithDetails);
+  });
+
+  app.patch("/api/user/email-preferences", isAuthenticated, async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const { emailNotificationsEnabled } = req.body;
+    if (typeof emailNotificationsEnabled !== "boolean") {
+      return res.status(400).json({ error: "emailNotificationsEnabled must be a boolean" });
+    }
+    const currentUser = await storage.getUser(userId);
+    const user = await storage.upsertUser({
+      id: userId,
+      email: currentUser?.email,
+      emailNotificationsEnabled,
+    });
+    res.json({ success: true, emailNotificationsEnabled: user.emailNotificationsEnabled });
   });
 
   // Admin submissions endpoint
@@ -807,6 +972,14 @@ export async function registerRoutes(
       kycStatus: "verified",
       kycVerifiedAt: new Date(),
     });
+    await logAuditEvent({
+      userId: req.session.userId,
+      action: "kyc_approved",
+      targetTable: "users",
+      targetId: userId,
+      metadata: { previousStatus: user.kycStatus },
+      req,
+    });
     res.json({ success: true, user: updatedUser });
   });
 
@@ -820,7 +993,140 @@ export async function registerRoutes(
       ...user,
       kycStatus: "rejected",
     });
+    await logAuditEvent({
+      userId: req.session.userId,
+      action: "kyc_rejected",
+      targetTable: "users",
+      targetId: userId,
+      metadata: { previousStatus: user.kycStatus },
+      req,
+    });
     res.json({ success: true, user: updatedUser });
+  });
+
+  // Admin: Payment Reconciliation - view stuck purchases and manage reconciliation
+  app.get("/api/admin/reconciliation/stuck", isAdmin, async (req: Request, res: Response) => {
+    try {
+      const minutes = parseInt(req.query.minutes as string) || 10;
+      const stuckPurchases = await storage.getStuckPurchases(minutes);
+
+      const purchasesWithDetails = await Promise.all(stuckPurchases.map(async (purchase) => {
+        const offering = await storage.getTokenOffering(purchase.offeringId);
+        const property = offering ? await storage.getProperty(offering.propertyId) : null;
+        const user = await storage.getUser(purchase.userId);
+        return {
+          ...purchase,
+          propertyName: property?.name || "Unknown Property",
+          tokenSymbol: offering?.tokenSymbol || "TOKEN",
+          userEmail: user?.email || "Unknown",
+          userName: user?.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : "Unknown",
+        };
+      }));
+
+      res.json(purchasesWithDetails);
+    } catch (error) {
+      console.error("[Reconciliation] Error fetching stuck purchases:", error);
+      res.status(500).json({ error: "Failed to fetch stuck purchases" });
+    }
+  });
+
+  app.get("/api/admin/reconciliation/all", isAdmin, async (req: Request, res: Response) => {
+    try {
+      const allPurchases = await storage.getAllPurchases();
+
+      const purchasesWithDetails = await Promise.all(allPurchases.map(async (purchase) => {
+        const offering = await storage.getTokenOffering(purchase.offeringId);
+        const property = offering ? await storage.getProperty(offering.propertyId) : null;
+        const user = await storage.getUser(purchase.userId);
+        return {
+          ...purchase,
+          propertyName: property?.name || "Unknown Property",
+          tokenSymbol: offering?.tokenSymbol || "TOKEN",
+          userEmail: user?.email || "Unknown",
+          userName: user?.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : "Unknown",
+        };
+      }));
+
+      res.json(purchasesWithDetails);
+    } catch (error) {
+      console.error("[Reconciliation] Error fetching purchases:", error);
+      res.status(500).json({ error: "Failed to fetch purchases" });
+    }
+  });
+
+  app.post("/api/admin/reconciliation/:purchaseId/retry", isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { purchaseId } = req.params;
+      const purchase = await storage.getAllPurchases().then(ps => ps.find(p => p.id === purchaseId));
+
+      if (!purchase) {
+        return res.status(404).json({ error: "Purchase not found" });
+      }
+
+      if (purchase.reconciliationStatus !== "failed_mint" && purchase.reconciliationStatus !== "minting") {
+        return res.status(400).json({ error: "Purchase is not in a retriable state" });
+      }
+
+      await storage.updatePurchaseReconciliationStatus(purchaseId, "minting");
+
+      await logAuditEvent({
+        userId: req.session.userId,
+        action: "reconciliation_retry",
+        targetTable: "token_purchases",
+        targetId: purchaseId,
+        metadata: { previousStatus: purchase.reconciliationStatus },
+        req,
+      });
+
+      res.json({ success: true, message: "Purchase marked for retry" });
+    } catch (error) {
+      console.error("[Reconciliation] Error retrying purchase:", error);
+      res.status(500).json({ error: "Failed to retry purchase" });
+    }
+  });
+
+  app.post("/api/admin/reconciliation/:purchaseId/refund", isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { purchaseId } = req.params;
+      const purchase = await storage.getAllPurchases().then(ps => ps.find(p => p.id === purchaseId));
+
+      if (!purchase) {
+        return res.status(404).json({ error: "Purchase not found" });
+      }
+
+      if (purchase.reconciliationStatus !== "failed_mint") {
+        return res.status(400).json({ error: "Only failed_mint purchases can be refunded" });
+      }
+
+      await storage.updatePurchaseReconciliationStatus(purchaseId, "refund_initiated");
+
+      await logAuditEvent({
+        userId: req.session.userId,
+        action: "reconciliation_refund_initiated",
+        targetTable: "token_purchases",
+        targetId: purchaseId,
+        metadata: { amount: purchase.totalAmount, userId: purchase.userId },
+        req,
+      });
+
+      if (purchase.paymentIntentId) {
+        try {
+          const { processRefund: processStripeRefund } = await import("./services/payments");
+          await processStripeRefund(purchase.paymentIntentId, parseFloat(purchase.totalAmount));
+          await storage.updatePurchaseStatus(purchaseId, "refunded");
+        } catch (refundErr) {
+          console.error("[Reconciliation] Stripe refund failed:", refundErr);
+          return res.status(500).json({ error: "Stripe refund failed — purchase flagged for manual review" });
+        }
+      } else {
+        await storage.updatePurchaseStatus(purchaseId, "refunded");
+      }
+
+      res.json({ success: true, message: "Refund processed for failed purchase" });
+    } catch (error) {
+      console.error("[Reconciliation] Error initiating refund:", error);
+      res.status(500).json({ error: "Failed to initiate refund" });
+    }
   });
 
   // Investor protection: Calculate refund with 3% APR
@@ -891,7 +1197,7 @@ export async function registerRoutes(
   });
 
   // Token purchase endpoint with phase enforcement
-  app.post("/api/purchase", isAuthenticated, purchaseRateLimit, async (req: Request, res: Response) => {
+  app.post("/api/purchase", isAuthenticated, requireKYCApproved, purchaseRateLimit, async (req: Request, res: Response) => {
     const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -906,6 +1212,10 @@ export async function registerRoutes(
     const user = await storage.getUser(userId);
     if (!user || user.kycStatus !== "verified") {
       return res.status(403).json({ error: "KYC verification required" });
+    }
+
+    if (!user.riskDisclosureAcknowledgedAt) {
+      return res.status(403).json({ error: "Risk disclosure acknowledgment required before purchasing" });
     }
 
     if (!user.walletAddress) {
@@ -978,6 +1288,17 @@ export async function registerRoutes(
         paymentIntentId: paymentIntent.id,
       });
 
+      await storage.updatePurchaseReconciliationStatus(purchase.id, "pending_payment");
+
+      await logAuditEvent({
+        userId,
+        action: "purchase_initiated",
+        targetTable: "token_purchases",
+        targetId: purchase.id,
+        metadata: { reconciliationStatus: "pending_payment", paymentMethod: "card", amount },
+        req,
+      });
+
       return res.json({ 
         success: true, 
         purchase,
@@ -1001,15 +1322,47 @@ export async function registerRoutes(
       status: paymentMethod === "usdc" ? "pending_crypto" : "completed",
     });
 
-    if (paymentMethod !== "usdc") {
+    if (paymentMethod === "usdc") {
+      await storage.updatePurchaseReconciliationStatus(purchase.id, "pending_payment");
+      await logAuditEvent({
+        userId,
+        action: "purchase_initiated",
+        targetTable: "token_purchases",
+        targetId: purchase.id,
+        metadata: { reconciliationStatus: "pending_payment", paymentMethod: "usdc", amount },
+        req,
+      });
+    } else {
+      await storage.updatePurchaseReconciliationStatus(purchase.id, "confirmed");
       await storage.updateOrCreateHolding(userId, offering.id, tokenCount, pricePerToken, votingPower);
+
+      await logAuditEvent({
+        userId,
+        action: "purchase_confirmed",
+        targetTable: "token_purchases",
+        targetId: purchase.id,
+        metadata: { reconciliationStatus: "confirmed", paymentMethod, amount },
+        req,
+      });
+
+      try {
+        if (user.email && user.emailNotificationsEnabled !== false) {
+          const property = await storage.getProperty(propertyId);
+          if (property) {
+            await sendPurchaseConfirmation(user.email, property.name, tokenCount, amount);
+          }
+        }
+      } catch (emailErr) {
+        console.error("[Email] Failed to send purchase confirmation:", emailErr);
+      }
     }
 
     res.json({ success: true, purchase });
   });
 
   // Confirm payment and update holdings (verifies payment with Stripe)
-  app.post("/api/purchase/confirm", isAuthenticated, purchaseRateLimit, async (req: Request, res: Response) => {
+  // Two-phase commit: payment_received → minting → confirmed (or failed_mint)
+  app.post("/api/purchase/confirm", isAuthenticated, requireKYCApproved, purchaseRateLimit, async (req: Request, res: Response) => {
     const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -1021,9 +1374,22 @@ export async function registerRoutes(
       return res.status(400).json({ error: "Payment intent ID required" });
     }
 
+    const existingPurchase = await storage.getPurchaseByPaymentIntentId(paymentIntentId);
+
     const verification = await verifyPaymentAndGetMetadata(paymentIntentId, userId);
     
     if (!verification.success) {
+      if (existingPurchase) {
+        await storage.updatePurchaseReconciliationStatus(existingPurchase.id, "failed_mint");
+        await logAuditEvent({
+          userId,
+          action: "payment_verification_failed",
+          targetTable: "token_purchases",
+          targetId: existingPurchase.id,
+          metadata: { paymentIntentId, error: verification.error, reconciliationStatus: "failed_mint" },
+          req,
+        });
+      }
       return res.status(400).json({ error: verification.error });
     }
 
@@ -1031,12 +1397,47 @@ export async function registerRoutes(
       return res.status(400).json({ error: "Payment not configured for production mode" });
     }
 
+    if (existingPurchase) {
+      await storage.updatePurchaseReconciliationStatus(existingPurchase.id, "payment_received");
+      await logAuditEvent({
+        userId,
+        action: "payment_received",
+        targetTable: "token_purchases",
+        targetId: existingPurchase.id,
+        metadata: { paymentIntentId, reconciliationStatus: "payment_received" },
+        req,
+      });
+    }
+
     const { propertyId, tokenCount, phase } = verification.metadata;
     const amount = verification.amount!;
 
     const offering = await storage.getOfferingByPropertyId(propertyId);
     if (!offering) {
+      if (existingPurchase) {
+        await storage.updatePurchaseReconciliationStatus(existingPurchase.id, "failed_mint");
+        await logAuditEvent({
+          userId,
+          action: "mint_failed_no_offering",
+          targetTable: "token_purchases",
+          targetId: existingPurchase.id,
+          metadata: { propertyId, reconciliationStatus: "failed_mint" },
+          req,
+        });
+      }
       return res.status(404).json({ error: "Property offering not found" });
+    }
+
+    if (existingPurchase) {
+      await storage.updatePurchaseReconciliationStatus(existingPurchase.id, "minting");
+      await logAuditEvent({
+        userId,
+        action: "minting_started",
+        targetTable: "token_purchases",
+        targetId: existingPurchase.id,
+        metadata: { reconciliationStatus: "minting" },
+        req,
+      });
     }
 
     const VOTING_MULTIPLIERS: Record<string, number> = {
@@ -1049,7 +1450,48 @@ export async function registerRoutes(
     const pricePerToken = amount / tokenCount;
     const votingPower = Math.round(tokenCount * (VOTING_MULTIPLIERS[phase] || 1));
 
-    await storage.updateOrCreateHolding(userId, offering.id, tokenCount, pricePerToken, votingPower);
+    try {
+      await storage.updateOrCreateHolding(userId, offering.id, tokenCount, pricePerToken, votingPower);
+
+      if (existingPurchase) {
+        await storage.updatePurchaseStatus(existingPurchase.id, "confirmed");
+        await storage.updatePurchaseReconciliationStatus(existingPurchase.id, "confirmed");
+        await logAuditEvent({
+          userId,
+          action: "purchase_confirmed",
+          targetTable: "token_purchases",
+          targetId: existingPurchase.id,
+          metadata: { reconciliationStatus: "confirmed", tokenCount, amount },
+          req,
+        });
+      }
+    } catch (mintError) {
+      console.error("[Purchase] Minting/holding update failed after payment:", mintError);
+      if (existingPurchase) {
+        await storage.updatePurchaseReconciliationStatus(existingPurchase.id, "failed_mint");
+        await logAuditEvent({
+          userId,
+          action: "mint_failed",
+          targetTable: "token_purchases",
+          targetId: existingPurchase.id,
+          metadata: { reconciliationStatus: "failed_mint", error: String(mintError) },
+          req,
+        });
+      }
+      return res.status(500).json({ error: "Payment received but minting failed. Your purchase has been flagged for admin review and refund processing." });
+    }
+
+    try {
+      const user = await storage.getUser(userId);
+      if (user?.email && user.emailNotificationsEnabled !== false) {
+        const property = await storage.getProperty(propertyId);
+        if (property) {
+          await sendPurchaseConfirmation(user.email, property.name, tokenCount, amount);
+        }
+      }
+    } catch (emailErr) {
+      console.error("[Email] Failed to send purchase confirmation:", emailErr);
+    }
 
     res.json({ success: true, message: "Purchase confirmed and holdings updated" });
   });
@@ -1414,9 +1856,8 @@ export async function registerRoutes(
           });
         }
 
-        // Send purchase confirmation email
         const user = await storage.getUser(userId);
-        if (user?.email) {
+        if (user?.email && user.emailNotificationsEnabled !== false) {
           await sendPurchaseConfirmation(user.email, property.name, parsedTokenCount, amount);
         }
 
@@ -1561,6 +2002,125 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Failed to update service bid status:", error);
       res.status(500).json({ error: "Failed to update service bid status" });
+    }
+  });
+
+  // Share Transfers
+  app.get("/api/user/transfers", isAuthenticated, async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    try {
+      const transfers = await storage.getUserShareTransfers(userId);
+      res.json(transfers);
+    } catch (error) {
+      console.error("Failed to fetch transfers:", error);
+      res.status(500).json({ error: "Failed to fetch transfers" });
+    }
+  });
+
+  app.post("/api/transfers", isAuthenticated, async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const { offeringId, recipientWalletAddress, tokenCount } = req.body;
+
+    if (!offeringId || !recipientWalletAddress || !tokenCount) {
+      return res.status(400).json({ error: "Missing required fields: offeringId, recipientWalletAddress, tokenCount" });
+    }
+
+    if (tokenCount <= 0) {
+      return res.status(400).json({ error: "Token count must be positive" });
+    }
+
+    try {
+      const holding = await storage.getHoldingByUserAndOffering(userId, offeringId);
+      if (!holding) {
+        return res.status(404).json({ error: "No holdings found for this offering" });
+      }
+
+      if (holding.tokenCount < tokenCount) {
+        return res.status(400).json({ error: `Insufficient tokens. You hold ${holding.tokenCount} tokens.` });
+      }
+
+      const pricePerToken = parseFloat(holding.averagePurchasePrice || "0");
+      const originalValue = (tokenCount * pricePerToken).toFixed(2);
+
+      const transfer = await storage.createShareTransfer({
+        userId,
+        fromOfferingId: offeringId,
+        toOfferingId: offeringId,
+        tokenCount,
+        originalValue,
+        transferValue: originalValue,
+        recipientWalletAddress,
+      });
+
+      res.status(201).json(transfer);
+    } catch (error) {
+      console.error("Failed to create transfer:", error);
+      res.status(500).json({ error: "Failed to create transfer request" });
+    }
+  });
+
+  // Refund Requests
+  app.get("/api/user/refunds", isAuthenticated, async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    try {
+      const refunds = await storage.getUserRefunds(userId);
+      res.json(refunds);
+    } catch (error) {
+      console.error("Failed to fetch refunds:", error);
+      res.status(500).json({ error: "Failed to fetch refunds" });
+    }
+  });
+
+  app.post("/api/refunds", isAuthenticated, async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const { offeringId, tokenCount } = req.body;
+
+    if (!offeringId || !tokenCount) {
+      return res.status(400).json({ error: "Missing required fields: offeringId, tokenCount" });
+    }
+
+    try {
+      const holding = await storage.getHoldingByUserAndOffering(userId, offeringId);
+      if (!holding) {
+        return res.status(404).json({ error: "No holdings found for this offering" });
+      }
+
+      if (holding.tokenCount < tokenCount) {
+        return res.status(400).json({ error: `Insufficient tokens. You hold ${holding.tokenCount} tokens.` });
+      }
+
+      const { calculateRefundWithInterest } = await import("@shared/schema");
+      const originalAmount = tokenCount * parseFloat(holding.averagePurchasePrice || "0");
+      const purchaseDate = holding.updatedAt || new Date();
+      const { interest, total } = calculateRefundWithInterest(originalAmount, purchaseDate);
+
+      const refund = await storage.createRefundRequest({
+        userId,
+        offeringId,
+        tokenCount,
+        originalAmount: originalAmount.toFixed(2),
+        interestEarned: interest.toFixed(2),
+        totalRefundAmount: total.toFixed(2),
+      });
+
+      res.status(201).json(refund);
+    } catch (error) {
+      console.error("Failed to create refund request:", error);
+      res.status(500).json({ error: "Failed to create refund request" });
     }
   });
 

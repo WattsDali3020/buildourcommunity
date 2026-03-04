@@ -32,6 +32,10 @@ import Treasury from "@/pages/treasury";
 import Services from "@/pages/services";
 import ImpactSimulator from "@/pages/impact-simulator";
 import League from "@/pages/league";
+import Transfers from "@/pages/transfers";
+import Terms from "@/pages/terms";
+import Privacy from "@/pages/privacy";
+import RiskDisclosure from "@/pages/risk-disclosure";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -63,6 +67,10 @@ function Router() {
       <Route path="/services" component={Services} />
       <Route path="/impact" component={ImpactSimulator} />
       <Route path="/league" component={League} />
+      <Route path="/transfers" component={Transfers} />
+      <Route path="/terms" component={Terms} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/risk-disclosure" component={RiskDisclosure} />
       <Route component={NotFound} />
     </Switch>
   );

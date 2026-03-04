@@ -118,6 +118,31 @@ export async function sendVoteConfirmation(
   });
 }
 
+export async function sendPhaseAdvancementNotification(
+  email: string,
+  propertyName: string,
+  newPhase: string,
+  tokenCount: number
+): Promise<boolean> {
+  const phaseLabels: Record<string, string> = {
+    county: "County",
+    state: "State",
+    national: "National",
+    international: "International",
+  };
+  return sendEmail({
+    to: email,
+    subject: `Phase Update - ${propertyName} now in ${phaseLabels[newPhase] || newPhase} phase`,
+    html: `
+      <h1>Offering Phase Update</h1>
+      <p>The token offering for <strong>${propertyName}</strong> has advanced to the <strong>${phaseLabels[newPhase] || newPhase}</strong> phase.</p>
+      <p>You currently hold <strong>${tokenCount}</strong> tokens in this property.</p>
+      <p>New investors from a wider geographic area can now participate, which may increase demand and funding progress.</p>
+      <p>Visit your investor dashboard to view the latest offering details.</p>
+    `,
+  });
+}
+
 const ADMIN_EMAIL = "DEmery@buildourcommunity.co";
 
 function escapeHtml(unsafe: string): string {

@@ -34,7 +34,8 @@ export async function setupAuth(app: Express): Promise<void> {
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: "lax",
+      maxAge: 8 * 60 * 60 * 1000,
     },
   };
 
@@ -183,6 +184,24 @@ export const isAdmin: RequestHandler = async (req, res, next) => {
   const user = await getUser(req.session.userId);
   if (!user || user.role !== "admin") {
     return res.status(403).json({ error: "Admin access required" });
+  }
+  next();
+};
+
+export const requireKYCApproved: RequestHandler = async (req, res, next) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  const user = await getUser(req.session.userId);
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+  if (user.kycStatus !== "verified") {
+    return res.status(403).json({ 
+      error: "KYC verification required",
+      kycStatus: user.kycStatus,
+      message: "You must complete KYC verification before making purchases. Please visit your dashboard to submit verification."
+    });
   }
   next();
 };
