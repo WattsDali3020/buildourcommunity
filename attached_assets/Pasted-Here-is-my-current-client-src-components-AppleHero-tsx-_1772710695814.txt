@@ -1,0 +1,46 @@
+Here is my current client/src/components/AppleHero.tsx:
+[paste AppleHero.tsx]
+Here is my current client/src/pages/home.tsx:
+[paste home.tsx]
+Completely redesign both files. Follow these exact specifications:
+AppleHero.tsx — Full viewport hero with map as the experience:
+The section must be 100vh minimum height with the map taking the full viewport. Remove all container max-width constraints from the map itself — it goes edge to edge, full bleed.
+Overlay the hero text directly ON TOP of the map using absolute positioning. Center it vertically in the top 40% of the viewport. Text overlay should have a subtle dark gradient scrim behind it (bottom of text area fades to transparent) so it's readable over the map. Text content stays the same but the h1 increases to text-5xl sm:text-6xl md:text-7xl.
+Change the map default center to [32.9, -83.2] (Georgia center) and zoom to 7. This platform is Georgia-first.
+Move the stats bar INSIDE the hero section, pinned to the bottom of the viewport as an overlay bar — position: absolute, bottom: 0, left: 0, right: 0 — with a frosted glass background (backdrop-blur-md bg-black/40). Stats stay the same, just repositioned.
+Add a floating Two-Path CTA panel on the right side of the map — position: absolute, right: 24px, top: 50% — two stacked cards:
+
+Card 1: "I want to invest" — icon TrendingUp, links to /properties
+Card 2: "I want to build" — icon HardHat, links to /professionals
+Each card has a title, one line of description, and an arrow. Dark glass styling matching the stats bar.
+
+Add Framer Motion animations: the hero text fades up on mount with initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}. The two-path cards stagger in with delay: 0.4 and delay: 0.6. The stats bar slides up from bottom with delay: 0.2.
+The map should initialize centered on Georgia. Add county-level subtle boundary overlay using a GeoJSON approach — if no properties exist show the map with a pulsing "Be the first to nominate a property in your county" prompt centered on the map overlay.
+home.tsx — Scroll storytelling with full-viewport beats:
+Replace SimpleHeader with Header (the main nav component).
+Remove AIInsightsBanner and FeaturedProperties — these show nothing on an empty platform and hurt the experience.
+Replace JoinWaitlist — remove the external link to buildourcommunity.co. Replace with a WaitlistModal trigger that opens inline.
+Add Framer Motion useScroll and useInView to each section. Each section below the hero should animate in using useInView with once: true — initial={{ opacity: 0, y: 40 }} animating to {{ opacity: 1, y: 0 }} with transition={{ duration: 0.6 }}.
+Restructure the page scroll order:
+
+AppleHero — full viewport, map as experience
+TrustIndicators — 3 cards, animate in on scroll
+New HowItWorks scroll section — 3 full-viewport-width steps. Each step is left-text / right-visual. Step 1: Nominate (map visual). Step 2: Invest (token price ramp visual — show the 4 phases as a horizontal timeline: County $12.50 → State $18.75 → National $28.13 → International $37.50 with a glowing progress dot). Step 3: Govern (voting power visual — show 3 badge tiers with multipliers). Use alternating left/right layout. Each step animates in on scroll.
+FeatureHighlights — existing 6-card grid, animate in on scroll
+FourStepCTA — existing component
+New inline waitlist section — replace JoinWaitlist, trigger WaitlistModal on button click
+
+The overall page should feel like a single connected scroll story, not stacked independent sections. Use consistent py-24 spacing between sections. Add a subtle vertical scroll progress indicator on the right edge of the page — a thin line that fills from top to bottom as the user scrolls, using Framer Motion useScroll + scaleY transform.
+Do not change any existing functionality, routing, or API calls. Only change visual presentation and animation. Keep all existing data-testid attributes.
+
+
+What This Gets You
+
+Map becomes the full-screen hero instead of a widget
+Georgia-centered from the start
+Two-path entry (Invest / Build) baked into the hero
+Framer Motion scroll story replaces stacked sections
+Stats bar floats over the map instead of sitting below it
+Phase pricing visualized as an animated timeline inline on the page
+Scroll progress indicator — that one detail alone signals a premium platform
+Empty state handled gracefully instead of showing blank sections

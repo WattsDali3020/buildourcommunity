@@ -29,6 +29,7 @@ app.use(helmet({
         "wss://*.walletconnect.com",
         "https://*.walletconnect.org",
         "wss://*.walletconnect.org",
+        "https://raw.githubusercontent.com",
       ],
       frameSrc: ["'self'", "https://js.stripe.com"],
       workerSrc: ["'self'", "blob:"],

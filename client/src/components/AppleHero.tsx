@@ -1,12 +1,15 @@
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ArrowRight, MapPin, Building2, TrendingUp, Users, DollarSign } from "lucide-react";
+import { ArrowRight, MapPin, Building2, TrendingUp, Users, DollarSign, HardHat } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Property as DBProperty } from "@shared/schema";
+
+const GA_COUNTIES_GEOJSON_URL = "https://raw.githubusercontent.com/johan/world.geo.json/master/countries/USA/GA.geo.json";
 
 const phaseColors: Record<string, string> = {
   County: "#22c55e",
@@ -42,8 +45,8 @@ export function AppleHero() {
     if (!mapRef.current || mapInstanceRef.current) return;
 
     const map = L.map(mapRef.current, {
-      center: [36.5, -96],
-      zoom: 4,
+      center: [32.9, -83.2],
+      zoom: 7,
       zoomControl: false,
       attributionControl: false,
       scrollWheelZoom: true,
@@ -57,6 +60,26 @@ export function AppleHero() {
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
     mapInstanceRef.current = map;
+
+    fetch(GA_COUNTIES_GEOJSON_URL)
+      .then((res) => res.json())
+      .then((geojsonData) => {
+        if (!mapInstanceRef.current) return;
+        try {
+          L.geoJSON(geojsonData, {
+            style: {
+              color: "rgba(59, 130, 246, 0.2)",
+              weight: 1,
+              fillColor: "rgba(59, 130, 246, 0.04)",
+              fillOpacity: 1,
+              interactive: false,
+            },
+          }).addTo(mapInstanceRef.current);
+        } catch {
+          // silently skip if GeoJSON fails
+        }
+      })
+      .catch(() => {});
 
     return () => {
       map.remove();
@@ -122,108 +145,170 @@ export function AppleHero() {
           background: transparent !important;
           border: none !important;
         }
+        @keyframes pulse-ring {
+          0% { transform: scale(0.8); opacity: 1; }
+          100% { transform: scale(2.2); opacity: 0; }
+        }
       `}</style>
 
-      <section data-testid="hero-section">
-        <div className="bg-gradient-to-b from-background to-muted/30 border-b">
-          <div className="mx-auto max-w-5xl px-4 pt-14 pb-10 text-center">
-            <div className="mb-5">
-              <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30 px-4 py-1.5 text-sm" data-testid="badge-platform">
-                <Building2 className="h-3.5 w-3.5 mr-1.5" />
-                AI-Nudged RevitalDAO
-              </Badge>
-            </div>
+      <section data-testid="hero-section" className="relative w-full" style={{ height: "100vh", minHeight: "700px" }}>
+        <div ref={mapRef} className="absolute inset-0 w-full h-full z-0" data-testid="hero-map" />
 
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-5 text-foreground" data-testid="text-hero-title">
-              Build Your Community,{" "}
-              <span className="text-gradient-animated">One Token at a Time</span>
-            </h1>
+        <div className="absolute inset-0 z-10 pointer-events-none" style={{
+          background: "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 40%, transparent 60%)"
+        }} />
 
-            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed" data-testid="text-hero-subtitle">
-              Nominate distressed properties, invest in revitalization, vote on development
-              plans, and watch your county transform.{" "}
-              <span className="text-primary font-medium">Like SimCity, but real.</span>
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-              <Button size="lg" asChild className="min-w-[200px]" data-testid="button-explore-properties">
-                <Link href="/properties">
-                  Explore Properties
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild className="min-w-[200px]" data-testid="button-nominate">
-                <Link href="/wishlist">
-                  <MapPin className="mr-2 h-4 w-4" />
-                  Nominate Property
-                </Link>
-              </Button>
-            </div>
+        <motion.div
+          className="absolute z-20 left-0 right-0 flex flex-col items-center justify-center text-center px-4 pointer-events-none"
+          style={{ top: "8%", maxHeight: "40%" }}
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          <div className="mb-5 pointer-events-auto">
+            <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30 px-4 py-1.5 text-sm" data-testid="badge-platform">
+              <Building2 className="h-3.5 w-3.5 mr-1.5" />
+              AI-Nudged RevitalDAO
+            </Badge>
           </div>
-        </div>
 
-        <div className="relative bg-muted/20">
-          <div className="mx-auto max-w-7xl px-4 py-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">Active Projects</span>
-                {properties.length > 0 && (
-                  <span className="text-xs text-muted-foreground">— click markers for details</span>
-                )}
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight mb-5 text-white drop-shadow-lg" data-testid="text-hero-title">
+            Build Your Community,{" "}
+            <span className="text-gradient-animated">One Token at a Time</span>
+          </h1>
+
+          <p className="text-base sm:text-lg text-gray-200 max-w-2xl mx-auto mb-6 leading-relaxed drop-shadow-md" data-testid="text-hero-subtitle">
+            Nominate distressed properties, invest in revitalization, vote on development
+            plans, and watch your county transform.{" "}
+            <span className="text-primary font-medium">Like SimCity, but real.</span>
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4 pointer-events-auto">
+            <Button size="lg" asChild className="min-w-[200px]" data-testid="button-explore-properties">
+              <Link href="/properties">
+                Explore Properties
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild className="min-w-[200px] border-white/20 text-white hover:bg-white/10" data-testid="button-nominate">
+              <Link href="/wishlist">
+                <MapPin className="mr-2 h-4 w-4" />
+                Nominate Property
+              </Link>
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap justify-center pointer-events-auto">
+            {Object.entries(phaseColors).map(([phase, color]) => (
+              <div key={phase} className="flex items-center gap-1.5 text-xs text-gray-300">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
+                <span>{phase}</span>
               </div>
-              <div className="flex items-center gap-3 flex-wrap">
-                {Object.entries(phaseColors).map(([phase, color]) => (
-                  <div key={phase} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
-                    <span>{phase}</span>
+            ))}
+          </div>
+        </motion.div>
+
+        {properties.length === 0 && (
+          <motion.div
+            className="absolute z-20 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2, duration: 0.8 }}
+          >
+            <div className="flex flex-col items-center gap-3">
+              <div className="relative">
+                <MapPin className="h-8 w-8 text-primary" />
+                <div className="absolute inset-0 rounded-full border-2 border-primary" style={{
+                  animation: "pulse-ring 2s ease-out infinite"
+                }} />
+              </div>
+              <p className="text-sm text-gray-300 bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/10 text-center max-w-[280px]">
+                Be the first to nominate a property in your county
+              </p>
+            </div>
+          </motion.div>
+        )}
+
+        <motion.div
+          className="absolute z-20 right-4 lg:right-6 hidden md:flex flex-col gap-3 pointer-events-auto"
+          style={{ top: "50%", transform: "translateY(-50%)" }}
+          initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+        >
+          <Link href="/properties">
+            <div className="group cursor-pointer rounded-xl border border-white/10 bg-black/50 backdrop-blur-md p-4 w-[200px] hover:bg-black/70 transition-all" data-testid="cta-invest">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="h-9 w-9 rounded-lg bg-primary/20 flex items-center justify-center">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                </div>
+                <ArrowRight className="h-4 w-4 text-gray-400 ml-auto group-hover:translate-x-1 transition-transform" />
+              </div>
+              <p className="text-sm font-semibold text-white">I want to invest</p>
+              <p className="text-xs text-gray-400 mt-0.5">Browse tokenized properties</p>
+            </div>
+          </Link>
+
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6, duration: 0.6 }}
+          >
+            <Link href="/professionals">
+              <div className="group cursor-pointer rounded-xl border border-white/10 bg-black/50 backdrop-blur-md p-4 w-[200px] hover:bg-black/70 transition-all" data-testid="cta-build">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="h-9 w-9 rounded-lg bg-chart-2/20 flex items-center justify-center">
+                    <HardHat className="h-4 w-4 text-chart-2" />
                   </div>
-                ))}
+                  <ArrowRight className="h-4 w-4 text-gray-400 ml-auto group-hover:translate-x-1 transition-transform" />
+                </div>
+                <p className="text-sm font-semibold text-white">I want to build</p>
+                <p className="text-xs text-gray-400 mt-0.5">Join the pro network</p>
               </div>
-            </div>
-          </div>
+            </Link>
+          </motion.div>
+        </motion.div>
 
-          <div className="mx-auto max-w-7xl px-4 pb-4">
-            <div className="rounded-xl overflow-hidden border shadow-lg" style={{ height: "500px" }}>
-              <div ref={mapRef} className="w-full h-full" data-testid="hero-map" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-card border-y" data-testid="stats-bar">
-          <div className="mx-auto max-w-7xl px-4 py-6">
+        <motion.div
+          className="absolute z-20 bottom-0 left-0 right-0 bg-black/40 backdrop-blur-md border-t border-white/10"
+          data-testid="stats-bar"
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+        >
+          <div className="mx-auto max-w-7xl px-4 py-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div className="text-center" data-testid="stat-properties">
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <Building2 className="h-4 w-4 text-primary" />
                   <span className="text-2xl sm:text-3xl font-bold text-primary">{properties.length}</span>
                 </div>
-                <p className="text-sm text-muted-foreground">Active Properties</p>
+                <p className="text-sm text-gray-400">Active Properties</p>
               </div>
               <div className="text-center" data-testid="stat-funded">
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <TrendingUp className="h-4 w-4 text-chart-3" />
                   <span className="text-2xl sm:text-3xl font-bold text-chart-3">$0</span>
                 </div>
-                <p className="text-sm text-muted-foreground">Total Raised</p>
+                <p className="text-sm text-gray-400">Total Raised</p>
               </div>
               <div className="text-center" data-testid="stat-investors">
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <Users className="h-4 w-4 text-chart-2" />
                   <span className="text-2xl sm:text-3xl font-bold text-chart-2">0</span>
                 </div>
-                <p className="text-sm text-muted-foreground">Community Members</p>
+                <p className="text-sm text-gray-400">Community Members</p>
               </div>
               <div className="text-center" data-testid="stat-engagement">
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <DollarSign className="h-4 w-4 text-chart-4" />
                   <span className="text-2xl sm:text-3xl font-bold text-chart-4">$12.50</span>
                 </div>
-                <p className="text-sm text-muted-foreground">Min. Investment</p>
+                <p className="text-sm text-gray-400">Min. Investment</p>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </section>
     </>
   );
