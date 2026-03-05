@@ -93,6 +93,64 @@ const votingTiers = [
   { label: "National Investor", multiplier: "1.0x", color: "text-purple-400 border-purple-500/30 bg-purple-500/10" },
 ];
 
+function PhaseTimeline() {
+  const timelineRef = useRef(null);
+  const isTimelineInView = useInView(timelineRef, { once: true, margin: "-80px" });
+
+  return (
+    <div className="order-2 lg:order-1" ref={timelineRef}>
+      <div className="rounded-xl border bg-muted/30 p-6">
+        <div className="flex items-center gap-1 w-full">
+          {phases.map((phase, i) => (
+            <div key={phase.label} className="flex-1 flex flex-col items-center">
+              <div className="text-xs text-muted-foreground mb-2">{phase.label}</div>
+              <div className="relative flex items-center w-full h-1.5">
+                <div className="absolute inset-0 rounded-full bg-muted-foreground/20" />
+                {phase.active && (
+                  <motion.div
+                    className="absolute inset-y-0 left-0 rounded-full bg-primary"
+                    initial={{ width: "0%" }}
+                    animate={isTimelineInView ? { width: "100%" } : { width: "0%" }}
+                    transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }}
+                  />
+                )}
+                {phase.active && (
+                  <motion.div
+                    className="absolute right-0 h-4 w-4 rounded-full bg-primary border-2 border-background"
+                    style={{ top: "50%", transform: "translateY(-50%)" }}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={isTimelineInView ? {
+                      scale: 1,
+                      opacity: 1,
+                      boxShadow: [
+                        "0 0 0px rgba(59, 130, 246, 0.4)",
+                        "0 0 12px rgba(59, 130, 246, 0.8)",
+                        "0 0 0px rgba(59, 130, 246, 0.4)",
+                      ],
+                    } : { scale: 0, opacity: 0 }}
+                    transition={{
+                      scale: { duration: 0.4, delay: 1.4 },
+                      opacity: { duration: 0.4, delay: 1.4 },
+                      boxShadow: { duration: 2, repeat: Infinity, delay: 1.8 },
+                    }}
+                  />
+                )}
+                {i < phases.length - 1 && (
+                  <div className="absolute right-0 translate-x-1/2 h-1 w-2 bg-muted-foreground/20" />
+                )}
+              </div>
+              <div className={`text-lg font-bold mt-2 ${phase.active ? "text-primary" : "text-muted-foreground"}`}>
+                {phase.price}
+              </div>
+              <div className="text-xs text-muted-foreground">per token</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function HowItWorks() {
   return (
     <section className="py-24" data-testid="section-how-it-works">
@@ -146,30 +204,7 @@ function HowItWorks() {
 
           <ScrollReveal>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <div className="order-2 lg:order-1">
-                <div className="rounded-xl border bg-muted/30 p-6">
-                  <div className="flex items-center gap-1 w-full">
-                    {phases.map((phase, i) => (
-                      <div key={phase.label} className="flex-1 flex flex-col items-center">
-                        <div className="text-xs text-muted-foreground mb-2">{phase.label}</div>
-                        <div className="relative flex items-center w-full">
-                          <div className={`h-1.5 w-full rounded-full ${phase.active ? "bg-primary" : "bg-muted-foreground/20"}`} />
-                          {phase.active && (
-                            <div className="absolute right-0 -translate-y-0 h-4 w-4 rounded-full bg-primary border-2 border-background shadow-lg shadow-primary/40" />
-                          )}
-                          {i < phases.length - 1 && (
-                            <div className="absolute right-0 translate-x-1/2 h-1 w-2 bg-muted-foreground/20" />
-                          )}
-                        </div>
-                        <div className={`text-lg font-bold mt-2 ${phase.active ? "text-primary" : "text-muted-foreground"}`}>
-                          {phase.price}
-                        </div>
-                        <div className="text-xs text-muted-foreground">per token</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <PhaseTimeline />
               <div className="order-1 lg:order-2">
                 <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary mb-4">
                   <span className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">2</span>

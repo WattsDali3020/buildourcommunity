@@ -7,9 +7,37 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { feature } from "topojson-client";
+import type { Topology } from "topojson-specification";
 import type { Property as DBProperty } from "@shared/schema";
 
-const GA_COUNTIES_GEOJSON_URL = "https://raw.githubusercontent.com/johan/world.geo.json/master/countries/USA/GA.geo.json";
+const GA_COUNTIES_TOPOJSON_URL = "https://raw.githubusercontent.com/deldersveld/topojson/master/countries/us-states/GA-13-georgia-counties.json";
+
+const GA_CITY_COORDS: Record<string, [number, number]> = {
+  "Canton": [34.2368, -84.4908],
+  "Atlanta": [33.7490, -84.3880],
+  "Carrollton": [33.5801, -85.0766],
+  "Rome": [34.2570, -85.1647],
+  "Valdosta": [30.8327, -83.2785],
+  "Augusta": [33.4735, -81.9748],
+  "Savannah": [32.0809, -81.0912],
+  "Macon": [32.8407, -83.6324],
+  "Columbus": [32.4610, -84.9877],
+  "Albany": [31.5785, -84.1557],
+  "Marietta": [33.9526, -84.5499],
+  "Athens": [33.9519, -83.3576],
+  "Gainesville": [34.2979, -83.8241],
+  "Dalton": [34.7698, -84.9702],
+  "Warner Robins": [32.6130, -83.6243],
+  "Roswell": [34.0232, -84.3616],
+  "Woodstock": [34.1015, -84.5194],
+  "Ball Ground": [34.3387, -84.3752],
+  "Waleska": [34.3165, -84.5530],
+  "Holly Springs": [34.1743, -84.5027],
+  "Jasper": [34.4676, -84.4291],
+};
+
+const DEFAULT_GA_CENTER: [number, number] = [32.9, -83.2];
 
 const phaseColors: Record<string, string> = {
   County: "#22c55e",
@@ -61,12 +89,15 @@ export function AppleHero() {
 
     mapInstanceRef.current = map;
 
-    fetch(GA_COUNTIES_GEOJSON_URL)
+    fetch(GA_COUNTIES_TOPOJSON_URL)
       .then((res) => res.json())
-      .then((geojsonData) => {
+      .then((topoData) => {
         if (!mapInstanceRef.current) return;
         try {
-          L.geoJSON(geojsonData, {
+          if (!topoData.objects || Object.keys(topoData.objects).length === 0) return;
+          const objectKey = Object.keys(topoData.objects)[0];
+          const geojsonData = feature(topoData as Topology, topoData.objects[objectKey]);
+          L.geoJSON(geojsonData as GeoJSON.GeoJsonObject, {
             style: {
               color: "rgba(59, 130, 246, 0.2)",
               weight: 1,
@@ -76,7 +107,7 @@ export function AppleHero() {
             },
           }).addTo(mapInstanceRef.current);
         } catch {
-          // silently skip if GeoJSON fails
+          // silently skip if conversion fails
         }
       })
       .catch(() => {});
@@ -98,8 +129,24 @@ export function AppleHero() {
     });
 
     properties.forEach((prop) => {
-      const lat = parseFloat(prop.city === "Canton" ? "34.2368" : "34.0");
-      const lng = parseFloat(prop.city === "Canton" ? "-84.4908" : "-84.0");
+      let lat: number;
+      let lng: number;
+
+      if (prop.latitude != null && prop.longitude != null) {
+        const parsedLat = parseFloat(String(prop.latitude));
+        const parsedLng = parseFloat(String(prop.longitude));
+        if (Number.isFinite(parsedLat) && Number.isFinite(parsedLng)) {
+          lat = parsedLat;
+          lng = parsedLng;
+        } else {
+          const cityCoords = prop.city ? GA_CITY_COORDS[prop.city] : null;
+          [lat, lng] = cityCoords || DEFAULT_GA_CENTER;
+        }
+      } else {
+        const cityCoords = prop.city ? GA_CITY_COORDS[prop.city] : null;
+        [lat, lng] = cityCoords || DEFAULT_GA_CENTER;
+      }
+
       const phase = "County";
 
       const marker = L.marker([lat, lng], {
@@ -205,6 +252,27 @@ export function AppleHero() {
                 <span>{phase}</span>
               </div>
             ))}
+          </div>
+
+          <div className="flex md:hidden gap-3 mt-4 w-full max-w-sm pointer-events-auto">
+            <Link href="/properties" className="flex-1">
+              <div className="rounded-xl border border-white/10 bg-black/50 backdrop-blur-md p-3 text-center" data-testid="cta-invest-mobile">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-xs font-semibold text-white">I want to invest</span>
+                </div>
+                <p className="text-[10px] text-gray-400">Browse properties</p>
+              </div>
+            </Link>
+            <Link href="/professionals" className="flex-1">
+              <div className="rounded-xl border border-white/10 bg-black/50 backdrop-blur-md p-3 text-center" data-testid="cta-build-mobile">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <HardHat className="h-3.5 w-3.5 text-chart-2" />
+                  <span className="text-xs font-semibold text-white">I want to build</span>
+                </div>
+                <p className="text-[10px] text-gray-400">Join pro network</p>
+              </div>
+            </Link>
           </div>
         </motion.div>
 
