@@ -36,6 +36,7 @@ import Transfers from "@/pages/transfers";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
 import RiskDisclosure from "@/pages/risk-disclosure";
+import ProfessionalApply from "@/pages/professional-apply";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -71,6 +72,7 @@ function Router() {
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/risk-disclosure" component={RiskDisclosure} />
+      <Route path="/professionals/apply" component={ProfessionalApply} />
       <Route component={NotFound} />
     </Switch>
   );
