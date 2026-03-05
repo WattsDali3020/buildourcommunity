@@ -40,6 +40,9 @@ Preferred communication style: Simple, everyday language.
 - **Impact Simulator**: Georgia county-level adoption scenarios, GDP multiplier projections, and founder revenue scaling.
 - **Community Wishlist**: Zip-code-driven business voting and community need submission.
 - **Service Provider Marketplace**: Platform for service providers to bid on property services.
+- **Professional Profiles & Matching**: Licensed professionals (contractors, realtors, attorneys, engineers, architects, lenders, inspectors, appraisers) with verification, endorsements, service areas, and project matching.
+- **Agent Tasks**: AI agent task queue for property sourcing, owner outreach, grant research, contractor sourcing, and more.
+- **Reputation System**: Event-based reputation scoring for professionals (project completions, ratings, disputes).
 - **Owner Detection & Contact**: Automated property owner lookup, contact tracking, and owner response portal.
 - **Property Submissions**: Owners can submit properties with document uploads.
 - **Grants System**: Tracking federal/state/local/private/nonprofit grants.

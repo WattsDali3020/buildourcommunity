@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, decimal, timestamp, boolean, pgEnum, serial } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, decimal, timestamp, boolean, pgEnum, serial, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { users, sessions, type User, type UpsertUser } from "./models/auth";
@@ -976,3 +976,166 @@ export const auditLog = pgTable("audit_log", {
 });
 
 export type AuditLog = typeof auditLog.$inferSelect;
+
+export const professionalProfiles = pgTable("professional_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  licenseNumber: text("license_number"),
+  licenseState: text("license_state"),
+  licenseType: text("license_type"),
+  licenseExpiry: timestamp("license_expiry"),
+  isLicenseVerified: boolean("is_license_verified").default(false),
+  licenseVerifiedAt: timestamp("license_verified_at"),
+  insuranceProvider: text("insurance_provider"),
+  insurancePolicyNumber: text("insurance_policy_number"),
+  insuranceExpiry: timestamp("insurance_expiry"),
+  isInsuranceVerified: boolean("is_insurance_verified").default(false),
+  bondingAmount: decimal("bonding_amount", { precision: 15, scale: 2 }),
+  isBonded: boolean("is_bonded").default(false),
+  specialties: text("specialties").array(),
+  serviceCounties: text("service_counties").array(),
+  serviceStates: text("service_states").array(),
+  bio: text("bio"),
+  companyName: text("company_name"),
+  website: text("website"),
+  phoneNumber: text("phone_number"),
+  yearsExperience: integer("years_experience"),
+  completedProjects: integer("completed_projects").default(0),
+  averageRating: decimal("average_rating", { precision: 3, scale: 2 }),
+  totalEndorsements: integer("total_endorsements").default(0),
+  reputationScore: integer("reputation_score").default(0),
+  isAvailable: boolean("is_available").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertProfessionalProfileSchema = createInsertSchema(professionalProfiles).omit({
+  id: true,
+  isLicenseVerified: true,
+  licenseVerifiedAt: true,
+  isInsuranceVerified: true,
+  completedProjects: true,
+  totalEndorsements: true,
+  reputationScore: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertProfessionalProfile = z.infer<typeof insertProfessionalProfileSchema>;
+export type ProfessionalProfile = typeof professionalProfiles.$inferSelect;
+
+export const professionalEndorsements = pgTable("professional_endorsements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  professionalId: varchar("professional_id").references(() => professionalProfiles.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertProfessionalEndorsementSchema = createInsertSchema(professionalEndorsements).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertProfessionalEndorsement = z.infer<typeof insertProfessionalEndorsementSchema>;
+export type ProfessionalEndorsement = typeof professionalEndorsements.$inferSelect;
+
+export const projectProfessionalMatches = pgTable("project_professional_matches", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  offeringId: varchar("offering_id").references(() => tokenOfferings.id).notNull(),
+  professionalId: varchar("professional_id").references(() => professionalProfiles.id).notNull(),
+  roleNeeded: text("role_needed").notNull(),
+  status: text("status").default("invited"),
+  proposalDetails: text("proposal_details"),
+  proposedAmount: decimal("proposed_amount", { precision: 15, scale: 2 }),
+  tokenAllocationPercent: decimal("token_allocation_percent", { precision: 5, scale: 2 }),
+  tokenAllocationAmount: decimal("token_allocation_amount", { precision: 15, scale: 2 }),
+  invitedAt: timestamp("invited_at").defaultNow(),
+  respondedAt: timestamp("responded_at"),
+  selectedAt: timestamp("selected_at"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertProjectProfessionalMatchSchema = createInsertSchema(projectProfessionalMatches).omit({
+  id: true,
+  status: true,
+  respondedAt: true,
+  selectedAt: true,
+  completedAt: true,
+  createdAt: true,
+});
+
+export type InsertProjectProfessionalMatch = z.infer<typeof insertProjectProfessionalMatchSchema>;
+export type ProjectProfessionalMatch = typeof projectProfessionalMatches.$inferSelect;
+
+export const professionalServiceAreas = pgTable("professional_service_areas", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  professionalId: varchar("professional_id").references(() => professionalProfiles.id).notNull(),
+  county: text("county"),
+  state: text("state"),
+  zipCode: text("zip_code"),
+  projectTypes: text("project_types").array(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertProfessionalServiceAreaSchema = createInsertSchema(professionalServiceAreas).omit({
+  id: true,
+  isActive: true,
+  createdAt: true,
+});
+
+export type InsertProfessionalServiceArea = z.infer<typeof insertProfessionalServiceAreaSchema>;
+export type ProfessionalServiceArea = typeof professionalServiceAreas.$inferSelect;
+
+export const agentTasks = pgTable("agent_tasks", {
+  id: serial("id").primaryKey(),
+  agentType: text("agent_type").notNull(),
+  status: text("status").default("queued"),
+  priority: integer("priority").default(3),
+  inputData: jsonb("input_data"),
+  outputData: jsonb("output_data"),
+  relatedPropertyId: text("related_property_id"),
+  relatedOfferingId: text("related_offering_id"),
+  relatedUserId: text("related_user_id"),
+  errorMessage: text("error_message"),
+  scheduledFor: timestamp("scheduled_for"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  retryCount: integer("retry_count").default(0),
+  maxRetries: integer("max_retries").default(3),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertAgentTaskSchema = createInsertSchema(agentTasks).omit({
+  id: true,
+  status: true,
+  outputData: true,
+  errorMessage: true,
+  startedAt: true,
+  completedAt: true,
+  retryCount: true,
+  createdAt: true,
+});
+
+export type InsertAgentTask = z.infer<typeof insertAgentTaskSchema>;
+export type AgentTask = typeof agentTasks.$inferSelect;
+
+export const reputationEvents = pgTable("reputation_events", {
+  id: serial("id").primaryKey(),
+  professionalId: varchar("professional_id").references(() => professionalProfiles.id).notNull(),
+  eventType: text("event_type").notNull(),
+  pointsDelta: integer("points_delta").notNull(),
+  description: text("description"),
+  relatedProjectId: text("related_project_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertReputationEventSchema = createInsertSchema(reputationEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertReputationEvent = z.infer<typeof insertReputationEventSchema>;
+export type ReputationEvent = typeof reputationEvents.$inferSelect;
