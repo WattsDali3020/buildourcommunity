@@ -1,0 +1,83 @@
+The Brand Translation
+From your X banner:
+ElementCurrent CSSShould BePrimary accentBlue 217 91% 35%Gold 43 85% 52%Gradient textBlue → BlueGold → AmberGlow effectsBlue radialGold radialHero gradientBlue tintGold tintBorder hover glowBlueGoldChart-4Yellow-ishThis was already closeDark background0 0% 7%Keep — it's rightBlue secondary accent—Keep blue as secondary 217 91% 55%
+The gold from your logo: hsl(43 85% 52%) — warm amber gold, not yellow.
+Dark mode gold brightens to: hsl(43 85% 62%)
+
+The Complete Prompt
+Paste this into Replit AI:
+
+
+Here is my current client/src/index.css:
+[paste full index.css]
+Make the following changes to align the color system with the RevitaHub brand identity — gold primary accent, blue secondary accent, dark backgrounds. Do not change any structure, utilities, or elevation system. Only change color values.
+In :root (light mode), change:
+
+--primary from 217 91% 35% to 43 85% 45%
+--primary-foreground stays 0 0% 98%
+--ring from 217 91% 35% to 43 85% 45%
+--sidebar-primary from 217 91% 35% to 43 85% 45%
+--sidebar-ring from 217 91% 35% to 43 85% 45%
+--chart-4 from 43 74% 38% to 43 85% 45% (gold is now primary chart color)
+--chart-1 from 217 91% 35% to 217 91% 40% (blue becomes chart-1)
+
+In .dark, change:
+
+--primary from 217 91% 35% to 43 85% 52%
+--ring from 217 91% 55% to 43 85% 52%
+--sidebar-primary from 217 91% 55% to 43 85% 52%
+--sidebar-ring from 217 91% 55% to 43 85% 52%
+--chart-1 from 217 91% 65% to 43 85% 62%
+--chart-4 from 43 74% 68% to 43 85% 62%
+
+In the @layer utilities section, update ALL color references:
+In .bg-gradient-premium and .dark .bg-gradient-premium: replace 217 30% with 43 30%
+In .bg-gradient-hero and .dark .bg-gradient-hero: replace 217 91% 35% with 43 85% 45% and 217 91% 55% with 43 85% 52%
+In .glow-blue and .dark .glow-blue::before: replace 217 91% 55% with 43 85% 52%. Also rename the class from glow-blue to glow-gold everywhere in this file only.
+In .border-glow:hover and .dark .border-glow:hover: replace 217 91% 55% with 43 85% 52%
+In .text-gradient-animated: replace both 217 91% 35% and 217 91% 55% with 43 85% 45% and 43 85% 62% — making the animated gradient go from deep gold to bright amber
+In .divider-gradient: replace 217 91% 55% with 43 85% 52%
+In .nav-item-active: replace 217 91% 35% with 43 85% 45% and 217 91% 55% with 43 85% 52%
+In .dark .nav-item-active: replace 217 91% 65% with 43 85% 62%
+In .stat-card::after: replace 217 91% 55% with 43 85% 52%
+In .section-alt and .dark .section-alt: replace 217 20% with 43 15%
+In .dark .glass-card: replace 217 91% 55% with 43 85% 52%
+In .nav-floating: replace 217 91% 35% with 43 85% 45%
+Also add these two new utility classes at the end of the first @layer utilities block:
+css/* Gold glow — RevitaHub brand primary */
+.glow-gold {
+  position: relative;
+}
+
+.glow-gold::before {
+  content: '';
+  position: absolute;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 600px;
+  background: radial-gradient(ellipse at center,
+    hsl(43 85% 52% / 0.18) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+.dark .glow-gold::before {
+  background: radial-gradient(ellipse at center,
+    hsl(43 85% 52% / 0.14) 0%,
+    transparent 70%
+  );
+}
+
+/* Blue accent utility — keep blue as secondary */
+.text-accent-blue {
+  color: hsl(217 91% 55%);
+}
+
+.dark .text-accent-blue {
+  color: hsl(217 91% 65%);
+}
+After making all changes, also find every instance of glow-blue in client/src/pages/home.tsx and replace with glow-gold.
