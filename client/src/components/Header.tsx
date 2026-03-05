@@ -2,10 +2,12 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { WalletButton } from "./WalletButton";
-import { Building2, Menu, X, Brain, FileText, BarChart3 } from "lucide-react";
+import { Building2, Menu, X, Brain, FileText, BarChart3, Briefcase } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
+
+const PROFESSIONAL_ROLES = ["contractor", "realtor", "attorney", "engineer", "architect", "lender", "inspector", "appraiser"];
 
 const publicNavLinks = [
   { href: "/", label: "Home" },
@@ -34,8 +36,14 @@ export function Header() {
     queryKey: ["/api/auth/user"],
   });
 
+  const isProfessional = user?.role && PROFESSIONAL_ROLES.includes(user.role);
+
   const allLinks = user 
-    ? [...publicNavLinks, ...authenticatedNavLinks]
+    ? [
+        ...publicNavLinks,
+        ...authenticatedNavLinks,
+        ...(isProfessional ? [{ href: "/dashboard/professional", label: "Pro Dashboard", icon: Briefcase }] : []),
+      ]
     : publicNavLinks;
 
   return (

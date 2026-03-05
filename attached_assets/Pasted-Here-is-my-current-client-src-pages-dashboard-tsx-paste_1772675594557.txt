@@ -1,0 +1,16 @@
+Here is my current client/src/pages/dashboard.tsx:
+[paste dashboard.tsx here]
+Here is my current client/src/App.tsx:
+[paste App.tsx here]
+Create a new file at client/src/pages/professional-dashboard.tsx — a dashboard for verified professionals. Mirror the exact same layout, card components, data fetching patterns, and shadcn/ui components used in dashboard.tsx.
+The page should have four sections:
+Section 1 — Overview Stats Row:
+Four stat cards showing: Reputation Score (from professionalProfiles.reputationScore), Completed Projects (completedProjects), Active Matches (activeProjectCount), Total Tokens Earned (totalTokensEarned). Mirror the StatCard pattern from dashboard.tsx.
+Section 2 — Active Project Matches:
+Fetches from GET /api/professionals/:id/matches where :id is the current user's professional profile id. Shows each match as a card: property name, role needed, token allocation on offer (tokenAllocationPercent%), proposed amount, current status badge (invited/interested/proposed/selected/rejected), date invited. If status is 'invited' show two buttons: "I'm Interested" (PATCH match status to 'interested') and "Not Available" (PATCH to 'rejected'). If status is 'interested' or 'proposed' show: "View Project" button linking to /properties/:propertyId.
+Section 3 — Token Holdings:
+Fetches from GET /api/user/holdings. Shows tokens held across all projects they've participated in as a professional. Same holdings display pattern as dashboard.tsx investor holdings section.
+Section 4 — Opportunities In Your Area:
+Fetches from GET /api/professionals/available/:county using the professional's first service county. Shows active projects in their service area that still need their role type. Each card has "Express Interest" button that POSTs to /api/offerings/:offeringId/professionals/invite with the current user's professional profile.
+Access gate: If the current user does not have a verified professional profile (check GET /api/user on load), show a full-page prompt: "Your professional profile is pending verification" with current status and a note that admin will notify them by email. If they have no profile at all redirect to /professionals/apply.
+Add the route /dashboard/professional to App.tsx. Add a "Professional Dashboard" link to the navigation for users whose role is contractor, realtor, attorney, engineer, architect, lender, inspector, or appraiser. Do not modify any existing routes or dashboard functionality.

@@ -38,6 +38,7 @@ import Privacy from "@/pages/privacy";
 import RiskDisclosure from "@/pages/risk-disclosure";
 import Professionals from "@/pages/professionals";
 import ProfessionalApply from "@/pages/professional-apply";
+import ProfessionalDashboard from "@/pages/professional-dashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -75,6 +76,7 @@ function Router() {
       <Route path="/risk-disclosure" component={RiskDisclosure} />
       <Route path="/professionals" component={Professionals} />
       <Route path="/professionals/apply" component={ProfessionalApply} />
+      <Route path="/dashboard/professional" component={ProfessionalDashboard} />
       <Route component={NotFound} />
     </Switch>
   );

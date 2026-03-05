@@ -518,10 +518,11 @@ export async function registerRoutes(
   });
 
   app.post("/api/nominations/:id/vote", async (req: Request, res: Response) => {
-    const { userId, desiredUse } = req.body;
+    const { desiredUse } = req.body;
     const nominationId = req.params.id;
+    const userId = req.session?.userId || `anon_${(req.ip || "unknown").replace(/[^a-zA-Z0-9]/g, "_")}`;
 
-    if (!userId || !desiredUse) {
+    if (!desiredUse) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -868,6 +869,15 @@ export async function registerRoutes(
     }
     const user = await storage.getUser(userId);
     res.json(user);
+  });
+
+  app.get("/api/user/professional-profile", isAuthenticated, async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const profile = await storage.getProfessionalProfileByUserId(userId);
+    res.json(profile || null);
   });
 
   app.get("/api/user/holdings", isAuthenticated, async (req: Request, res: Response) => {
@@ -2095,6 +2105,63 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/professionals/opportunities/:county", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const offerings = await storage.getAllTokenOfferings();
+      const active = offerings.filter(o => o.status === "active");
+      const results: Array<{ offeringId: string; propertyId: string; propertyName: string; currentPhase: string; rolesNeeded: string[] }> = [];
+      for (const offering of active) {
+        const property = await storage.getProperty(offering.propertyId);
+        if (!property) continue;
+        const propertyCounty = property.county?.toLowerCase();
+        if (propertyCounty && propertyCounty !== req.params.county.toLowerCase()) continue;
+        const matches = await storage.getMatchesByOffering(offering.id);
+        const filledRoles = matches.filter(m => m.status === "selected" || m.status === "interested" || m.status === "proposed").map(m => m.roleNeeded);
+        const allRoles = ["contractor", "realtor", "attorney", "engineer", "architect", "lender", "inspector", "appraiser"];
+        const rolesNeeded = allRoles.filter(r => !filledRoles.includes(r));
+        if (rolesNeeded.length > 0) {
+          results.push({
+            offeringId: offering.id,
+            propertyId: offering.propertyId,
+            propertyName: property.name,
+            currentPhase: offering.currentPhase || "county",
+            rolesNeeded,
+          });
+        }
+      }
+      res.json(results);
+    } catch (error) {
+      console.error("Failed to fetch opportunities:", error);
+      res.status(500).json({ error: "Failed to fetch opportunities" });
+    }
+  });
+
+  app.post("/api/professionals/express-interest", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) return res.status(401).json({ error: "Not authenticated" });
+      const profile = await storage.getProfessionalProfileByUserId(userId);
+      if (!profile || !profile.isLicenseVerified) {
+        return res.status(403).json({ error: "Verified professional profile required" });
+      }
+      const { offeringId, roleNeeded } = req.body;
+      if (!offeringId || !roleNeeded) {
+        return res.status(400).json({ error: "Missing required fields: offeringId, roleNeeded" });
+      }
+      const match = await storage.createProjectMatch({
+        offeringId,
+        professionalId: profile.id,
+        roleNeeded,
+        invitedAt: new Date(),
+      });
+      await storage.updateProjectMatchStatus(match.id, "interested");
+      res.json(match);
+    } catch (error) {
+      console.error("Failed to express interest:", error);
+      res.status(500).json({ error: "Failed to express interest" });
+    }
+  });
+
   app.get("/api/professionals/:id", async (req: Request, res: Response) => {
     try {
       const profile = await storage.getProfessionalProfile(req.params.id);
@@ -2171,7 +2238,12 @@ export async function registerRoutes(
         return res.status(403).json({ error: "Not authorized to view these matches" });
       }
       const matches = await storage.getMatchesByProfessional(req.params.id);
-      res.json(matches);
+      const enriched = await Promise.all(matches.map(async (m) => {
+        const offering = await storage.getTokenOffering(m.offeringId);
+        const property = offering ? await storage.getProperty(offering.propertyId) : null;
+        return { ...m, propertyId: offering?.propertyId || null, propertyName: property?.name || null };
+      }));
+      res.json(enriched);
     } catch (error) {
       console.error("Failed to fetch matches:", error);
       res.status(500).json({ error: "Failed to fetch matches" });
