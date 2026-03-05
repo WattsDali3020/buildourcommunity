@@ -35,7 +35,7 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 /
 ├── client/
 │   └── src/
-│       ├── App.tsx                  # Router — all 30 page routes registered here
+│       ├── App.tsx                  # Router — all 34 page routes registered here
 │       ├── main.tsx                 # React entry point
 │       ├── index.css                # Tailwind + HSL color variables (dark/light)
 │       ├── pages/
@@ -69,6 +69,9 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 │       │   ├── terms.tsx            # Terms of Service (draft placeholder)
 │       │   ├── privacy.tsx          # Privacy Policy (draft placeholder)
 │       │   ├── risk-disclosure.tsx  # Risk disclosure with interactive acknowledgment
+│       │   ├── professionals.tsx    # Professional directory with filters
+│       │   ├── professional-apply.tsx # 6-step professional application wizard
+│       │   ├── professional-dashboard.tsx # Dashboard for verified professionals
 │       │   └── not-found.tsx        # 404 page
 │       ├── components/
 │       │   ├── Header.tsx           # Main nav: public + authenticated links
@@ -129,7 +132,7 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 │           └── use-upload.ts        # File upload hook
 ├── server/
 │   ├── index.ts                     # Express app bootstrap + Helmet.js (CSP enabled) + server start
-│   ├── routes.ts                    # All API route handlers (79 endpoints)
+│   ├── routes.ts                    # All API route handlers (104 endpoints)
 │   ├── storage.ts                   # IStorage interface + MemStorage fallback
 │   ├── databaseStorage.ts           # DatabaseStorage — PostgreSQL implementation of IStorage
 │   ├── db.ts                        # Drizzle client setup (DATABASE_URL)
@@ -247,7 +250,7 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 | `serviceBidStatus` | pending, approved, rejected |
 | `userRole` | user, admin |
 
-### Tables (29 total)
+### Tables (35 total)
 
 **users** (via shared/models/auth.ts — Replit Auth)
 - `id` (varchar PK), `email`, `firstName`, `lastName`, `profileImageUrl`, `walletAddress`, `county`, `state`, `country`, `kycStatus` (text, default "pending"), `kycVerifiedAt`, `role` (userRole enum, default "user"), `riskDisclosureAcknowledgedAt`, `emailNotificationsEnabled` (boolean, default true), `createdAt`, `updatedAt`
@@ -375,6 +378,37 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 **auditLog**
 - `id` (serial), `userId`, `action`, `targetTable`, `targetId`, `metadata`, `ipAddress`, `timestamp`
 
+**professionalProfiles**
+- `id` (varchar PK, UUID), `userId` (FK → users), `licenseNumber`, `licenseState`, `licenseType`, `licenseExpiry`
+- `isLicenseVerified` (boolean, default false), `licenseVerifiedAt`
+- `insuranceProvider`, `insurancePolicyNumber`, `insuranceExpiry`, `isInsuranceVerified` (boolean, default false)
+- `bondingAmount`, `isBonded` (boolean, default false)
+- `specialties` (text[]), `serviceCounties` (text[]), `serviceStates` (text[])
+- `bio`, `companyName`, `website`, `phoneNumber`, `yearsExperience`
+- `completedProjects` (default 0), `averageRating`, `totalEndorsements` (default 0), `reputationScore` (default 0)
+- `isAvailable` (boolean, default true), `createdAt`, `updatedAt`
+
+**professionalEndorsements**
+- `id` (varchar PK, UUID), `professionalId` (FK → professionalProfiles), `userId` (FK → users), `comment`, `createdAt`
+
+**projectProfessionalMatches**
+- `id` (varchar PK, UUID), `offeringId` (FK → tokenOfferings), `professionalId` (FK → professionalProfiles)
+- `roleNeeded`, `status` (text, default "invited"), `proposalDetails`, `proposedAmount`, `tokenAllocationPercent`, `tokenAllocationAmount`
+- `invitedAt`, `respondedAt`, `selectedAt`, `completedAt`, `createdAt`
+
+**professionalServiceAreas**
+- `id` (varchar PK, UUID), `professionalId` (FK → professionalProfiles), `county`, `state`, `zipCode`
+- `projectTypes` (text[]), `isActive` (boolean, default true), `createdAt`
+
+**agentTasks**
+- `id` (serial PK), `agentType`, `status` (text, default "queued"), `priority` (default 3)
+- `inputData` (jsonb), `outputData` (jsonb), `relatedPropertyId`, `relatedOfferingId`, `relatedUserId`
+- `errorMessage`, `scheduledFor`, `startedAt`, `completedAt`, `retryCount` (default 0), `maxRetries` (default 3), `createdAt`
+
+**reputationEvents**
+- `id` (serial PK), `professionalId` (FK → professionalProfiles), `eventType`, `pointsDelta`, `description`
+- `relatedProjectId`, `createdAt`
+
 ### Key Constants (shared/schema.ts)
 
 ```typescript
@@ -401,7 +435,7 @@ FUNDING_TIMELINE_CONFIG = {
 
 ---
 
-## API Routes (server/routes.ts — 79 endpoints)
+## API Routes (server/routes.ts — 104 endpoints)
 
 ### Platform
 | Method | Path | Auth | Description |
@@ -536,6 +570,7 @@ FUNDING_TIMELINE_CONFIG = {
 ### Admin Endpoints
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
+| GET | `/api/offerings` | Admin | List all offerings |
 | GET | `/api/admin/kyc-pending` | Admin | List pending KYC verifications |
 | POST | `/api/admin/kyc/:userId/approve` | Admin | Approve KYC |
 | POST | `/api/admin/kyc/:userId/reject` | Admin | Reject KYC |
@@ -556,6 +591,37 @@ FUNDING_TIMELINE_CONFIG = {
 | POST | `/api/waitlist` | No | Join waitlist |
 | POST | `/api/webhooks/stripe` | Stripe Sig | Stripe webhook (verified via `stripe.webhooks.constructEvent` with `STRIPE_WEBHOOK_SECRET`) |
 
+### Professional Matching
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/professionals` | No | List verified professionals (filters: county, state, specialty, role) |
+| GET | `/api/professionals/available/:county` | No | Professionals by county |
+| GET | `/api/professionals/opportunities/:county` | Yes | Opportunities for professionals in county |
+| GET | `/api/professionals/:id` | No | Professional detail with endorsement count |
+| POST | `/api/professionals/apply` | Yes | Create professional profile |
+| PATCH | `/api/professionals/:id` | Yes + Owner | Update own professional profile |
+| POST | `/api/professionals/express-interest` | Yes | Express interest in opportunity |
+| GET | `/api/professionals/:id/matches` | Yes + Owner | Professional's matches |
+| GET | `/api/professionals/:id/endorsements` | No | Get endorsements for professional |
+| POST | `/api/professionals/:id/endorse` | Yes | Create endorsement |
+| POST | `/api/professionals/:id/service-areas` | Yes + Owner | Add service area |
+| DELETE | `/api/professionals/:id/service-areas/:areaId` | Yes + Owner | Delete service area |
+| POST | `/api/professionals/matches/:matchId/respond` | Yes | Respond to match invitation |
+| GET | `/api/admin/professionals/pending` | Admin | List pending professional verifications |
+| POST | `/api/admin/professionals/:id/verify` | Admin | Verify professional |
+| POST | `/api/admin/professionals/:id/reject` | Admin | Reject professional |
+| POST | `/api/admin/professionals/:id/suspend` | Admin | Suspend professional |
+| GET | `/api/offerings/:offeringId/professionals` | No | List matched professionals for offering |
+| POST | `/api/offerings/:offeringId/professionals/invite` | Admin | Invite professional to offering |
+| POST | `/api/offerings/:offeringId/professionals/select` | Admin | Select professional for offering |
+
+### Agent Tasks
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/admin/agent-tasks` | Admin | List agent tasks (optional status filter) |
+| POST | `/api/admin/agent-tasks` | Admin | Create agent task |
+| PATCH | `/api/admin/agent-tasks/:id/status` | Admin | Update agent task status |
+
 ### Auth Routes (Replit Integration — replitAuth.ts)
 | Method | Path | Description |
 |--------|------|-------------|
@@ -566,7 +632,7 @@ FUNDING_TIMELINE_CONFIG = {
 
 ---
 
-## Frontend Pages & Routes (30 total)
+## Frontend Pages & Routes (34 total)
 
 | Route | Page File | Purpose |
 |-------|-----------|---------|
@@ -600,6 +666,9 @@ FUNDING_TIMELINE_CONFIG = {
 | `/terms` | terms.tsx | Terms of Service (draft placeholder) |
 | `/privacy` | privacy.tsx | Privacy Policy (draft placeholder) |
 | `/risk-disclosure` | risk-disclosure.tsx | Risk categories with interactive acknowledgment |
+| `/professionals` | professionals.tsx | Professional directory with filters |
+| `/professionals/apply` | professional-apply.tsx | 6-step professional application wizard |
+| `/dashboard/professional` | professional-dashboard.tsx | Dashboard for verified professionals |
 
 ---
 

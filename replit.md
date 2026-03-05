@@ -40,7 +40,10 @@ Preferred communication style: Simple, everyday language.
 - **Impact Simulator**: Georgia county-level adoption scenarios, GDP multiplier projections, and founder revenue scaling.
 - **Community Wishlist**: Zip-code-driven business voting and community need submission.
 - **Service Provider Marketplace**: Platform for service providers to bid on property services.
-- **Professional Profiles & Matching**: Licensed professionals (contractors, realtors, attorneys, engineers, architects, lenders, inspectors, appraisers) with verification, endorsements, service areas, and project matching.
+- **Professional Directory**: Public listing of verified professionals filtered by license type and county. 8 license types supported (contractor, realtor, attorney, engineer, architect, lender, inspector, appraiser).
+- **Professional Application**: 6-step wizard for professionals to apply with license details, service areas, insurance, and portfolio.
+- **Professional Dashboard**: Verified professionals see matches, holdings, opportunities in their service county, and can self-express-interest.
+- **Professional Matching**: Admin invites verified professionals to active offerings; professionals can express interest in county-level opportunities. Matches tracked with status workflow (invited → interested → proposed → selected).
 - **Agent Tasks**: AI agent task queue for property sourcing, owner outreach, grant research, contractor sourcing, and more.
 - **Reputation System**: Event-based reputation scoring for professionals (project completions, ratings, disputes).
 - **Owner Detection & Contact**: Automated property owner lookup, contact tracking, and owner response portal.
@@ -49,7 +52,7 @@ Preferred communication style: Simple, everyday language.
 - **Private Offerings**: Invite-only offerings with access codes and token allocation limits.
 - **Scheduler Service**: Background tasks for funding deadlines, phase advancements, and proposal statuses.
 - **Email Service**: Transactional emails for purchases, refunds, proposals, and phase changes.
-- **Security**: Helmet.js with CSP enabled (self + Mapbox/Stripe/WalletConnect/Base), session hardening, rate limiting, auth middleware on sensitive write endpoints, server-side userId injection on key create endpoints (properties, submissions, nominations, purchases), ownership authorization on submission mutations (403 for non-owners), owner-lookup endpoints restricted to admin-only, file upload endpoint requires authentication, Stripe webhook signature verification via `constructEvent` with `STRIPE_WEBHOOK_SECRET`.
+- **Security**: Helmet.js with CSP enabled (self + Mapbox/Stripe/WalletConnect/Base), session hardening, rate limiting, auth middleware on sensitive write endpoints, server-side userId injection on key create endpoints (properties, submissions, nominations, purchases), ownership authorization on submission mutations (403 for non-owners), owner-lookup endpoints restricted to admin-only, file upload endpoint requires authentication, Stripe webhook signature verification via `constructEvent` with `STRIPE_WEBHOOK_SECRET`, nomination vote identity derived from session/IP (prevents client-supplied userId spoofing).
 - **Audit Log**: System-wide event logging in `audit_log` table.
 - **Soft Delete**: `deletedAt` columns on financial tables.
 

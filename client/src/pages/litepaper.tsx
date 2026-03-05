@@ -39,7 +39,11 @@ import {
   Trophy,
   Hammer,
   MapPin,
-  Store
+  Store,
+  Briefcase,
+  ClipboardList,
+  Star,
+  UserCheck
 } from "lucide-react";
 
 const tableOfContents = [
@@ -56,6 +60,7 @@ const tableOfContents = [
   { id: "revitaleague", title: "RevitaLeague Competition", icon: Trophy },
   { id: "impact", title: "Georgia Impact Simulation", icon: MapPin },
   { id: "marketplace", title: "Service Marketplace & Wishlist", icon: Store },
+  { id: "professional-matching", title: "Professional Matching", icon: Briefcase },
   { id: "chainlink", title: "Chainlink Integration", icon: Link2 },
   { id: "governance", title: "DAO Governance", icon: Vote },
   { id: "treasury", title: "Treasury & Founder Economics", icon: Landmark },
@@ -177,7 +182,7 @@ export default function Litepaper() {
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-1.5 text-sm font-medium text-primary mb-6 print:hidden">
                 <FileText className="h-4 w-4" />
-                Technical Litepaper v3.1
+                Technical Litepaper v3.2 — Alpha
               </div>
               
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6" data-testid="litepaper-title">
@@ -254,6 +259,10 @@ export default function Litepaper() {
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                   <span className="text-sm">Service provider marketplace and community wishlist voting</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <span className="text-sm">Professional matching with 8 license types, reputation scoring, and agent task queue</span>
                 </div>
               </div>
             </div>
@@ -1244,6 +1253,208 @@ function updateLeagueScore(uint256 propertyId, uint256 newScore)
 
               <div className="divider-gradient" />
 
+              <Section id="professional-matching" title="Professional Matching & Verification" icon={Briefcase} alternate>
+                <p className="text-lg leading-relaxed mb-8 text-muted-foreground">
+                  RevitaHub connects revitalization projects with verified local professionals through a comprehensive 
+                  matching, verification, and reputation system. The Professional Directory ensures every project has 
+                  access to qualified contractors, realtors, attorneys, and other specialists — all verified by admin 
+                  review and tracked through on-platform reputation scoring.
+                </p>
+
+                <Subsection title="Professional Directory & License Types">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    Professionals apply through a multi-step onboarding wizard, providing license credentials, 
+                    service areas, insurance information, and portfolio links. Admin review and verification 
+                    ensure only qualified professionals appear in the directory.
+                  </p>
+
+                  <div className="rounded-xl border overflow-hidden mb-6">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="text-left p-4 font-semibold">License Type</th>
+                          <th className="text-left p-4 font-semibold">Role in Revitalization</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          ["Contractor", "Renovation, construction management, and permitting"],
+                          ["Realtor", "Property sourcing, valuation, and transaction coordination"],
+                          ["Attorney", "SPV formation, regulatory filings, title work, and compliance"],
+                          ["Engineer", "Structural assessment, environmental review, and site planning"],
+                          ["Architect", "Design, adaptive reuse planning, and building code compliance"],
+                          ["Lender", "Financing structure, loan origination, and capital stack advisory"],
+                          ["Inspector", "Property condition assessments and code violation reporting"],
+                          ["Appraiser", "Independent property valuation and market analysis"],
+                        ].map(([type, role], i) => (
+                          <tr key={i} className="border-t">
+                            <td className="p-4 font-medium">{type}</td>
+                            <td className="p-4 text-muted-foreground">{role}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Subsection>
+
+                <Subsection title="Verification & Approval Workflow">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    Every professional profile undergoes admin verification before appearing in the public directory. 
+                    License numbers, insurance credentials, and service area claims are validated against state records 
+                    where available.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="flex items-start gap-3 p-4 rounded-xl border">
+                      <ClipboardList className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-sm font-medium">Application Submission</span>
+                        <p className="text-xs text-muted-foreground mt-1">6-step wizard captures license, insurance, service areas, and portfolio</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-4 rounded-xl border">
+                      <UserCheck className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-sm font-medium">Admin Verification</span>
+                        <p className="text-xs text-muted-foreground mt-1">Admin reviews credentials and approves or rejects with verification timestamp</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-4 rounded-xl border">
+                      <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-sm font-medium">Directory Listing</span>
+                        <p className="text-xs text-muted-foreground mt-1">Verified professionals appear in public directory with endorsements</p>
+                      </div>
+                    </div>
+                  </div>
+                </Subsection>
+
+                <Subsection title="Service Areas & Endorsements">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    Professionals define their service areas at the county level, enabling precise matching with 
+                    properties in their geographic coverage. Other platform users and project participants can 
+                    leave endorsements with ratings, building a transparent reputation trail.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="p-4 rounded-xl border">
+                      <h5 className="font-semibold text-sm mb-2">County-Based Service Areas</h5>
+                      <ul className="space-y-1 text-xs text-muted-foreground">
+                        <li>• Professionals specify counties they serve</li>
+                        <li>• Active/inactive toggle per county</li>
+                        <li>• Auto-matching with properties in covered counties</li>
+                        <li>• Filter directory by county availability</li>
+                      </ul>
+                    </div>
+                    <div className="p-4 rounded-xl border">
+                      <h5 className="font-semibold text-sm mb-2">Endorsement System</h5>
+                      <ul className="space-y-1 text-xs text-muted-foreground">
+                        <li>• Authenticated users can endorse professionals</li>
+                        <li>• Written comments from verified platform users</li>
+                        <li>• Endorsement count visible on directory cards</li>
+                      </ul>
+                    </div>
+                  </div>
+                </Subsection>
+
+                <Subsection title="Project Matching">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    The platform supports two-way matching between projects and professionals. Admins can invite 
+                    verified professionals to active token offerings based on needed roles, and professionals 
+                    can independently express interest in opportunities within their service counties.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="p-4 rounded-xl border">
+                      <h5 className="font-semibold text-sm mb-2">Admin-Initiated Matching</h5>
+                      <ul className="space-y-1 text-xs text-muted-foreground">
+                        <li>• Admin invites professionals to specific offerings</li>
+                        <li>• Role specification (contractor, inspector, etc.)</li>
+                        <li>• Optional token allocation percentage for professional</li>
+                        <li>• Track invitation → response → selection pipeline</li>
+                      </ul>
+                    </div>
+                    <div className="p-4 rounded-xl border">
+                      <h5 className="font-semibold text-sm mb-2">Professional Self-Service</h5>
+                      <ul className="space-y-1 text-xs text-muted-foreground">
+                        <li>• Browse opportunities by county</li>
+                        <li>• Express interest in active offerings</li>
+                        <li>• View match status on Professional Dashboard</li>
+                        <li>• Track holdings and completed projects</li>
+                      </ul>
+                    </div>
+                  </div>
+                </Subsection>
+
+                <Subsection title="Reputation System">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    An event-based reputation scoring system tracks professional performance across multiple 
+                    dimensions. Reputation events are recorded by admins and accumulate into a composite score 
+                    visible on each professional's profile.
+                  </p>
+
+                  <div className="rounded-xl border overflow-hidden mb-6">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="text-left p-4 font-semibold">Event Type</th>
+                          <th className="text-left p-4 font-semibold">Score Impact</th>
+                          <th className="text-left p-4 font-semibold">Description</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          ["Project Completion", "+10", "Successfully delivered on a revitalization project"],
+                          ["Positive Rating", "+5", "Received a 4-5 star endorsement from a project participant"],
+                          ["On-Time Delivery", "+3", "Met project milestones within agreed timeline"],
+                          ["Dispute Filed", "-5", "A dispute was raised regarding professional's work"],
+                          ["Dispute Resolved", "+2", "Dispute resolved satisfactorily"],
+                          ["License Renewal", "+1", "Updated license credentials proactively"],
+                        ].map(([type, score, desc], i) => (
+                          <tr key={i} className="border-t">
+                            <td className="p-4 font-medium">{type}</td>
+                            <td className={`p-4 font-semibold ${score.startsWith('+') ? 'text-primary' : 'text-destructive'}`}>{score}</td>
+                            <td className="p-4 text-muted-foreground">{desc}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Subsection>
+
+                <Subsection title="Agent Tasks">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    The Agent Task system provides an AI-assisted task queue for platform operations. Admin-created 
+                    tasks automate and track key workflows across property sourcing, owner outreach, grant research, 
+                    and contractor sourcing — ensuring no revitalization opportunity is missed.
+                  </p>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    {[
+                      { label: "Property Sourcing", icon: Building2 },
+                      { label: "Owner Outreach", icon: Users },
+                      { label: "Grant Research", icon: Landmark },
+                      { label: "Contractor Sourcing", icon: Hammer },
+                    ].map((task, i) => (
+                      <div key={i} className="p-4 rounded-xl border text-center">
+                        <task.icon className="h-5 w-5 text-primary mx-auto mb-2" />
+                        <p className="text-sm font-medium">{task.label}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-muted/30 border">
+                    <p className="text-sm text-muted-foreground">
+                      Agent tasks are admin-managed with priority levels and status tracking (queued, running, 
+                      completed, failed, needs_human). Results and metadata are stored as structured JSON for 
+                      downstream automation and reporting.
+                    </p>
+                  </div>
+                </Subsection>
+              </Section>
+
+              <div className="divider-gradient" />
+
               <Section id="chainlink" title="Chainlink Integration" icon={Link2}>
                 <p className="leading-relaxed mb-8 text-muted-foreground">
                   RevitaHub is a participant in the Chainlink Build Program, leveraging Chainlink's oracle 
@@ -2013,6 +2224,9 @@ function getClaimableVested(address founder) public view returns (uint256) {
                       "Georgia county-level GDP impact simulator (159 counties, 4 adoption tiers)",
                       "RevitaLeague competition layer (4 leagues, RevitaCup, cross-county rivalries)",
                       "Economic impact cards on property detail with ARC distress classification",
+                      "Professional matching system — 8 license types, verification workflow, county-based service areas, endorsements",
+                      "Agent task queue — AI-assisted property sourcing, owner outreach, grant research, contractor sourcing",
+                      "Reputation system — event-based scoring for project completions, ratings, and disputes",
                       "Platform security hardening — CSP, auth middleware on all write endpoints, ownership authorization, server-side identity injection, Stripe webhook verification, authenticated file uploads"
                     ]},
                     { quarter: "Q2 2026", status: "upcoming", items: [
@@ -2115,7 +2329,7 @@ function getClaimableVested(address founder) public view returns (uint256) {
 
               <div className="py-16 text-center">
                 <p className="text-sm text-muted-foreground mb-4">
-                  RevitaHub Technical Litepaper v3.1 — March 2026
+                  RevitaHub Technical Litepaper v3.2 (Alpha) — March 2026
                 </p>
                 <p className="text-xs text-muted-foreground">
                   &copy; {new Date().getFullYear()} Build Our Community, LLC. All rights reserved.
