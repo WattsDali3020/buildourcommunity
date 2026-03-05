@@ -18,11 +18,19 @@ import {
   type ServiceBid, type InsertServiceBid,
   type ShareTransfer,
   type TokenRefund,
+  type ProfessionalProfile, type InsertProfessionalProfile,
+  type ProfessionalEndorsement, type InsertProfessionalEndorsement,
+  type ProjectProfessionalMatch, type InsertProjectProfessionalMatch,
+  type ProfessionalServiceArea, type InsertProfessionalServiceArea,
+  type AgentTask, type InsertAgentTask,
+  type ReputationEvent, type InsertReputationEvent,
   PHASE_CONFIG, calculatePhasePrice, getPhaseAllocation,
   users, properties, tokenOfferings, offeringPhases, tokenPurchases, 
   tokenHoldings, proposals, votes, propertySubmissions, submissionDocuments,
   propertyNominations, desiredUseVotes, privateOfferingInvites, propertyGrants, waitlist, wishes,
-  serviceBids, shareTransfers, tokenRefunds
+  serviceBids, shareTransfers, tokenRefunds,
+  professionalProfiles, professionalEndorsements, projectProfessionalMatches,
+  professionalServiceAreas, agentTasks, reputationEvents
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
@@ -979,5 +987,195 @@ export class DatabaseStorage implements IStorage {
 
   async getAllPurchases(): Promise<TokenPurchase[]> {
     return db.select().from(tokenPurchases).orderBy(desc(tokenPurchases.purchasedAt));
+  }
+
+  async createProfessionalProfile(profile: InsertProfessionalProfile): Promise<ProfessionalProfile> {
+    const [created] = await db.insert(professionalProfiles).values(profile).returning();
+    return created;
+  }
+
+  async getProfessionalProfile(id: string): Promise<ProfessionalProfile | undefined> {
+    const [profile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.id, id));
+    return profile || undefined;
+  }
+
+  async getProfessionalProfileByUserId(userId: string): Promise<ProfessionalProfile | undefined> {
+    const [profile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.userId, userId));
+    return profile || undefined;
+  }
+
+  async getProfessionalProfiles(filters?: { county?: string; state?: string; specialty?: string; role?: string; status?: string }): Promise<ProfessionalProfile[]> {
+    let query = db.select().from(professionalProfiles);
+    const conditions: any[] = [];
+
+    if (filters?.county) {
+      conditions.push(sql`${filters.county} = ANY(${professionalProfiles.serviceCounties})`);
+    }
+    if (filters?.state) {
+      conditions.push(sql`${filters.state} = ANY(${professionalProfiles.serviceStates})`);
+    }
+    if (filters?.specialty) {
+      conditions.push(sql`${filters.specialty} = ANY(${professionalProfiles.specialties})`);
+    }
+
+    if (conditions.length > 0) {
+      return db.select().from(professionalProfiles).where(and(...conditions)).orderBy(desc(professionalProfiles.createdAt));
+    }
+    return db.select().from(professionalProfiles).orderBy(desc(professionalProfiles.createdAt));
+  }
+
+  async updateProfessionalProfile(id: string, data: Partial<InsertProfessionalProfile>): Promise<ProfessionalProfile | undefined> {
+    const [updated] = await db.update(professionalProfiles).set({ ...data, updatedAt: new Date() }).where(eq(professionalProfiles.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async updateProfessionalProfileStatus(id: string, status: string, verifiedAt?: Date): Promise<ProfessionalProfile | undefined> {
+    const updateData: any = { isLicenseVerified: status === "verified", updatedAt: new Date() };
+    if (verifiedAt) {
+      updateData.licenseVerifiedAt = verifiedAt;
+    }
+    const [updated] = await db.update(professionalProfiles).set(updateData).where(eq(professionalProfiles.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async getProfessionalsByCounty(county: string): Promise<ProfessionalProfile[]> {
+    return db.select().from(professionalProfiles)
+      .where(and(
+        sql`${county} = ANY(${professionalProfiles.serviceCounties})`,
+        eq(professionalProfiles.isLicenseVerified, true),
+        eq(professionalProfiles.isAvailable, true)
+      ))
+      .orderBy(desc(professionalProfiles.reputationScore));
+  }
+
+  async createEndorsement(endorsement: InsertProfessionalEndorsement): Promise<ProfessionalEndorsement> {
+    const [created] = await db.insert(professionalEndorsements).values(endorsement).returning();
+    await db.update(professionalProfiles)
+      .set({ totalEndorsements: sql`${professionalProfiles.totalEndorsements} + 1` })
+      .where(eq(professionalProfiles.id, endorsement.professionalId));
+    return created;
+  }
+
+  async getEndorsementsByProfessional(professionalId: string): Promise<ProfessionalEndorsement[]> {
+    return db.select().from(professionalEndorsements)
+      .where(eq(professionalEndorsements.professionalId, professionalId))
+      .orderBy(desc(professionalEndorsements.createdAt));
+  }
+
+  async hasUserEndorsed(userId: string, professionalId: string): Promise<boolean> {
+    const [existing] = await db.select().from(professionalEndorsements)
+      .where(and(
+        eq(professionalEndorsements.userId, userId),
+        eq(professionalEndorsements.professionalId, professionalId)
+      ));
+    return !!existing;
+  }
+
+  async getEndorsementCount(professionalId: string): Promise<number> {
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(professionalEndorsements)
+      .where(eq(professionalEndorsements.professionalId, professionalId));
+    return Number(result?.count || 0);
+  }
+
+  async createProjectMatch(match: InsertProjectProfessionalMatch): Promise<ProjectProfessionalMatch> {
+    const [created] = await db.insert(projectProfessionalMatches).values(match).returning();
+    return created;
+  }
+
+  async getProjectMatch(id: string): Promise<ProjectProfessionalMatch | undefined> {
+    const [match] = await db.select().from(projectProfessionalMatches).where(eq(projectProfessionalMatches.id, id));
+    return match || undefined;
+  }
+
+  async getMatchesByOffering(offeringId: string): Promise<ProjectProfessionalMatch[]> {
+    return db.select().from(projectProfessionalMatches)
+      .where(eq(projectProfessionalMatches.offeringId, offeringId))
+      .orderBy(desc(projectProfessionalMatches.createdAt));
+  }
+
+  async getMatchesByProfessional(professionalId: string): Promise<ProjectProfessionalMatch[]> {
+    return db.select().from(projectProfessionalMatches)
+      .where(eq(projectProfessionalMatches.professionalId, professionalId))
+      .orderBy(desc(projectProfessionalMatches.createdAt));
+  }
+
+  async updateProjectMatchStatus(id: string, status: string, data?: Partial<ProjectProfessionalMatch>): Promise<ProjectProfessionalMatch | undefined> {
+    const updateData: any = { status };
+    if (status === "interested" || status === "rejected") {
+      updateData.respondedAt = new Date();
+    }
+    if (status === "selected") {
+      updateData.selectedAt = new Date();
+    }
+    if (status === "completed") {
+      updateData.completedAt = new Date();
+    }
+    if (data) {
+      Object.assign(updateData, data);
+    }
+    const [updated] = await db.update(projectProfessionalMatches).set(updateData).where(eq(projectProfessionalMatches.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async createServiceArea(area: InsertProfessionalServiceArea): Promise<ProfessionalServiceArea> {
+    const [created] = await db.insert(professionalServiceAreas).values(area).returning();
+    return created;
+  }
+
+  async getServiceAreasByProfessional(professionalId: string): Promise<ProfessionalServiceArea[]> {
+    return db.select().from(professionalServiceAreas)
+      .where(eq(professionalServiceAreas.professionalId, professionalId));
+  }
+
+  async deleteServiceArea(id: string): Promise<boolean> {
+    const result = await db.delete(professionalServiceAreas).where(eq(professionalServiceAreas.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async createAgentTask(task: InsertAgentTask): Promise<AgentTask> {
+    const [created] = await db.insert(agentTasks).values(task).returning();
+    return created;
+  }
+
+  async getAgentTask(id: number): Promise<AgentTask | undefined> {
+    const [task] = await db.select().from(agentTasks).where(eq(agentTasks.id, id));
+    return task || undefined;
+  }
+
+  async getAgentTasks(status?: string): Promise<AgentTask[]> {
+    if (status) {
+      return db.select().from(agentTasks).where(eq(agentTasks.status, status)).orderBy(desc(agentTasks.createdAt));
+    }
+    return db.select().from(agentTasks).orderBy(desc(agentTasks.createdAt));
+  }
+
+  async updateAgentTaskStatus(id: number, status: string, data?: Partial<AgentTask>): Promise<AgentTask | undefined> {
+    const updateData: any = { status };
+    if (status === "running") {
+      updateData.startedAt = new Date();
+    }
+    if (status === "completed" || status === "failed") {
+      updateData.completedAt = new Date();
+    }
+    if (data) {
+      Object.assign(updateData, data);
+    }
+    const [updated] = await db.update(agentTasks).set(updateData).where(eq(agentTasks.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async createReputationEvent(event: InsertReputationEvent): Promise<ReputationEvent> {
+    const [created] = await db.insert(reputationEvents).values(event).returning();
+    await db.update(professionalProfiles)
+      .set({ reputationScore: sql`${professionalProfiles.reputationScore} + ${event.pointsDelta}` })
+      .where(eq(professionalProfiles.id, event.professionalId));
+    return created;
+  }
+
+  async getReputationEventsByProfessional(professionalId: string): Promise<ReputationEvent[]> {
+    return db.select().from(reputationEvents)
+      .where(eq(reputationEvents.professionalId, professionalId))
+      .orderBy(desc(reputationEvents.createdAt));
   }
 }

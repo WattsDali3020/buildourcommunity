@@ -18,11 +18,19 @@ import {
   type ServiceBid, type InsertServiceBid,
   type ShareTransfer,
   type TokenRefund,
+  type ProfessionalProfile, type InsertProfessionalProfile,
+  type ProfessionalEndorsement, type InsertProfessionalEndorsement,
+  type ProjectProfessionalMatch, type InsertProjectProfessionalMatch,
+  type ProfessionalServiceArea, type InsertProfessionalServiceArea,
+  type AgentTask, type InsertAgentTask,
+  type ReputationEvent, type InsertReputationEvent,
   PHASE_CONFIG, calculatePhasePrice, getPhaseAllocation,
   users, properties, tokenOfferings, offeringPhases, tokenPurchases, 
   tokenHoldings, proposals, votes, propertySubmissions, submissionDocuments,
   propertyNominations, desiredUseVotes, privateOfferingInvites, propertyGrants, waitlist, wishes,
-  serviceBids, shareTransfers, tokenRefunds
+  serviceBids, shareTransfers, tokenRefunds,
+  professionalProfiles, professionalEndorsements, projectProfessionalMatches,
+  professionalServiceAreas, agentTasks, reputationEvents
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -174,6 +182,43 @@ export interface IStorage {
   updatePurchaseReconciliationStatus(id: string, reconciliationStatus: TokenPurchase["reconciliationStatus"]): Promise<TokenPurchase | undefined>;
   getStuckPurchases(minutesThreshold: number): Promise<TokenPurchase[]>;
   getAllPurchases(): Promise<TokenPurchase[]>;
+
+  // Professional Profiles
+  createProfessionalProfile(profile: InsertProfessionalProfile): Promise<ProfessionalProfile>;
+  getProfessionalProfile(id: string): Promise<ProfessionalProfile | undefined>;
+  getProfessionalProfileByUserId(userId: string): Promise<ProfessionalProfile | undefined>;
+  getProfessionalProfiles(filters?: { county?: string; state?: string; specialty?: string; role?: string; status?: string }): Promise<ProfessionalProfile[]>;
+  updateProfessionalProfile(id: string, data: Partial<InsertProfessionalProfile>): Promise<ProfessionalProfile | undefined>;
+  updateProfessionalProfileStatus(id: string, status: string, verifiedAt?: Date): Promise<ProfessionalProfile | undefined>;
+  getProfessionalsByCounty(county: string): Promise<ProfessionalProfile[]>;
+
+  // Professional Endorsements
+  createEndorsement(endorsement: InsertProfessionalEndorsement): Promise<ProfessionalEndorsement>;
+  getEndorsementsByProfessional(professionalId: string): Promise<ProfessionalEndorsement[]>;
+  hasUserEndorsed(userId: string, professionalId: string): Promise<boolean>;
+  getEndorsementCount(professionalId: string): Promise<number>;
+
+  // Project Professional Matches
+  createProjectMatch(match: InsertProjectProfessionalMatch): Promise<ProjectProfessionalMatch>;
+  getProjectMatch(id: string): Promise<ProjectProfessionalMatch | undefined>;
+  getMatchesByOffering(offeringId: string): Promise<ProjectProfessionalMatch[]>;
+  getMatchesByProfessional(professionalId: string): Promise<ProjectProfessionalMatch[]>;
+  updateProjectMatchStatus(id: string, status: string, data?: Partial<ProjectProfessionalMatch>): Promise<ProjectProfessionalMatch | undefined>;
+
+  // Professional Service Areas
+  createServiceArea(area: InsertProfessionalServiceArea): Promise<ProfessionalServiceArea>;
+  getServiceAreasByProfessional(professionalId: string): Promise<ProfessionalServiceArea[]>;
+  deleteServiceArea(id: string): Promise<boolean>;
+
+  // Agent Tasks
+  createAgentTask(task: InsertAgentTask): Promise<AgentTask>;
+  getAgentTask(id: number): Promise<AgentTask | undefined>;
+  getAgentTasks(status?: string): Promise<AgentTask[]>;
+  updateAgentTaskStatus(id: number, status: string, data?: Partial<AgentTask>): Promise<AgentTask | undefined>;
+
+  // Reputation Events
+  createReputationEvent(event: InsertReputationEvent): Promise<ReputationEvent>;
+  getReputationEventsByProfessional(professionalId: string): Promise<ReputationEvent[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -1329,6 +1374,53 @@ export class MemStorage implements IStorage {
       return dateB - dateA;
     });
   }
+
+  async createProfessionalProfile(profile: InsertProfessionalProfile): Promise<ProfessionalProfile> {
+    const id = randomUUID();
+    return { id, ...profile, isLicenseVerified: false, licenseVerifiedAt: null, isInsuranceVerified: false, completedProjects: 0, totalEndorsements: 0, reputationScore: 0, createdAt: new Date(), updatedAt: new Date() } as ProfessionalProfile;
+  }
+  async getProfessionalProfile(id: string): Promise<ProfessionalProfile | undefined> { return undefined; }
+  async getProfessionalProfileByUserId(userId: string): Promise<ProfessionalProfile | undefined> { return undefined; }
+  async getProfessionalProfiles(filters?: { county?: string; state?: string; specialty?: string; role?: string; status?: string }): Promise<ProfessionalProfile[]> { return []; }
+  async updateProfessionalProfile(id: string, data: Partial<InsertProfessionalProfile>): Promise<ProfessionalProfile | undefined> { return undefined; }
+  async updateProfessionalProfileStatus(id: string, status: string, verifiedAt?: Date): Promise<ProfessionalProfile | undefined> { return undefined; }
+  async getProfessionalsByCounty(county: string): Promise<ProfessionalProfile[]> { return []; }
+
+  async createEndorsement(endorsement: InsertProfessionalEndorsement): Promise<ProfessionalEndorsement> {
+    const id = randomUUID();
+    return { id, ...endorsement, createdAt: new Date() } as ProfessionalEndorsement;
+  }
+  async getEndorsementsByProfessional(professionalId: string): Promise<ProfessionalEndorsement[]> { return []; }
+  async hasUserEndorsed(userId: string, professionalId: string): Promise<boolean> { return false; }
+  async getEndorsementCount(professionalId: string): Promise<number> { return 0; }
+
+  async createProjectMatch(match: InsertProjectProfessionalMatch): Promise<ProjectProfessionalMatch> {
+    const id = randomUUID();
+    return { id, ...match, status: "invited", respondedAt: null, selectedAt: null, completedAt: null, createdAt: new Date() } as ProjectProfessionalMatch;
+  }
+  async getProjectMatch(id: string): Promise<ProjectProfessionalMatch | undefined> { return undefined; }
+  async getMatchesByOffering(offeringId: string): Promise<ProjectProfessionalMatch[]> { return []; }
+  async getMatchesByProfessional(professionalId: string): Promise<ProjectProfessionalMatch[]> { return []; }
+  async updateProjectMatchStatus(id: string, status: string, data?: Partial<ProjectProfessionalMatch>): Promise<ProjectProfessionalMatch | undefined> { return undefined; }
+
+  async createServiceArea(area: InsertProfessionalServiceArea): Promise<ProfessionalServiceArea> {
+    const id = randomUUID();
+    return { id, ...area, isActive: true, createdAt: new Date() } as ProfessionalServiceArea;
+  }
+  async getServiceAreasByProfessional(professionalId: string): Promise<ProfessionalServiceArea[]> { return []; }
+  async deleteServiceArea(id: string): Promise<boolean> { return false; }
+
+  async createAgentTask(task: InsertAgentTask): Promise<AgentTask> {
+    return { id: 1, ...task, status: "queued", outputData: null, errorMessage: null, startedAt: null, completedAt: null, retryCount: 0, createdAt: new Date() } as AgentTask;
+  }
+  async getAgentTask(id: number): Promise<AgentTask | undefined> { return undefined; }
+  async getAgentTasks(status?: string): Promise<AgentTask[]> { return []; }
+  async updateAgentTaskStatus(id: number, status: string, data?: Partial<AgentTask>): Promise<AgentTask | undefined> { return undefined; }
+
+  async createReputationEvent(event: InsertReputationEvent): Promise<ReputationEvent> {
+    return { id: 1, ...event, createdAt: new Date() } as ReputationEvent;
+  }
+  async getReputationEventsByProfessional(professionalId: string): Promise<ReputationEvent[]> { return []; }
 }
 
 import { DatabaseStorage } from "./databaseStorage";

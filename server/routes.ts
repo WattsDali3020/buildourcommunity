@@ -2029,6 +2029,435 @@ export async function registerRoutes(
     }
   });
 
+  // Professional Profiles
+  app.post("/api/professionals/apply", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId!;
+      const existing = await storage.getProfessionalProfileByUserId(userId);
+      if (existing) {
+        return res.status(409).json({ error: "You already have a professional profile" });
+      }
+      const { isLicenseVerified, licenseVerifiedAt, isInsuranceVerified, completedProjects, totalEndorsements, reputationScore, ...safeBody } = req.body;
+      const profile = await storage.createProfessionalProfile({
+        ...safeBody,
+        userId,
+      });
+      await logAuditEvent({
+        userId,
+        action: "professional_apply",
+        targetTable: "professional_profiles",
+        targetId: profile.id,
+        metadata: { licenseType: req.body.licenseType, licenseState: req.body.licenseState },
+        req,
+      });
+      res.status(201).json(profile);
+    } catch (error) {
+      console.error("Failed to create professional profile:", error);
+      res.status(500).json({ error: "Failed to create professional profile" });
+    }
+  });
+
+  app.get("/api/professionals", async (req: Request, res: Response) => {
+    try {
+      const { county, state, specialty, role } = req.query;
+      const profiles = await storage.getProfessionalProfiles({
+        county: county as string,
+        state: state as string,
+        specialty: specialty as string,
+        role: role as string,
+      });
+      const verified = profiles.filter(p => p.isLicenseVerified);
+      res.json(verified);
+    } catch (error) {
+      console.error("Failed to fetch professionals:", error);
+      res.status(500).json({ error: "Failed to fetch professionals" });
+    }
+  });
+
+  app.get("/api/professionals/available/:county", async (req: Request, res: Response) => {
+    try {
+      const profiles = await storage.getProfessionalsByCounty(req.params.county);
+      res.json(profiles);
+    } catch (error) {
+      console.error("Failed to fetch professionals by county:", error);
+      res.status(500).json({ error: "Failed to fetch professionals" });
+    }
+  });
+
+  app.get("/api/professionals/:id", async (req: Request, res: Response) => {
+    try {
+      const profile = await storage.getProfessionalProfile(req.params.id);
+      if (!profile) {
+        return res.status(404).json({ error: "Professional profile not found" });
+      }
+      const endorsementCount = await storage.getEndorsementCount(profile.id);
+      res.json({ ...profile, endorsementCount });
+    } catch (error) {
+      console.error("Failed to fetch professional:", error);
+      res.status(500).json({ error: "Failed to fetch professional" });
+    }
+  });
+
+  app.patch("/api/professionals/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const profile = await storage.getProfessionalProfile(req.params.id);
+      if (!profile) {
+        return res.status(404).json({ error: "Professional profile not found" });
+      }
+      if (profile.userId !== req.session.userId) {
+        return res.status(403).json({ error: "Not authorized to update this profile" });
+      }
+      const { userId: _u, isLicenseVerified: _lv, licenseVerifiedAt: _la, isInsuranceVerified: _iv, completedProjects: _cp, totalEndorsements: _te, reputationScore: _rs, id: _id, ...safeUpdate } = req.body;
+      const updated = await storage.updateProfessionalProfile(req.params.id, safeUpdate);
+      res.json(updated);
+    } catch (error) {
+      console.error("Failed to update professional profile:", error);
+      res.status(500).json({ error: "Failed to update professional profile" });
+    }
+  });
+
+  app.post("/api/professionals/:id/endorse", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId!;
+      const professionalId = req.params.id;
+      const profile = await storage.getProfessionalProfile(professionalId);
+      if (!profile) {
+        return res.status(404).json({ error: "Professional profile not found" });
+      }
+      const alreadyEndorsed = await storage.hasUserEndorsed(userId, professionalId);
+      if (alreadyEndorsed) {
+        return res.status(409).json({ error: "You have already endorsed this professional" });
+      }
+      const endorsement = await storage.createEndorsement({
+        professionalId,
+        userId,
+        comment: req.body.comment || null,
+      });
+      res.status(201).json(endorsement);
+    } catch (error) {
+      console.error("Failed to create endorsement:", error);
+      res.status(500).json({ error: "Failed to create endorsement" });
+    }
+  });
+
+  app.get("/api/professionals/:id/endorsements", async (req: Request, res: Response) => {
+    try {
+      const endorsements = await storage.getEndorsementsByProfessional(req.params.id);
+      res.json(endorsements);
+    } catch (error) {
+      console.error("Failed to fetch endorsements:", error);
+      res.status(500).json({ error: "Failed to fetch endorsements" });
+    }
+  });
+
+  app.get("/api/professionals/:id/matches", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const profile = await storage.getProfessionalProfile(req.params.id);
+      if (!profile) {
+        return res.status(404).json({ error: "Professional profile not found" });
+      }
+      if (profile.userId !== req.session.userId) {
+        return res.status(403).json({ error: "Not authorized to view these matches" });
+      }
+      const matches = await storage.getMatchesByProfessional(req.params.id);
+      res.json(matches);
+    } catch (error) {
+      console.error("Failed to fetch matches:", error);
+      res.status(500).json({ error: "Failed to fetch matches" });
+    }
+  });
+
+  // Admin Professional Routes
+  app.get("/api/admin/professionals/pending", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const profiles = await storage.getProfessionalProfiles({ status: "pending" });
+      const pending = profiles.filter(p => !p.isLicenseVerified);
+      res.json(pending);
+    } catch (error) {
+      console.error("Failed to fetch pending professionals:", error);
+      res.status(500).json({ error: "Failed to fetch pending professionals" });
+    }
+  });
+
+  app.post("/api/admin/professionals/:id/verify", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const profile = await storage.getProfessionalProfile(req.params.id);
+      if (!profile) {
+        return res.status(404).json({ error: "Professional profile not found" });
+      }
+      const updated = await storage.updateProfessionalProfileStatus(req.params.id, "verified", new Date());
+      await logAuditEvent({
+        userId: req.session.userId!,
+        action: "professional_verify",
+        targetTable: "professional_profiles",
+        targetId: req.params.id,
+        metadata: { professionalUserId: profile.userId },
+        req,
+      });
+      res.json(updated);
+    } catch (error) {
+      console.error("Failed to verify professional:", error);
+      res.status(500).json({ error: "Failed to verify professional" });
+    }
+  });
+
+  app.post("/api/admin/professionals/:id/reject", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const profile = await storage.getProfessionalProfile(req.params.id);
+      if (!profile) {
+        return res.status(404).json({ error: "Professional profile not found" });
+      }
+      const updated = await storage.updateProfessionalProfileStatus(req.params.id, "rejected");
+      await logAuditEvent({
+        userId: req.session.userId!,
+        action: "professional_reject",
+        targetTable: "professional_profiles",
+        targetId: req.params.id,
+        metadata: { professionalUserId: profile.userId },
+        req,
+      });
+      res.json(updated);
+    } catch (error) {
+      console.error("Failed to reject professional:", error);
+      res.status(500).json({ error: "Failed to reject professional" });
+    }
+  });
+
+  app.post("/api/admin/professionals/:id/suspend", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const profile = await storage.getProfessionalProfile(req.params.id);
+      if (!profile) {
+        return res.status(404).json({ error: "Professional profile not found" });
+      }
+      const updated = await storage.updateProfessionalProfileStatus(req.params.id, "suspended");
+      await logAuditEvent({
+        userId: req.session.userId!,
+        action: "professional_suspend",
+        targetTable: "professional_profiles",
+        targetId: req.params.id,
+        metadata: { professionalUserId: profile.userId },
+        req,
+      });
+      res.json(updated);
+    } catch (error) {
+      console.error("Failed to suspend professional:", error);
+      res.status(500).json({ error: "Failed to suspend professional" });
+    }
+  });
+
+  // Project Matching Routes
+  app.get("/api/offerings/:offeringId/professionals", async (req: Request, res: Response) => {
+    try {
+      const matches = await storage.getMatchesByOffering(req.params.offeringId);
+      res.json(matches);
+    } catch (error) {
+      console.error("Failed to fetch offering professionals:", error);
+      res.status(500).json({ error: "Failed to fetch offering professionals" });
+    }
+  });
+
+  app.post("/api/offerings/:offeringId/professionals/invite", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { professionalId, roleNeeded, proposedAmount, tokenAllocationPercent, tokenAllocationAmount } = req.body;
+      if (!professionalId || !roleNeeded) {
+        return res.status(400).json({ error: "Missing required fields: professionalId, roleNeeded" });
+      }
+      const match = await storage.createProjectMatch({
+        offeringId: req.params.offeringId,
+        professionalId,
+        roleNeeded,
+        proposedAmount: proposedAmount?.toString(),
+        tokenAllocationPercent: tokenAllocationPercent?.toString(),
+        tokenAllocationAmount: tokenAllocationAmount?.toString(),
+        invitedAt: new Date(),
+      });
+      await logAuditEvent({
+        userId: req.session.userId!,
+        action: "professional_invite",
+        targetTable: "project_professional_matches",
+        targetId: match.id,
+        metadata: { offeringId: req.params.offeringId, professionalId, roleNeeded },
+        req,
+      });
+      res.status(201).json(match);
+    } catch (error) {
+      console.error("Failed to invite professional:", error);
+      res.status(500).json({ error: "Failed to invite professional" });
+    }
+  });
+
+  app.post("/api/professionals/matches/:matchId/respond", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const match = await storage.getProjectMatch(req.params.matchId);
+      if (!match) {
+        return res.status(404).json({ error: "Match not found" });
+      }
+      const profile = await storage.getProfessionalProfile(match.professionalId);
+      if (!profile || profile.userId !== req.session.userId) {
+        return res.status(403).json({ error: "Not authorized to respond to this match" });
+      }
+      const { status, proposalDetails, proposedAmount } = req.body;
+      if (!["interested", "rejected"].includes(status)) {
+        return res.status(400).json({ error: "Status must be 'interested' or 'rejected'" });
+      }
+      const updated = await storage.updateProjectMatchStatus(req.params.matchId, status, {
+        proposalDetails,
+        proposedAmount: proposedAmount?.toString(),
+      } as any);
+      res.json(updated);
+    } catch (error) {
+      console.error("Failed to respond to match:", error);
+      res.status(500).json({ error: "Failed to respond to match" });
+    }
+  });
+
+  app.post("/api/offerings/:offeringId/professionals/select", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { matchId, tokenAllocationPercent, tokenAllocationAmount } = req.body;
+      if (!matchId) {
+        return res.status(400).json({ error: "Missing required field: matchId" });
+      }
+      const match = await storage.getProjectMatch(matchId);
+      if (!match) {
+        return res.status(404).json({ error: "Match not found" });
+      }
+      if (match.offeringId !== req.params.offeringId) {
+        return res.status(400).json({ error: "Match does not belong to this offering" });
+      }
+      const updated = await storage.updateProjectMatchStatus(matchId, "selected", {
+        tokenAllocationPercent: tokenAllocationPercent?.toString(),
+        tokenAllocationAmount: tokenAllocationAmount?.toString(),
+      } as any);
+      await logAuditEvent({
+        userId: req.session.userId!,
+        action: "professional_select",
+        targetTable: "project_professional_matches",
+        targetId: matchId,
+        metadata: { offeringId: req.params.offeringId, tokenAllocationPercent, tokenAllocationAmount },
+        req,
+      });
+      res.json(updated);
+    } catch (error) {
+      console.error("Failed to select professional:", error);
+      res.status(500).json({ error: "Failed to select professional" });
+    }
+  });
+
+  // Service Area Routes
+  app.post("/api/professionals/:id/service-areas", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const profile = await storage.getProfessionalProfile(req.params.id);
+      if (!profile) {
+        return res.status(404).json({ error: "Professional profile not found" });
+      }
+      if (profile.userId !== req.session.userId) {
+        return res.status(403).json({ error: "Not authorized to modify this profile's service areas" });
+      }
+      const area = await storage.createServiceArea({
+        professionalId: req.params.id,
+        ...req.body,
+      });
+      res.status(201).json(area);
+    } catch (error) {
+      console.error("Failed to add service area:", error);
+      res.status(500).json({ error: "Failed to add service area" });
+    }
+  });
+
+  app.delete("/api/professionals/:id/service-areas/:areaId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const profile = await storage.getProfessionalProfile(req.params.id);
+      if (!profile) {
+        return res.status(404).json({ error: "Professional profile not found" });
+      }
+      if (profile.userId !== req.session.userId) {
+        return res.status(403).json({ error: "Not authorized to modify this profile's service areas" });
+      }
+      const areas = await storage.getServiceAreasByProfessional(req.params.id);
+      const ownsArea = areas.some(a => a.id === req.params.areaId);
+      if (!ownsArea) {
+        return res.status(404).json({ error: "Service area not found for this profile" });
+      }
+      const deleted = await storage.deleteServiceArea(req.params.areaId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Service area not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to delete service area:", error);
+      res.status(500).json({ error: "Failed to delete service area" });
+    }
+  });
+
+  // Agent Task Routes
+  app.get("/api/admin/agent-tasks", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const status = req.query.status as string | undefined;
+      const tasks = await storage.getAgentTasks(status);
+      res.json(tasks);
+    } catch (error) {
+      console.error("Failed to fetch agent tasks:", error);
+      res.status(500).json({ error: "Failed to fetch agent tasks" });
+    }
+  });
+
+  app.post("/api/admin/agent-tasks", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { agentType, priority, inputData, relatedPropertyId, relatedOfferingId, relatedUserId, scheduledFor, maxRetries } = req.body;
+      if (!agentType) {
+        return res.status(400).json({ error: "Missing required field: agentType" });
+      }
+      const validTypes = ["property_sourcing", "owner_outreach", "grant_research", "contractor_sourcing", "realtor_outreach", "legal_compliance", "investor_relations", "community_engagement"];
+      if (!validTypes.includes(agentType)) {
+        return res.status(400).json({ error: `Invalid agentType. Must be one of: ${validTypes.join(", ")}` });
+      }
+      const task = await storage.createAgentTask({
+        agentType,
+        priority,
+        inputData,
+        relatedPropertyId,
+        relatedOfferingId,
+        relatedUserId,
+        scheduledFor: scheduledFor ? new Date(scheduledFor) : undefined,
+        maxRetries,
+      });
+      await logAuditEvent({
+        userId: req.session.userId!,
+        action: "agent_task_create",
+        targetTable: "agent_tasks",
+        targetId: String(task.id),
+        metadata: { agentType, priority },
+        req,
+      });
+      res.status(201).json(task);
+    } catch (error) {
+      console.error("Failed to create agent task:", error);
+      res.status(500).json({ error: "Failed to create agent task" });
+    }
+  });
+
+  app.patch("/api/admin/agent-tasks/:id/status", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { status, outputData, errorMessage } = req.body;
+      const validStatuses = ["queued", "running", "completed", "failed", "needs_human"];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(", ")}` });
+      }
+      const taskId = parseInt(req.params.id);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ error: "Invalid task ID" });
+      }
+      const updated = await storage.updateAgentTaskStatus(taskId, status, { outputData, errorMessage } as any);
+      if (!updated) {
+        return res.status(404).json({ error: "Agent task not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Failed to update agent task status:", error);
+      res.status(500).json({ error: "Failed to update agent task status" });
+    }
+  });
+
   // Share Transfers
   app.get("/api/user/transfers", isAuthenticated, async (req: Request, res: Response) => {
     const userId = req.session.userId;

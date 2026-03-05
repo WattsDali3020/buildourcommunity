@@ -1,0 +1,36 @@
+Without modifying any existing routes, add the following new routes after the existing service bids section. Follow the exact same patterns already used in this file for auth middleware, error handling, and response formatting.
+Professional routes:
+
+POST /api/professionals/apply — isAuthenticated — create professional profile, set userId from session, set status to 'pending', log to auditLog
+GET /api/professionals — no auth — list verified professionals, support query params: county, state, specialty, role
+GET /api/professionals/:id — no auth — get single professional profile with endorsement count
+PATCH /api/professionals/:id — isAuthenticated + verify profile.userId === req.session.userId — update own profile
+POST /api/professionals/:id/endorse — isAuthenticated — add endorsement, prevent duplicate endorsements from same user
+GET /api/professionals/:id/endorsements — no auth — list endorsements for a professional
+GET /api/professionals/:id/matches — isAuthenticated + verify profile.userId === req.session.userId — get project matches for this professional
+GET /api/professionals/available/:county — no auth — find verified professionals in a county
+
+Admin professional routes:
+
+GET /api/admin/professionals/pending — isAdmin — list professionals with status 'pending'
+POST /api/admin/professionals/:id/verify — isAdmin — set status to 'verified', set verifiedAt to now(), log to auditLog
+POST /api/admin/professionals/:id/reject — isAdmin — set status to 'rejected', log to auditLog
+POST /api/admin/professionals/:id/suspend — isAdmin — set status to 'suspended', log to auditLog
+
+Project matching routes:
+
+GET /api/offerings/:offeringId/professionals — no auth — list professionals matched to this offering
+POST /api/offerings/:offeringId/professionals/invite — isAdmin — create projectProfessionalMatch record with status 'invited'
+POST /api/professionals/matches/:matchId/respond — isAuthenticated — professional responds to match, status becomes 'interested' or 'rejected'
+POST /api/offerings/:offeringId/professionals/select — isAdmin — set match status to 'selected', log token allocation to auditLog
+
+Service area routes:
+
+POST /api/professionals/:id/service-areas — isAuthenticated + owner check — add service area
+DELETE /api/professionals/:id/service-areas/:areaId — isAuthenticated + owner check — delete service area
+
+Agent task routes:
+
+GET /api/admin/agent-tasks — isAdmin — list all agent tasks, support status filter
+POST /api/admin/agent-tasks — isAdmin — manually queue a task
+PATCH /api/admin/agent-tasks/:id/status — isAdmin — update task status
