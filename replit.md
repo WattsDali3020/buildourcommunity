@@ -35,7 +35,7 @@ Preferred communication style: Simple, everyday language.
 - **Token Purchase Flow**: Phase restrictions, per-person limits, payment processing, two-phase payment reconciliation.
 - **Investor Dashboard**: Portfolio metrics, voting power, KYC status, holdings, refund requests.
 - **Governance Voting**: API-backed proposals with token-weighted voting.
-- **Admin Panel**: Property/nomination approval, KYC management, payment reconciliation.
+- **Admin Panel**: Property/nomination approval, KYC management, payment reconciliation, professional verification (approve/reject/suspend), and project-professional matching (invite/select verified professionals for active offerings).
 - **Investor Protection API**: 3% APR refund calculation for unfunded properties.
 - **Impact Simulator**: Georgia county-level adoption scenarios, GDP multiplier projections, and founder revenue scaling.
 - **Community Wishlist**: Zip-code-driven business voting and community need submission.

@@ -25,8 +25,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Building2, FileText, Users, CheckCircle, XCircle, Eye, RefreshCw, AlertTriangle, DollarSign } from "lucide-react";
-import type { Property, PropertyNomination, PropertySubmission, TokenPurchase } from "@shared/schema";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Building2, FileText, Users, CheckCircle, XCircle, Eye, RefreshCw, AlertTriangle, DollarSign, Briefcase, UserCheck, ChevronDown, ChevronRight, Search, Star, MapPin } from "lucide-react";
+import type { Property, PropertyNomination, PropertySubmission, TokenPurchase, ProfessionalProfile, TokenOffering, ProjectProfessionalMatch } from "@shared/schema";
 
 interface ReconciliationPurchase extends TokenPurchase {
   propertyName: string;
@@ -39,6 +40,12 @@ export default function AdminPanel() {
   const { toast } = useToast();
   const [selectedNomination, setSelectedNomination] = useState<PropertyNomination | null>(null);
   const [reviewNotes, setReviewNotes] = useState("");
+  const [expandedOffering, setExpandedOffering] = useState<string | null>(null);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [inviteOfferingId, setInviteOfferingId] = useState<string>("");
+  const [inviteRole, setInviteRole] = useState("all");
+  const [inviteCounty, setInviteCounty] = useState("");
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState<string>("");
 
   const { data: properties = [], isLoading: propertiesLoading } = useQuery<Property[]>({
     queryKey: ["/api/properties"],
@@ -111,6 +118,143 @@ export default function AdminPanel() {
       toast({ title: "Error", description: "Failed to initiate refund", variant: "destructive" });
     },
   });
+
+  const { data: pendingProfessionals = [], isLoading: professionalsLoading } = useQuery<ProfessionalProfile[]>({
+    queryKey: ["/api/admin/professionals/pending"],
+  });
+
+  const verifyProfessionalMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("POST", `/api/admin/professionals/${id}/verify`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/professionals/pending"] });
+      toast({ title: "Professional approved", description: "The professional has been verified and can now be matched to projects." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to approve professional", variant: "destructive" });
+    },
+  });
+
+  const rejectProfessionalMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("POST", `/api/admin/professionals/${id}/reject`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/professionals/pending"] });
+      toast({ title: "Professional rejected" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to reject professional", variant: "destructive" });
+    },
+  });
+
+  const suspendProfessionalMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("POST", `/api/admin/professionals/${id}/suspend`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/professionals/pending"] });
+      toast({ title: "Professional suspended" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to suspend professional", variant: "destructive" });
+    },
+  });
+
+  const { data: offerings = [], isLoading: offeringsLoading } = useQuery<TokenOffering[]>({
+    queryKey: ["/api/offerings"],
+  });
+
+  const activeOfferings = offerings.filter(o => o.status === "active");
+
+  const { data: offeringMatches = {} } = useQuery<Record<string, ProjectProfessionalMatch[]>>({
+    queryKey: ["/api/offerings/matches", activeOfferings.map(o => o.id)],
+    queryFn: async () => {
+      const result: Record<string, ProjectProfessionalMatch[]> = {};
+      await Promise.all(
+        activeOfferings.map(async (o) => {
+          const res = await fetch(`/api/offerings/${o.id}/professionals`);
+          if (res.ok) result[o.id] = await res.json();
+          else result[o.id] = [];
+        })
+      );
+      return result;
+    },
+    enabled: activeOfferings.length > 0,
+  });
+
+  const searchParams = new URLSearchParams();
+  if (inviteRole !== "all") searchParams.set("role", inviteRole);
+  if (inviteCounty.trim()) searchParams.set("county", inviteCounty.trim());
+  const searchQuery = searchParams.toString();
+
+  const { data: searchedProfessionals = [] } = useQuery<ProfessionalProfile[]>({
+    queryKey: ["/api/professionals", searchQuery],
+    queryFn: async () => {
+      const url = searchQuery ? `/api/professionals?${searchQuery}` : "/api/professionals";
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to search professionals");
+      return res.json();
+    },
+    enabled: inviteModalOpen,
+  });
+
+  const verifiedProfessionals = searchedProfessionals.filter(p => p.isLicenseVerified);
+
+  const inviteProfessionalMutation = useMutation({
+    mutationFn: async ({ offeringId, professionalId, roleNeeded }: { offeringId: string; professionalId: string; roleNeeded: string }) => {
+      return apiRequest("POST", `/api/offerings/${offeringId}/professionals/invite`, { professionalId, roleNeeded });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/offerings/matches"] });
+      toast({ title: "Professional invited", description: "The professional has been invited to the project." });
+      setInviteModalOpen(false);
+      setSelectedProfessionalId("");
+      setInviteRole("all");
+      setInviteCounty("");
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to invite professional", variant: "destructive" });
+    },
+  });
+
+  const selectProfessionalMutation = useMutation({
+    mutationFn: async ({ offeringId, matchId }: { offeringId: string; matchId: string }) => {
+      return apiRequest("POST", `/api/offerings/${offeringId}/professionals/select`, { matchId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/offerings/matches"] });
+      toast({ title: "Professional selected", description: "The professional has been selected for this project." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to select professional", variant: "destructive" });
+    },
+  });
+
+  const ROLES = [
+    { value: "contractor", label: "Contractor" },
+    { value: "realtor", label: "Realtor" },
+    { value: "attorney", label: "Attorney" },
+    { value: "engineer", label: "Engineer" },
+    { value: "architect", label: "Architect" },
+    { value: "lender", label: "Lender" },
+    { value: "inspector", label: "Inspector" },
+    { value: "appraiser", label: "Appraiser" },
+  ];
+
+  const getRoleLabel = (role: string) => ROLES.find(r => r.value === role)?.label || role;
+
+  const getMatchStatusBadge = (status: string) => {
+    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+      invited: "outline",
+      interested: "secondary",
+      proposed: "secondary",
+      selected: "default",
+      rejected: "destructive",
+    };
+    return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
+  };
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -211,6 +355,13 @@ export default function AdminPanel() {
                 <Badge variant="destructive" className="ml-2">{stuckPurchases.length}</Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="professionals" data-testid="tab-professionals">
+              Professionals
+              {pendingProfessionals.length > 0 && (
+                <Badge variant="secondary" className="ml-2">{pendingProfessionals.length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="matching" data-testid="tab-matching">Project Matching</TabsTrigger>
           </TabsList>
 
           <TabsContent value="nominations" className="mt-6">
@@ -463,7 +614,344 @@ export default function AdminPanel() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="professionals" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Pending Professional Applications</CardTitle>
+                <CardDescription>Review and verify professional license applications</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {professionalsLoading ? (
+                  <div className="text-center py-8 text-muted-foreground">Loading pending applications...</div>
+                ) : pendingProfessionals.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground" data-testid="text-no-pending-professionals">
+                    No pending professional applications
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Company / Name</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>License</TableHead>
+                        <TableHead>Service Areas</TableHead>
+                        <TableHead>Applied</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingProfessionals.map((prof) => (
+                        <TableRow key={prof.id} data-testid={`row-professional-${prof.id}`}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium" data-testid={`text-prof-name-${prof.id}`}>{prof.companyName || "—"}</div>
+                              {prof.bio && <div className="text-sm text-muted-foreground line-clamp-1">{prof.bio}</div>}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" data-testid={`badge-prof-role-${prof.id}`}>{getRoleLabel(prof.licenseType || "")}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm space-y-0.5">
+                              {prof.licenseNumber && <div>#{prof.licenseNumber}</div>}
+                              {prof.licenseState && <div className="text-muted-foreground">{prof.licenseState}</div>}
+                              {prof.licenseExpiry && (
+                                <div className="text-muted-foreground">
+                                  Exp: {new Date(prof.licenseExpiry).toLocaleDateString()}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1 max-w-[200px]">
+                              {(prof.serviceCounties || []).slice(0, 3).map((county) => (
+                                <Badge key={county} variant="outline" className="text-xs py-0">
+                                  {county}
+                                </Badge>
+                              ))}
+                              {(prof.serviceCounties || []).length > 3 && (
+                                <Badge variant="outline" className="text-xs py-0">
+                                  +{(prof.serviceCounties || []).length - 3}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-sm">
+                            {prof.createdAt ? formatTimeSince(prof.createdAt) : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => verifyProfessionalMutation.mutate(prof.id)}
+                                disabled={verifyProfessionalMutation.isPending}
+                                title="Approve"
+                                data-testid={`button-approve-professional-${prof.id}`}
+                              >
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => rejectProfessionalMutation.mutate(prof.id)}
+                                disabled={rejectProfessionalMutation.isPending}
+                                title="Reject"
+                                data-testid={`button-reject-professional-${prof.id}`}
+                              >
+                                <XCircle className="h-4 w-4 text-destructive" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => suspendProfessionalMutation.mutate(prof.id)}
+                                disabled={suspendProfessionalMutation.isPending}
+                                title="Suspend"
+                                data-testid={`button-suspend-professional-${prof.id}`}
+                              >
+                                <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="matching" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Project Professional Matching</CardTitle>
+                <CardDescription>Manage professional assignments for active offerings</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {offeringsLoading ? (
+                  <div className="text-center py-8 text-muted-foreground">Loading offerings...</div>
+                ) : activeOfferings.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground" data-testid="text-no-active-offerings">
+                    No active offerings to match professionals to
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {activeOfferings.map((offering) => {
+                      const matches = offeringMatches[offering.id] || [];
+                      const isExpanded = expandedOffering === offering.id;
+                      const property = properties.find(p => p.id === offering.propertyId);
+                      const matchedRoles = [...new Set(matches.map(m => m.roleNeeded))];
+                      const allRoles = ROLES.map(r => r.value);
+                      const missingRoles = allRoles.filter(r => !matchedRoles.includes(r));
+
+                      return (
+                        <Card key={offering.id} data-testid={`card-offering-${offering.id}`}>
+                          <CardContent className="p-4">
+                            <div
+                              className="flex items-center justify-between cursor-pointer"
+                              onClick={() => setExpandedOffering(isExpanded ? null : offering.id)}
+                              data-testid={`toggle-offering-${offering.id}`}
+                            >
+                              <div className="flex items-center gap-3">
+                                {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                <div>
+                                  <div className="font-medium" data-testid={`text-offering-name-${offering.id}`}>
+                                    {property?.name || offering.tokenName}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground flex items-center gap-3">
+                                    <span>Phase: {offering.currentPhase}</span>
+                                    <span>{matches.length} professional{matches.length !== 1 ? "s" : ""} matched</span>
+                                    {missingRoles.length > 0 && (
+                                      <span className="text-yellow-600">{missingRoles.length} role{missingRoles.length !== 1 ? "s" : ""} needed</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setInviteOfferingId(offering.id);
+                                  setInviteModalOpen(true);
+                                }}
+                                data-testid={`button-invite-${offering.id}`}
+                              >
+                                <UserCheck className="h-4 w-4 mr-2" />
+                                Invite Professional
+                              </Button>
+                            </div>
+
+                            {isExpanded && (
+                              <div className="mt-4 border-t pt-4">
+                                {matches.length === 0 ? (
+                                  <div className="text-center py-4 text-muted-foreground text-sm">
+                                    No professionals matched yet
+                                  </div>
+                                ) : (
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Professional</TableHead>
+                                        <TableHead>Role</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Proposed Amount</TableHead>
+                                        <TableHead>Invited</TableHead>
+                                        <TableHead>Actions</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {matches.map((match) => (
+                                        <TableRow key={match.id} data-testid={`row-match-${match.id}`}>
+                                          <TableCell className="font-medium" data-testid={`text-match-prof-${match.id}`}>
+                                            {match.professionalId}
+                                          </TableCell>
+                                          <TableCell>
+                                            <Badge variant="outline">{getRoleLabel(match.roleNeeded)}</Badge>
+                                          </TableCell>
+                                          <TableCell data-testid={`badge-match-status-${match.id}`}>
+                                            {getMatchStatusBadge(match.status || "invited")}
+                                          </TableCell>
+                                          <TableCell>
+                                            {match.proposedAmount ? `$${Number(match.proposedAmount).toLocaleString()}` : "—"}
+                                          </TableCell>
+                                          <TableCell className="text-muted-foreground text-sm">
+                                            {match.invitedAt ? formatTimeSince(match.invitedAt) : "—"}
+                                          </TableCell>
+                                          <TableCell>
+                                            {match.status === "proposed" && (
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => selectProfessionalMutation.mutate({ offeringId: offering.id, matchId: match.id })}
+                                                disabled={selectProfessionalMutation.isPending}
+                                                data-testid={`button-select-match-${match.id}`}
+                                              >
+                                                <CheckCircle className="h-4 w-4 text-green-600 mr-1" />
+                                                Select
+                                              </Button>
+                                            )}
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                )}
+
+                                {missingRoles.length > 0 && (
+                                  <div className="mt-3 pt-3 border-t">
+                                    <div className="text-sm text-muted-foreground mb-2">Roles still needed:</div>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {missingRoles.map((role) => (
+                                        <Badge key={role} variant="outline" className="text-xs text-yellow-600 border-yellow-300">
+                                          {getRoleLabel(role)}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
+
+        <Dialog open={inviteModalOpen} onOpenChange={setInviteModalOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Invite Professional</DialogTitle>
+              <DialogDescription>Search for verified professionals to invite to this project</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Filter by Role</label>
+                <Select value={inviteRole} onValueChange={setInviteRole}>
+                  <SelectTrigger data-testid="select-invite-role">
+                    <SelectValue placeholder="All Roles" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    {ROLES.map((role) => (
+                      <SelectItem key={role.value} value={role.value}>{role.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Filter by County</label>
+                <Input
+                  placeholder="e.g., Cherokee"
+                  value={inviteCounty}
+                  onChange={(e) => setInviteCounty(e.target.value)}
+                  data-testid="input-invite-county"
+                />
+              </div>
+              <div className="border rounded-md max-h-[250px] overflow-y-auto">
+                {verifiedProfessionals.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground text-sm">
+                    No verified professionals match these filters
+                  </div>
+                ) : (
+                  verifiedProfessionals.map((prof) => (
+                    <div
+                      key={prof.id}
+                      className={`flex items-center justify-between p-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 ${selectedProfessionalId === prof.id ? "bg-primary/5 border-primary" : ""}`}
+                      onClick={() => setSelectedProfessionalId(prof.id)}
+                      data-testid={`invite-option-${prof.id}`}
+                    >
+                      <div>
+                        <div className="font-medium text-sm flex items-center gap-2">
+                          {prof.companyName || "Professional"}
+                          <CheckCircle className="h-3.5 w-3.5 text-chart-3" />
+                        </div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs py-0">{getRoleLabel(prof.licenseType || "")}</Badge>
+                          {prof.reputationScore != null && (
+                            <span className="flex items-center gap-0.5">
+                              <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                              {prof.reputationScore}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {selectedProfessionalId === prof.id && (
+                        <CheckCircle className="h-5 w-5 text-primary" />
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setInviteModalOpen(false)}>Cancel</Button>
+              <Button
+                disabled={!selectedProfessionalId || inviteProfessionalMutation.isPending}
+                onClick={() => {
+                  if (selectedProfessionalId && inviteOfferingId) {
+                    const prof = verifiedProfessionals.find(p => p.id === selectedProfessionalId);
+                    inviteProfessionalMutation.mutate({
+                      offeringId: inviteOfferingId,
+                      professionalId: selectedProfessionalId,
+                      roleNeeded: prof?.licenseType || "contractor",
+                    });
+                  }
+                }}
+                data-testid="button-confirm-invite"
+              >
+                Invite
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={!!selectedNomination} onOpenChange={() => setSelectedNomination(null)}>
           <DialogContent>

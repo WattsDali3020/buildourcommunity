@@ -121,6 +121,10 @@ export class DatabaseStorage implements IStorage {
     return offering || undefined;
   }
 
+  async getAllTokenOfferings(): Promise<TokenOffering[]> {
+    return db.select().from(tokenOfferings).where(sql`${tokenOfferings.deletedAt} IS NULL`);
+  }
+
   async getOfferingByPropertyId(propertyId: string): Promise<TokenOffering | undefined> {
     const [offering] = await db.select().from(tokenOfferings).where(eq(tokenOfferings.propertyId, propertyId));
     return offering || undefined;

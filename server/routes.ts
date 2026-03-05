@@ -121,6 +121,17 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/offerings", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const offerings = await storage.getAllTokenOfferings();
+      const sanitized = offerings.map(({ accessCode, ...rest }) => rest);
+      res.json(sanitized);
+    } catch (error) {
+      console.error("Failed to fetch offerings:", error);
+      res.status(500).json({ error: "Failed to fetch offerings" });
+    }
+  });
+
   app.get("/api/offerings/:offeringId/phases", async (req: Request, res: Response) => {
     const phases = await storage.getOfferingPhases(req.params.offeringId);
     res.json(phases.map(phase => ({

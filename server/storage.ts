@@ -48,6 +48,7 @@ export interface IStorage {
   updatePropertyStatus(id: string, status: Property["status"]): Promise<Property | undefined>;
   
   getTokenOffering(id: string): Promise<TokenOffering | undefined>;
+  getAllTokenOfferings(): Promise<TokenOffering[]>;
   getOfferingByPropertyId(propertyId: string): Promise<TokenOffering | undefined>;
   getTokenOfferingsByProperty(propertyId: string): Promise<TokenOffering[]>;
   createTokenOffering(offering: InsertTokenOffering): Promise<TokenOffering>;
@@ -349,6 +350,10 @@ export class MemStorage implements IStorage {
 
   async getTokenOffering(id: string): Promise<TokenOffering | undefined> {
     return this.tokenOfferings.get(id);
+  }
+
+  async getAllTokenOfferings(): Promise<TokenOffering[]> {
+    return Array.from(this.tokenOfferings.values()).filter(o => !o.deletedAt);
   }
 
   async getOfferingByPropertyId(propertyId: string): Promise<TokenOffering | undefined> {
