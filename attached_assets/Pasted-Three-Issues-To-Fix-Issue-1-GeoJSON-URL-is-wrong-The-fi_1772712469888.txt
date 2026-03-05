@@ -1,0 +1,29 @@
+Three Issues To Fix
+Issue 1 — GeoJSON URL is wrong
+The file is fetching Georgia county boundaries from a world GeoJSON repo that doesn't have Georgia county-level detail. It will either 404 silently or load state-level shapes. Fix this now:
+Paste this into Replit AI:
+
+In client/src/components/AppleHero.tsx, replace the GA_COUNTIES_GEOJSON_URL value with:
+"https://raw.githubusercontent.com/deldersveld/topojson/master/countries/us-states/GA-13-georgia-counties.json"
+Also update the fetch and L.geoJSON call to handle TopoJSON format by first converting it. Install the topojson-client package and import feature from it. Convert the TopoJSON to GeoJSON before passing to L.geoJSON. If the fetch or conversion fails, silently skip — keep the existing catch block.
+
+Issue 2 — Marker lat/lng is still hardcoded
+typescriptconst lat = parseFloat(prop.city === "Canton" ? "34.2368" : "34.0");
+const lng = parseFloat(prop.city === "Canton" ? "-84.4908" : "-84.0");
+This only works for Canton. Every other property drops at [34.0, -84.0] which is somewhere in Cherokee County regardless of what city it actually is. Fix:
+Paste this into Replit AI:
+
+In client/src/components/AppleHero.tsx, the marker placement currently uses hardcoded coordinates based only on a Canton check. Replace this logic entirely. The Property type from @shared/schema — check if it has latitude and longitude fields. If it does, use those directly. If not, add a coordinate lookup object for common Georgia cities mapping city name to [lat, lng]. Include at minimum: Atlanta, Carrollton, Rome, Valdosta, Augusta, Savannah, Macon, Columbus, Albany, Canton, Gainesville, Dalton, Brunswick, Waycross, Thomasville, LaGrange, Griffin, Newnan, Marietta, Alpharetta. If a city isn't in the lookup, default to the Georgia center [32.9, -83.2] rather than a wrong location.
+
+Issue 3 — Phase timeline visual needs animation
+The phase pricing timeline in HowItWorks is static. The active dot just sits there. It should animate — the progress line should draw from left to the active node when the section scrolls into view. This is the Framer Motion moment that makes it feel alive.
+Paste this into Replit AI:
+
+In client/src/pages/home.tsx, find the phase pricing timeline in the HowItWorks function (the div with flex items-center gap-1 w-full containing the phases map). Wrap the active phase progress bar in a Framer Motion motion.div. When the containing ScrollReveal comes into view, animate the active bar from width: 0% to width: 100% with transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }}. Add a glowing pulse animation to the active dot using animate={{ boxShadow: ["0 0 0px rgba(var(--primary), 0.4)", "0 0 12px rgba(var(--primary), 0.8)", "0 0 0px rgba(var(--primary), 0.4)"] }} transition={{ duration: 2, repeat: Infinity }}.
+
+
+One Enhancement Worth Adding Now
+The two-path CTA cards on the right side of the map are hidden on mobile (hidden md:flex). On mobile those cards just disappear. You need a mobile version.
+Paste this into Replit AI:
+
+In client/src/components/AppleHero.tsx, add a mobile version of the two-path CTA cards. Below the existing button row in the hero text overlay (after the phase color legend), add a flex md:hidden row of two compact cards side by side — same "I want to invest" and "I want to build" content but smaller, full-width split 50/50, stacked horizontally. Style them the same as the desktop cards but with p-3 and smaller text. These should only show on mobile where the right-side floating cards are hidden.
