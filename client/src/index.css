@@ -18,15 +18,15 @@
   --sidebar: 0 0% 96%;
   --sidebar-foreground: 0 0% 9%;
   --sidebar-border: 0 0% 92%;
-  --sidebar-primary: 217 91% 35%;
+  --sidebar-primary: 43 85% 45%;
   --sidebar-primary-foreground: 0 0% 98%;
   --sidebar-accent: 0 0% 92%;
   --sidebar-accent-foreground: 0 0% 9%;
-  --sidebar-ring: 217 91% 35%;
+  --sidebar-ring: 43 85% 45%;
   --popover: 0 0% 94%;
   --popover-foreground: 0 0% 9%;
   --popover-border: 0 0% 90%;
-  --primary: 217 91% 35%;
+  --primary: 43 85% 45%;
   --primary-foreground: 0 0% 98%;
   --secondary: 0 0% 90%;
   --secondary-foreground: 0 0% 9%;
@@ -37,11 +37,11 @@
   --destructive: 0 84% 38%;
   --destructive-foreground: 0 0% 98%;
   --input: 0 0% 78%;
-  --ring: 217 91% 35%;
-  --chart-1: 217 91% 35%;
+  --ring: 43 85% 45%;
+  --chart-1: 217 91% 40%;
   --chart-2: 187 71% 32%;
   --chart-3: 156 72% 28%;
-  --chart-4: 43 74% 38%;
+  --chart-4: 43 85% 45%;
   --chart-5: 27 87% 42%;
   --font-sans: Inter, sans-serif;
   --font-serif: Georgia, serif;
@@ -102,15 +102,15 @@
   --sidebar: 0 0% 11%;
   --sidebar-foreground: 0 0% 98%;
   --sidebar-border: 0 0% 14%;
-  --sidebar-primary: 217 91% 55%;
+  --sidebar-primary: 43 85% 52%;
   --sidebar-primary-foreground: 0 0% 98%;
   --sidebar-accent: 0 0% 14%;
   --sidebar-accent-foreground: 0 0% 98%;
-  --sidebar-ring: 217 91% 55%;
+  --sidebar-ring: 43 85% 52%;
   --popover: 0 0% 13%;
   --popover-foreground: 0 0% 98%;
   --popover-border: 0 0% 16%;
-  --primary: 217 91% 35%;
+  --primary: 43 85% 52%;
   --primary-foreground: 0 0% 98%;
   --secondary: 0 0% 16%;
   --secondary-foreground: 0 0% 98%;
@@ -121,11 +121,11 @@
   --destructive: 0 84% 32%;
   --destructive-foreground: 0 0% 98%;
   --input: 0 0% 28%;
-  --ring: 217 91% 55%;
-  --chart-1: 217 91% 65%;
+  --ring: 43 85% 52%;
+  --chart-1: 43 85% 62%;
   --chart-2: 187 71% 62%;
   --chart-3: 156 72% 58%;
-  --chart-4: 43 74% 68%;
+  --chart-4: 43 85% 62%;
   --chart-5: 27 87% 72%;
   --shadow-2xs: 0px 2px 0px 0px hsl(217 91% 35% / 0.00);
   --shadow-xs: 0px 2px 0px 0px hsl(217 91% 35% / 0.00);
@@ -181,7 +181,7 @@
   .bg-gradient-premium {
     background: linear-gradient(180deg, 
       hsl(var(--background)) 0%, 
-      hsl(217 30% 97%) 50%,
+      hsl(43 30% 97%) 50%,
       hsl(var(--background)) 100%
     );
   }
@@ -189,7 +189,7 @@
   .dark .bg-gradient-premium {
     background: linear-gradient(180deg, 
       hsl(var(--background)) 0%, 
-      hsl(217 30% 10%) 50%,
+      hsl(43 30% 10%) 50%,
       hsl(var(--background)) 100%
     );
   }
@@ -197,24 +197,24 @@
   /* Hero gradient with blue glow */
   .bg-gradient-hero {
     background: linear-gradient(180deg, 
-      hsl(217 91% 35% / 0.03) 0%,
+      hsl(43 85% 45% / 0.03) 0%,
       hsl(var(--background)) 100%
     );
   }
 
   .dark .bg-gradient-hero {
     background: linear-gradient(180deg, 
-      hsl(217 91% 55% / 0.08) 0%,
+      hsl(43 85% 52% / 0.08) 0%,
       hsl(var(--background)) 100%
     );
   }
 
   /* Radial glow effect */
-  .glow-blue {
+  .glow-gold {
     position: relative;
   }
   
-  .glow-blue::before {
+  .glow-gold::before {
     content: '';
     position: absolute;
     top: -200px;
@@ -223,16 +223,16 @@
     width: 800px;
     height: 600px;
     background: radial-gradient(ellipse at center, 
-      hsl(217 91% 55% / 0.15) 0%, 
+      hsl(43 85% 52% / 0.18) 0%, 
       transparent 70%
     );
     pointer-events: none;
     z-index: -1;
   }
 
-  .dark .glow-blue::before {
+  .dark .glow-gold::before {
     background: radial-gradient(ellipse at center, 
-      hsl(217 91% 55% / 0.12) 0%, 
+      hsl(43 85% 52% / 0.14) 0%, 
       transparent 70%
     );
   }
@@ -246,7 +246,7 @@
 
   .dark .glass-card {
     background: hsl(var(--card) / 0.6);
-    border: 1px solid hsl(217 91% 55% / 0.1);
+    border: 1px solid hsl(43 85% 52% / 0.1);
   }
 
   /* Premium stat card with subtle glow */
@@ -260,7 +260,7 @@
     position: absolute;
     inset: 0;
     background: linear-gradient(135deg, 
-      hsl(217 91% 55% / 0.05) 0%, 
+      hsl(43 85% 52% / 0.05) 0%, 
       transparent 50%
     );
     pointer-events: none;
@@ -268,16 +268,16 @@
 
   /* Section alternating backgrounds */
   .section-alt {
-    background: hsl(217 20% 97%);
+    background: hsl(43 15% 97%);
   }
 
   .dark .section-alt {
-    background: hsl(217 20% 9%);
+    background: hsl(43 15% 9%);
   }
 
   /* Floating nav shadow */
   .nav-floating {
-    box-shadow: 0 4px 30px hsl(217 91% 35% / 0.08);
+    box-shadow: 0 4px 30px hsl(43 85% 45% / 0.08);
   }
 
   .dark .nav-floating {
@@ -290,21 +290,21 @@
   }
 
   .border-glow:hover {
-    box-shadow: 0 0 20px hsl(217 91% 55% / 0.15);
-    border-color: hsl(217 91% 55% / 0.3);
+    box-shadow: 0 0 20px hsl(43 85% 52% / 0.15);
+    border-color: hsl(43 85% 52% / 0.3);
   }
 
   .dark .border-glow:hover {
-    box-shadow: 0 0 25px hsl(217 91% 55% / 0.2);
-    border-color: hsl(217 91% 55% / 0.4);
+    box-shadow: 0 0 25px hsl(43 85% 52% / 0.2);
+    border-color: hsl(43 85% 52% / 0.4);
   }
 
   /* Animated gradient text */
   .text-gradient-animated {
     background: linear-gradient(90deg, 
-      hsl(217 91% 35%) 0%, 
-      hsl(217 91% 55%) 50%,
-      hsl(217 91% 35%) 100%
+      hsl(43 85% 45%) 0%, 
+      hsl(43 85% 62%) 50%,
+      hsl(43 85% 45%) 100%
     );
     background-size: 200% auto;
     -webkit-background-clip: text;
@@ -329,7 +329,7 @@
     height: 1px;
     background: linear-gradient(90deg, 
       transparent 0%, 
-      hsl(217 91% 55% / 0.3) 50%, 
+      hsl(43 85% 52% / 0.3) 50%, 
       transparent 100%
     );
   }
@@ -372,7 +372,7 @@
 
   /* Active nav indicator */
   .nav-item-active {
-    color: hsl(217 91% 35%);
+    color: hsl(43 85% 45%);
     font-weight: 500;
     position: relative;
   }
@@ -385,11 +385,19 @@
     transform: translateY(-50%);
     width: 3px;
     height: 16px;
-    background: hsl(217 91% 55%);
+    background: hsl(43 85% 52%);
     border-radius: 2px;
   }
 
   .dark .nav-item-active {
+    color: hsl(43 85% 62%);
+  }
+
+  .text-accent-blue {
+    color: hsl(217 91% 55%);
+  }
+
+  .dark .text-accent-blue {
     color: hsl(217 91% 65%);
   }
 }

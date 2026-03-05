@@ -177,7 +177,7 @@ export default function Litepaper() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        <section className="relative bg-gradient-hero glow-blue py-20 lg:py-28 print:py-8 print:bg-white overflow-hidden">
+        <section className="relative bg-gradient-hero glow-gold py-20 lg:py-28 print:py-8 print:bg-white overflow-hidden">
           <div className="mx-auto max-w-6xl px-4">
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-1.5 text-sm font-medium text-primary mb-6 print:hidden">

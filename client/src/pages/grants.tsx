@@ -161,7 +161,7 @@ export default function Grants() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        <section className="bg-gradient-hero glow-blue py-16 lg:py-24">
+        <section className="bg-gradient-hero glow-gold py-16 lg:py-24">
           <div className="mx-auto max-w-7xl px-4">
             <div className="max-w-3xl mx-auto text-center">
               <Badge variant="outline" className="mb-4">

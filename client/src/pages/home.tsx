@@ -338,7 +338,7 @@ function FeatureHighlights() {
 function InlineWaitlist({ onOpenWaitlist }: { onOpenWaitlist: () => void }) {
   return (
     <ScrollReveal>
-      <section className="py-24 bg-gradient-hero glow-blue">
+      <section className="py-24 bg-gradient-hero glow-gold">
         <div className="mx-auto max-w-4xl px-4 text-center">
           <div className="rounded-2xl border bg-card/80 backdrop-blur-sm p-10 lg:p-14">
             <h2 className="text-3xl lg:text-4xl font-bold mb-4 tracking-tight">
