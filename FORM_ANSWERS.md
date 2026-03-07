@@ -20,7 +20,7 @@ This doc captures enhancement suggestions, status, rationale, compliance ties (p
 ## Build Gaps and Plans
 
 ### 1. On-chain AML/KYC Oracle Integration (Chainlink)
-- **Status**: To Build
+- **Status**: Implemented
 - **Rationale**: Amundi stresses AML/KYC for tokenized funds; automates Escrow checks to flag suspicious buys.
 - **Profit Tie**: Prevents regulatory halts, enabling more fundings → treasury growth.
 - **Implementation**: See Escrow.sol — `IAMLOracle` interface integrated with purchase function. Score threshold at 80 triggers `SuspiciousActivityReported` event and reverts.
@@ -46,22 +46,53 @@ function setAMLOracle(address _oracle) external onlyRole(DEFAULT_ADMIN_ROLE) {
 ```
 
 ### 2. EIP-712 Signature Verification for Gasless Voting
-- **Status**: To Build
-- **Rationale**: Reduces gas costs (critical for mass usage), already partially in Governance.sol.
+- **Status**: Implemented
+- **Rationale**: Reduces gas costs (critical for mass usage).
 - **Profit Tie**: Higher participation → faster phases → more token sales.
-- **Implementation**: See Governance.sol update — EIP-712 domain separator with typed vote struct for off-chain signature collection and on-chain verification.
+- **Implementation**: Governance.sol — `castVoteBySignature()` with EIP-712 domain separator, `VOTE_TYPEHASH`, nonce replay protection, deadline expiry, and `RELAYER_ROLE` for gasless submission.
+
+```solidity
+bytes32 public constant VOTE_TYPEHASH = keccak256("Vote(uint256 proposalId,uint8 support,address voter,uint256 nonce,uint256 deadline)");
+
+function castVoteBySignature(uint256 proposalId, uint8 support, address voter, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external onlyRole(RELAYER_ROLE) {
+    uint256 currentNonce = nonces[voter]++;
+    bytes32 structHash = keccak256(abi.encode(VOTE_TYPEHASH, proposalId, support, voter, currentNonce, deadline));
+    bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash));
+    address signer = ECDSA.recover(digest, v, r, s);
+    require(signer == voter, "Invalid signature");
+    // ... tally vote with phase-weighted power
+}
+```
 
 ### 3. Automated Suspicious Activity Flagging
-- **Status**: To Build
+- **Status**: Implemented (via Build Gap #1)
 - **Rationale**: Enhances Escrow compliance; ties to Amundi's custody/disclosure reqs.
 - **Profit Tie**: Builds trust for institutional inflows.
-- **Implementation**: Integrated in Escrow update — automated via AML oracle score checks on every purchase.
+- **Implementation**: Integrated in Escrow.sol — AML oracle score check on every `purchase()` call automatically flags and reverts high-score buyers. Manual `reportSuspiciousActivity()` also available for admin/operator use.
 
 ### 4. Geo-Verification Oracles for Phase Eligibility
-- **Status**: To Build
+- **Status**: Implemented
 - **Rationale**: Ensures County locals get 1.5x votes; Amundi notes regional reg differences (US vs EU).
 - **Profit Tie**: Localized engagement drives early sales.
-- **Implementation**: See PhaseManager.sol update — Chainlink oracle for geo-verification before phase advancement.
+- **Implementation**: PhaseManager.sol — `IGeoOracle` interface with `getPhaseEligibility()`, integrated into `checkSubscriptionAdvancement()` (emits eligibility event) and `claimEngagementBonus()` (1.5x bonus for County locals). Admin setter `setGeoOracle()`.
+
+```solidity
+interface IGeoOracle {
+    function getPhaseEligibility(address user, uint256 propertyId) external returns (uint8);
+}
+
+// In claimEngagementBonus — County locals get 1.5x
+if (address(geoOracle) != address(0)) {
+    uint8 eligibility = geoOracle.getPhaseEligibility(msg.sender, propertyId);
+    if (eligibility == 0) { // Phase.County
+        bonusAmount = (BONUS_TOKENS * 3) / 2; // 1.5x
+    }
+}
+
+function setGeoOracle(address _oracle) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    geoOracle = IGeoOracle(_oracle);
+}
+```
 
 ### 5. LLC-Backed Property Structs in PropertyToken
 - **Status**: To Build

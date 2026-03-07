@@ -4,6 +4,10 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 
+interface IGeoOracle {
+    function getPhaseEligibility(address user, uint256 propertyId) external returns (uint8);
+}
+
 interface IPropertyToken {
     enum Phase { County, State, National, International }
     
@@ -59,6 +63,7 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
 
     IPropertyToken public propertyToken;
     IGovernance public governance;
+    IGeoOracle public geoOracle;
 
     // Engagement threshold for early phase advancement (basis points)
     uint256 public constant ENGAGEMENT_THRESHOLD = 7500; // 75%
@@ -127,6 +132,8 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
     event PollBonusApplied(uint256 indexed propertyId, uint256 pollParticipants, uint256 bonusEngagement);
     event DemandNudge(uint256 indexed propertyId, uint8 demandType, uint256 demandBps);
     event DemandDrivenAdvancement(uint256 indexed propertyId, uint256 demandBps);
+    event GeoEligibilityChecked(uint256 indexed propertyId, address indexed user, uint8 eligiblePhase);
+    event GeoOracleUpdated(address indexed newOracle);
 
     constructor(address _propertyToken, address _governance) {
         propertyToken = IPropertyToken(_propertyToken);
@@ -275,6 +282,11 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
      */
     function checkSubscriptionAdvancement(uint256 propertyId) external {
         (,,,,,,,uint8 currentPhase,,) = propertyToken.getProperty(propertyId);
+
+        if (address(geoOracle) != address(0)) {
+            uint8 eligibility = geoOracle.getPhaseEligibility(msg.sender, propertyId);
+            emit GeoEligibilityChecked(propertyId, msg.sender, eligibility);
+        }
         
         uint256 phaseAllocation = propertyToken.phaseAllocations(propertyId, currentPhase);
         uint256 phaseMinted = propertyToken.phaseMinted(propertyId, currentPhase);
@@ -354,6 +366,15 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
     }
 
     /**
+     * @notice Set geo-verification oracle for County-local eligibility checks
+     * @param _oracle Address of the geo oracle contract
+     */
+    function setGeoOracle(address _oracle) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        geoOracle = IGeoOracle(_oracle);
+        emit GeoOracleUpdated(_oracle);
+    }
+
+    /**
      * @notice Get all tracked properties
      */
     function getTrackedProperties() external view returns (uint256[] memory) {
@@ -377,10 +398,21 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
         // Mark as claimed before minting (reentrancy protection)
         hasClaimed[propertyId][msg.sender] = true;
 
-        // Mint bonus tokens (requires MINTER_ROLE granted to PhaseManager)
-        propertyToken.mintTokens(propertyId, msg.sender, BONUS_TOKENS);
+        uint256 bonusAmount = BONUS_TOKENS;
 
-        emit BonusClaimed(propertyId, msg.sender, BONUS_TOKENS);
+        // County locals get 1.5x bonus via geo-verification oracle
+        if (address(geoOracle) != address(0)) {
+            uint8 eligibility = geoOracle.getPhaseEligibility(msg.sender, propertyId);
+            emit GeoEligibilityChecked(propertyId, msg.sender, eligibility);
+            if (eligibility == 0) { // Phase.County = 0
+                bonusAmount = (BONUS_TOKENS * 3) / 2; // 1.5x
+            }
+        }
+
+        // Mint bonus tokens (requires MINTER_ROLE granted to PhaseManager)
+        propertyToken.mintTokens(propertyId, msg.sender, bonusAmount);
+
+        emit BonusClaimed(propertyId, msg.sender, bonusAmount);
     }
 
     /**
