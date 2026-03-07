@@ -38,6 +38,8 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         Phase currentPhase;
         bool isActive;
         bool isFunded;
+        string llcIdentifier;
+        address custodian;
     }
 
     // Phase allocation percentages (basis points, 10000 = 100%)
@@ -82,8 +84,9 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
     EnumerableSet.UintSet private _allPropertyIds;
 
     // Events
-    event PropertyCreated(uint256 indexed propertyId, string name, uint256 totalSupply, uint256 fundingTarget);
+    event PropertyCreated(uint256 indexed propertyId, string name, uint256 totalSupply, uint256 fundingTarget, string llcIdentifier, address custodian);
     event PropertyFunded(uint256 indexed propertyId, uint256 totalRaised);
+    event LLCBackingUpdated(uint256 indexed propertyId, string llcIdentifier, address custodian);
     event PhaseAdvanced(uint256 indexed propertyId, Phase newPhase);
     event TokensMinted(uint256 indexed propertyId, address indexed buyer, uint256 amount, Phase phase);
     event AddressWhitelisted(address indexed account, Phase eligibility);
@@ -145,8 +148,13 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         string memory propertyUri,
         uint256 totalSupply,
         uint256 fundingTarget,
-        uint256 fundingDuration
+        uint256 fundingDuration,
+        string memory llcId,
+        address custodian
     ) external onlyRole(DEFAULT_ADMIN_ROLE) returns (uint256) {
+        require(custodian != address(0), "Custodian required for LLC backing");
+        require(bytes(llcId).length > 0, "LLC identifier required");
+
         uint256 propertyId = propertyCount++;
         
         properties[propertyId] = Property({
@@ -159,7 +167,9 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
             fundingDeadline: block.timestamp + fundingDuration,
             currentPhase: Phase.County,
             isActive: true,
-            isFunded: false
+            isFunded: false,
+            llcIdentifier: llcId,
+            custodian: custodian
         });
 
         // Set phase allocations
@@ -171,7 +181,7 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         // Track property for enumeration
         _allPropertyIds.add(propertyId);
 
-        emit PropertyCreated(propertyId, name, totalSupply, fundingTarget);
+        emit PropertyCreated(propertyId, name, totalSupply, fundingTarget, llcId, custodian);
         return propertyId;
     }
 
@@ -259,6 +269,7 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         
         Property storage prop = properties[propertyId];
         require(prop.isActive, "Property not active");
+        require(prop.custodian != address(0), "No LLC backing");
         require(!prop.isFunded || block.timestamp <= prop.fundingDeadline, "Funding closed");
         
         Phase buyerPhase = addressPhaseEligibility[buyer];
@@ -363,6 +374,27 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
     function updateBasePrice(uint256 newPrice) external onlyRole(DEFAULT_ADMIN_ROLE) {
         basePrice = newPrice;
         emit BasePriceUpdated(newPrice);
+    }
+
+    /**
+     * @notice Update LLC backing for a property
+     * @param propertyId Property ID
+     * @param llcId LLC identifier (e.g., "GA-LLC-456")
+     * @param custodian Custody wallet address
+     */
+    function updateLLCBacking(
+        uint256 propertyId,
+        string calldata llcId,
+        address custodian
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(properties[propertyId].isActive, "Property not active");
+        require(custodian != address(0), "Custodian required");
+        require(bytes(llcId).length > 0, "LLC identifier required");
+
+        properties[propertyId].llcIdentifier = llcId;
+        properties[propertyId].custodian = custodian;
+
+        emit LLCBackingUpdated(propertyId, llcId, custodian);
     }
 
     /**

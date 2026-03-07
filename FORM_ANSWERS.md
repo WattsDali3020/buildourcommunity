@@ -95,10 +95,28 @@ function setGeoOracle(address _oracle) external onlyRole(DEFAULT_ADMIN_ROLE) {
 ```
 
 ### 5. LLC-Backed Property Structs in PropertyToken
-- **Status**: To Build
+- **Status**: Implemented
 - **Rationale**: RealT-like SEC safety; Amundi highlights offshore structs for US funds.
 - **Profit Tie**: Avoids "securities" classification risks, unlocking retail.
-- **Implementation**: See PropertyToken.sol update — LLC address and jurisdiction stored per token ID.
+- **Implementation**: PropertyToken.sol — `llcIdentifier` and `custodian` fields added to Property struct. `createProperty()` requires both. `mintTokens()` enforces `custodian != address(0)`. Admin setter `updateLLCBacking()` for post-creation updates.
+
+```solidity
+struct Property {
+    // ... existing fields ...
+    string llcIdentifier; // e.g., "GA-LLC-456"
+    address custodian;    // Custody wallet for compliance
+}
+
+// In createProperty — required at creation
+require(custodian != address(0), "Custodian required for LLC backing");
+require(bytes(llcId).length > 0, "LLC identifier required");
+
+// In mintTokens — enforced before minting
+require(prop.custodian != address(0), "No LLC backing");
+
+// Admin setter for post-creation updates
+function updateLLCBacking(uint256 propertyId, string calldata llcId, address custodian) external onlyRole(DEFAULT_ADMIN_ROLE);
+```
 
 ### 6. Multi-Sig Treasury Execution
 - **Status**: To Build (expand existing)
