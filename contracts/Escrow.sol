@@ -6,6 +6,10 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 
+interface IAMLOracle {
+    function getAMLScore(address buyer) external returns (uint256);
+}
+
 interface IPropertyToken {
     function mintTokens(uint256 propertyId, address buyer, uint256 amount) external;
     function getCurrentPrice(uint256 propertyId) external view returns (uint256);
@@ -39,7 +43,10 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
     uint256 public constant BASIS_POINTS = 10000;
     uint256 public constant SECONDS_PER_YEAR = 365 days;
 
+    uint256 public constant AML_THRESHOLD = 80;
+
     IPropertyToken public propertyToken;
+    IAMLOracle public amlOracle;
 
     // Purchase record
     struct Purchase {
@@ -219,6 +226,14 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
         require(isPropertyActive[propertyId], "Property not active");
         require(!escrow.isComplete, "Funding complete");
         require(block.timestamp < escrow.deadline, "Funding deadline passed");
+
+        if (address(amlOracle) != address(0)) {
+            uint256 amlScore = amlOracle.getAMLScore(msg.sender);
+            if (amlScore > AML_THRESHOLD) {
+                emit SuspiciousActivityReported(propertyId, msg.sender, "High AML Score", block.timestamp);
+                revert("AML check failed");
+            }
+        }
 
         uint256 price = propertyToken.getCurrentPrice(propertyId);
         uint256 totalCost = price * amount;
@@ -506,6 +521,14 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
      */
     function getInvestorContribution(uint256 propertyId, address investor) external view returns (uint256) {
         return buyerContributions[propertyId][investor];
+    }
+
+    /**
+     * @notice Set AML oracle address for automated compliance checks
+     * @param _oracle Address of the AML oracle contract
+     */
+    function setAMLOracle(address _oracle) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        amlOracle = IAMLOracle(_oracle);
     }
 
     /**
