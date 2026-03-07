@@ -119,13 +119,35 @@ function updateLLCBacking(uint256 propertyId, string calldata llcId, address cus
 ```
 
 ### 6. Multi-Sig Treasury Execution
-- **Status**: To Build (expand existing)
+- **Status**: Implemented
 - **Rationale**: 2-of-3 for credibility; Amundi on supportive regs but practice caution.
 - **Profit Tie**: Secure founder cut without control loss.
-- **Implementation**: See Treasury.sol refinement — expand to 2-of-3 multi-sig with DAO-appointed signers.
+- **Implementation**: Treasury.sol — Full 2-of-3 multi-sig with `SIGNER_ROLE` for DAO-appointed signers. `submitTransaction()` → `confirmTransaction()` → `executeTransaction()` flow. 1% founder cut (`FOUNDER_CUT_BPS = 100`) deducted on every execution. 24-month vesting with 90-day cliff. Chainlink reserve verification. Relayer reimbursement pool for gasless voting.
+
+```solidity
+// In executeTransaction — 2-of-3 multi-sig with founder cut
+require(txn.confirmationCount >= requiredConfirmations, "Not enough confirmations");
+
+uint256 founderCut = (txn.value * FOUNDER_CUT_BPS) / 10000;
+if (founderCut > 0) {
+    (bool founderSuccess, ) = payable(founderWallet).call{value: founderCut}("");
+    require(founderSuccess, "Founder cut transfer failed");
+}
+uint256 netValue = txn.value - founderCut;
+(bool success, ) = txn.target.call{value: netValue}(txn.data);
+```
+
+## All Build Gaps Complete
+All 6 enhancement areas are now implemented across the 5 core contracts:
+1. AML/KYC Oracle (Escrow.sol) — Automated compliance checks on purchases
+2. EIP-712 Gasless Voting (Governance.sol) — Off-chain signatures for mass participation
+3. Suspicious Activity Flagging (Escrow.sol) — Automated via AML oracle + manual reporting
+4. Geo-Verification (PhaseManager.sol) — County-local 1.5x bonus via oracle
+5. LLC-Backed Properties (PropertyToken.sol) — Custodian + LLC ID per property
+6. Multi-Sig Treasury (Treasury.sol) — 2-of-3 with founder vesting + reserve verification
 
 ## Next Steps
 - Test on Base Sepolia (low gas).
 - Cost Estimate: Chainlink ~$100 initial LINK.
-- Timeline: 1 week per contract.
+- Timeline: Deploy and verify each contract sequentially.
 - Legal: Consult for SEC (e.g., Reg D for private funds).
