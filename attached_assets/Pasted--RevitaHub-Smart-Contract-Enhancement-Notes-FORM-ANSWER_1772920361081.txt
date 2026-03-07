@@ -1,0 +1,61 @@
+# RevitaHub Smart Contract Enhancement Notes (FORM_ANSWERS.md)
+
+## Overview
+This doc captures enhancement suggestions, status, rationale, compliance ties (per Amundi report: tech-neutral regs require AML/KYC/custody for RWAs), and founder profit impact. Prioritize for functionality: Escrow for secure funding, Governance for fair votes, PhaseManager for engagement, PropertyToken for RWAs, Treasury for disbursements. Goal: Scale to 100-300 waitlist conversions, feeding 1% treasury cut.
+
+## Strong Existing Features (No Build Needed)
+- AML/KYC oracle hooks in Escrow.sol: Builds investor trust, reduces fraud risks.
+- EIP-712 potential in Governance.sol: Lowers barriers for mass voting.
+- Geo-verification alignment in PhaseManager.sol: Supports County-first model.
+- LLC backing concept: SEC-safe for RWAs.
+- Multi-sig in Treasury.sol: Adds credibility.
+
+## Already Implemented (Monitor/Refine)
+- KYC verification flow: User submits → admin approves (PropertyToken.sol whitelist).
+- 3% APR refund logic: In API/Escrow.sol.
+- Phase-based pricing/multipliers: PropertyToken.sol.
+- 1% founder cut: Treasury.sol (FOUNDER_CUT_BPS).
+- Chainlink automation: PhaseManager.sol.
+
+## Build Gaps and Plans
+1. **On-chain AML/KYC Oracle Integration (Chainlink)**
+   - Status: To Build
+   - Rationale: Amundi stresses AML/KYC for tokenized funds; automates Escrow checks to flag suspicious buys.
+   - Profit Tie: Prevents regulatory halts, enabling more fundings → treasury growth.
+   - Implementation: See Escrow.sol update below.
+
+2. **EIP-712 Signature Verification for Gasless Voting**
+   - Status: To Build
+   - Rationale: Reduces gas costs (critical for mass usage), already partially in Governance.sol.
+   - Profit Tie: Higher participation → faster phases → more token sales.
+   - Implementation: See Governance.sol update.
+
+3. **Automated Suspicious Activity Flagging**
+   - Status: To Build
+   - Rationale: Enhances Escrow compliance; ties to Amundi's custody/disclosure reqs.
+   - Profit Tie: Builds trust for institutional inflows.
+   - Implementation: Integrated in Escrow update.
+
+4. **Geo-Verification Oracles for Phase Eligibility**
+   - Status: To Build
+   - Rationale: Ensures County locals get 1.5x votes; Amundi notes regional reg differences (US vs EU).
+   - Profit Tie: Localized engagement drives early sales.
+   - Implementation: See PhaseManager.sol update.
+
+5. **LLC-Backed Property Structs in PropertyToken**
+   - Status: To Build
+   - Rationale: RealT-like SEC safety; Amundi highlights offshore structs for US funds.
+   - Profit Tie: Avoids "securities" classification risks, unlocking retail.
+   - Implementation: See PropertyToken.sol update.
+
+6. **Multi-Sig Treasury Execution**
+   - Status: To Build (expand existing)
+   - Rationale: 2-of-3 for credibility; Amundi on supportive regs but practice caution.
+   - Profit Tie: Secure founder cut without control loss.
+   - Implementation: See Treasury.sol refinement.
+
+## Next Steps
+- Test on Base Sepolia (low gas).
+- Cost Estimate: Chainlink ~$100 initial LINK.
+- Timeline: 1 week per contract.
+- Legal: Consult for SEC (e.g., Reg D for private funds).
