@@ -24,10 +24,11 @@ async function main() {
 
   console.log("2. Deploying Escrow...");
   const Escrow = await ethers.getContractFactory("Escrow");
-  const escrow = await Escrow.deploy(propertyTokenAddress);
+  const escrow = await Escrow.deploy(propertyTokenAddress, deployer.address);
   await escrow.waitForDeployment();
   const escrowAddress = await escrow.getAddress();
   console.log("   Escrow deployed to:", escrowAddress);
+  console.log("   Founder wallet:", deployer.address);
 
   console.log("3. Deploying Governance...");
   const Governance = await ethers.getContractFactory("Governance");
@@ -45,7 +46,7 @@ async function main() {
 
   console.log("5. Deploying Treasury...");
   const Treasury = await ethers.getContractFactory("Treasury");
-  const treasury = await Treasury.deploy(deployer.address);
+  const treasury = await Treasury.deploy();
   await treasury.waitForDeployment();
   const treasuryAddress = await treasury.getAddress();
   console.log("   Treasury deployed to:", treasuryAddress);
@@ -87,8 +88,8 @@ async function main() {
   console.log("- Adding Deployer as Treasury SIGNER...");
   await (await treasury.grantRole(SIGNER_ROLE, deployer.address)).wait();
 
-  console.log("- Setting Governance address on Treasury (impact-gated founder cut)...");
-  await (await treasury.setGovernance(governanceAddress)).wait();
+  console.log("- Setting Governance address on Escrow (impact-gated founder fee)...");
+  await (await escrow.setGovernanceContract(governanceAddress)).wait();
 
   const addresses = {
     network: network.name,
@@ -129,7 +130,8 @@ async function main() {
   console.log("- Governance   -> Treasury:      EXECUTOR_ROLE");
   console.log("- Deployer     -> Governance:    PROPOSER_ROLE");
   console.log("- Deployer     -> Treasury:      SIGNER_ROLE");
-  console.log("- Treasury     -> Governance:    setGovernance (impact scoring)");
+  console.log("- Escrow       -> Governance:    setGovernanceContract (impact scoring)");
+  console.log("- Escrow       -> Founder:       1% at funding (impact-gated) + 1% quarterly");
   console.log("");
   console.log(`Addresses saved to: ${outputPath}`);
   console.log("");
@@ -145,13 +147,13 @@ async function main() {
     console.log("");
     console.log(`npx hardhat verify --network ${networkName} ${propertyTokenAddress} "https://revitahub.com/api/metadata/{id}.json"`);
     console.log("");
-    console.log(`npx hardhat verify --network ${networkName} ${escrowAddress} ${propertyTokenAddress}`);
+    console.log(`npx hardhat verify --network ${networkName} ${escrowAddress} ${propertyTokenAddress} ${deployer.address}`);
     console.log("");
     console.log(`npx hardhat verify --network ${networkName} ${governanceAddress} ${propertyTokenAddress}`);
     console.log("");
     console.log(`npx hardhat verify --network ${networkName} ${phaseManagerAddress} ${propertyTokenAddress} ${governanceAddress}`);
     console.log("");
-    console.log(`npx hardhat verify --network ${networkName} ${treasuryAddress} ${deployer.address}`);
+    console.log(`npx hardhat verify --network ${networkName} ${treasuryAddress}`);
     console.log("");
     console.log("Or view on Basescan:");
     Object.entries(addresses.contracts).forEach(([name, addr]) => {

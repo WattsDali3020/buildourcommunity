@@ -10,9 +10,10 @@ async function main() {
   console.log("PropertyToken deployed:", await propertyToken.getAddress());
 
   const Escrow = await ethers.getContractFactory("Escrow");
-  const escrow = await Escrow.deploy(await propertyToken.getAddress());
+  const escrow = await Escrow.deploy(await propertyToken.getAddress(), deployer.address);
   await escrow.waitForDeployment();
   console.log("Escrow deployed:", await escrow.getAddress());
+  console.log("Founder wallet:", deployer.address);
 
   const Governance = await ethers.getContractFactory("Governance");
   const governance = await Governance.deploy(await propertyToken.getAddress());
@@ -28,7 +29,7 @@ async function main() {
   console.log("PhaseManager deployed:", await phaseManager.getAddress());
 
   const Treasury = await ethers.getContractFactory("Treasury");
-  const treasury = await Treasury.deploy(deployer.address);
+  const treasury = await Treasury.deploy();
   await treasury.waitForDeployment();
   console.log("Treasury deployed:", await treasury.getAddress());
 
@@ -52,8 +53,8 @@ async function main() {
   await governance.grantRole(await governance.PROPOSER_ROLE(), deployer.address);
   console.log("Governance PROPOSER_ROLE granted to deployer");
 
-  await treasury.setGovernance(await governance.getAddress());
-  console.log("Treasury governance set (impact-gated founder cut)");
+  await escrow.setGovernanceContract(await governance.getAddress());
+  console.log("Escrow governance set (impact-gated founder fee)");
 
   console.log("\n=== Deployment Complete ===");
   console.log("PropertyToken:", await propertyToken.getAddress());
@@ -70,7 +71,8 @@ async function main() {
   console.log("Governance   -> Treasury:      EXECUTOR_ROLE");
   console.log("Deployer     -> Treasury:      SIGNER_ROLE");
   console.log("Deployer     -> Governance:    PROPOSER_ROLE");
-  console.log("Treasury     -> Governance:    setGovernance (impact scoring)");
+  console.log("Escrow       -> Governance:    setGovernanceContract (impact scoring)");
+  console.log("Escrow       -> Founder:       1% at funding (impact-gated) + 1% quarterly");
 }
 
 main().catch((error) => {

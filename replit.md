@@ -58,10 +58,10 @@ Preferred communication style: Simple, everyday language.
 
 ### Smart Contract Architecture
 - **PropertyToken.sol**: ERC-1155 tokens with phase-based voting power, transfer locks.
-- **Escrow.sol**: Handles token purchases, 3% APR refunds, and token burning.
+- **Escrow.sol**: Handles token purchases, 3% APR refunds, token burning, 1% founder fee (impact-gated at funding + quarterly distributions via Chainlink).
 - **Governance.sol**: Manages DAO voting with phase-weighted voting, gasless signatures.
 - **PhaseManager.sol**: Chainlink Automation for phase advancement.
-- **Treasury.sol**: Manages DAO funds, founder vesting.
+- **Treasury.sol**: Manages DAO funds (pure pass-through), 2-of-3 multi-sig, relayer reimbursements, reserve verification.
 
 ## External Dependencies
 

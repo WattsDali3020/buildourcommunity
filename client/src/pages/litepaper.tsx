@@ -185,7 +185,7 @@ export default function Litepaper() {
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-1.5 text-sm font-medium text-primary mb-6 print:hidden">
                 <FileText className="h-4 w-4" />
-                Technical Litepaper v3.3 — Alpha
+                Technical Litepaper v3.4 — Alpha
               </div>
               
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6" data-testid="litepaper-title">
@@ -249,7 +249,7 @@ export default function Litepaper() {
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span className="text-sm">1% capped founder fee — 24-month vesting, 90-day cliff</span>
+                  <span className="text-sm">1% founder fee — impact-gated at funding + quarterly distributions via Chainlink</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -319,8 +319,8 @@ export default function Litepaper() {
                   every property into a competing virtual city across four live leagues, while the Georgia Impact 
                   Simulator models GDP growth across 159 counties. A service provider marketplace and community 
                   wishlist create a full pipeline from neighborhood need to funded project. All treasury operations 
-                  are governed by a 2-of-3 multi-sig with a transparent 1% capped founder sustainability fee 
-                  subject to 24-month vesting with a 90-day cliff.
+                  are governed by a 2-of-3 multi-sig. The 1% founder sustainability fee is impact-gated in the 
+                  Escrow contract — paid at funding completion and on quarterly distributions via Chainlink.
                 </p>
 
                 <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 p-6 mb-8">
@@ -353,7 +353,7 @@ export default function Litepaper() {
                       </div>
                       <div>
                         <p className="font-medium text-sm">Transparent Founder Economics</p>
-                        <p className="text-sm text-muted-foreground">1% capped fee, 24-month vesting, fully on-chain and auditable</p>
+                        <p className="text-sm text-muted-foreground">1% capped fee at funding + quarterly, impact-gated, fully on-chain and auditable</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
@@ -390,34 +390,28 @@ export default function Litepaper() {
 
                 <Subsection title="Founder Sustainability Model">
                   <p className="leading-relaxed mb-6 text-muted-foreground">
-                    As a solo-founder project, long-term sustainability is built directly into the smart contracts 
-                    with full transparency. The founder takes a <strong className="text-foreground">1% fee (FOUNDER_CUT_BPS = 100)</strong> on 
-                    treasury disbursements, subject to strict vesting:
+                    As a solo-founder project, long-term sustainability is built directly into the Escrow smart contract 
+                    with full transparency. The founder earns through two on-chain payment paths, both capped at <strong className="text-foreground">1% (FOUNDER_FEE_BPS = 100)</strong>:
                   </p>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <div className="p-4 rounded-xl border text-center">
                       <p className="text-3xl font-bold text-primary mb-1">1%</p>
-                      <p className="text-sm text-muted-foreground">Capped Founder Fee</p>
-                      <p className="text-xs text-muted-foreground mt-1">Hardcoded in Treasury.sol</p>
+                      <p className="text-sm text-muted-foreground">At Funding Completion</p>
+                      <p className="text-xs text-muted-foreground mt-1">Impact-gated (score must be &ge; 70)</p>
                     </div>
                     <div className="p-4 rounded-xl border text-center">
-                      <p className="text-3xl font-bold text-primary mb-1">24 mo</p>
-                      <p className="text-sm text-muted-foreground">Vesting Period</p>
-                      <p className="text-xs text-muted-foreground mt-1">Linear after cliff</p>
-                    </div>
-                    <div className="p-4 rounded-xl border text-center">
-                      <p className="text-3xl font-bold text-primary mb-1">90 day</p>
-                      <p className="text-sm text-muted-foreground">Cliff Period</p>
-                      <p className="text-xs text-muted-foreground mt-1">Zero claims before cliff</p>
+                      <p className="text-3xl font-bold text-primary mb-1">1%</p>
+                      <p className="text-sm text-muted-foreground">Quarterly Distributions</p>
+                      <p className="text-xs text-muted-foreground mt-1">Automated via Chainlink every 90 days</p>
                     </div>
                   </div>
 
                   <p className="text-sm text-muted-foreground p-4 rounded-xl bg-muted/30 border">
-                    The 1% founder cut is explicit in the Treasury smart contract, capped at the contract level, 
-                    and recorded on-chain for every transaction. It cannot be changed without a contract upgrade 
-                    requiring DAO approval. This ensures founder incentives are permanently aligned with 
-                    platform success.
+                    Both founder fee paths are hardcoded in the Escrow smart contract at the constant level, 
+                    recorded on-chain for every transaction, and cannot be changed without a new contract deployment 
+                    requiring DAO approval. The raise math ensures the project always receives its full budget: 
+                    fundingTarget = projectBudget / 0.99.
                   </p>
                 </Subsection>
 
@@ -525,7 +519,7 @@ export default function Litepaper() {
                     </div>
                     <div className="p-4 rounded-xl border">
                       <h5 className="font-semibold text-sm mb-2">Transparent Economics</h5>
-                      <p className="text-xs text-muted-foreground">All fees including the 1% founder cut are hardcoded in smart contracts, auditable on-chain, and subject to DAO governance for any changes.</p>
+                      <p className="text-xs text-muted-foreground">All fees including the 1% founder fee are hardcoded in the Escrow smart contract, auditable on-chain, and subject to DAO governance for any changes.</p>
                     </div>
                   </div>
                 </Subsection>
@@ -663,7 +657,7 @@ export default function Litepaper() {
                     <div className="p-4 rounded-xl bg-chart-3/10 border border-chart-3/20 text-center">
                       <Lock className="h-8 w-8 mx-auto mb-2 text-chart-3" />
                       <h5 className="font-semibold text-sm">Escrow.sol</h5>
-                      <p className="text-xs text-muted-foreground">Token purchases, 3% APR refunds, token burning on failed offerings, compliance events</p>
+                      <p className="text-xs text-muted-foreground">Token purchases, 3% APR refunds, 1% founder fee (impact-gated at funding + quarterly), Chainlink dual-trigger</p>
                     </div>
                     <div className="p-4 rounded-xl bg-chart-1/10 border border-chart-1/20 text-center">
                       <Vote className="h-8 w-8 mx-auto mb-2 text-chart-1" />
@@ -680,7 +674,7 @@ export default function Litepaper() {
                     <div className="p-4 rounded-xl bg-chart-4/10 border border-chart-4/20 text-center">
                       <Landmark className="h-8 w-8 mx-auto mb-2 text-chart-4" />
                       <h5 className="font-semibold text-sm">Treasury.sol</h5>
-                      <p className="text-xs text-muted-foreground">2-of-3 multi-sig, impact-gated 1% founder cut, vesting, relayer reimbursements, reserve verification</p>
+                      <p className="text-xs text-muted-foreground">2-of-3 multi-sig, DAO fund management, relayer reimbursements, Chainlink reserve verification</p>
                     </div>
                   </div>
                 </div>
@@ -1617,7 +1611,7 @@ function castVoteBySignature(
                     PropertyDevelopment proposals require an on-chain impact report before they can be submitted for a vote.
                     Proposers must attach an IPFS-hosted impact report and an impact score (0–100). Without both, the 
                     proposal reverts — enforcing "no report, no vote." The impact score also flows downstream to the Treasury,
-                    where it determines whether the founder sustainability fee applies.
+                    where it determines whether the founder sustainability fee applies at Escrow funding completion.
                   </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -1639,7 +1633,7 @@ function castVoteBySignature(
                       <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="text-sm font-medium">Founder Gate</span>
-                        <p className="text-xs text-muted-foreground mt-1">Score &lt; 70 = founder cut zeroed at Treasury</p>
+                        <p className="text-xs text-muted-foreground mt-1">Score &lt; 70 = founder fee zeroed at Escrow funding</p>
                       </div>
                     </div>
                   </div>
@@ -1680,7 +1674,7 @@ function castVoteBySignature(
               <Section id="impact-governance" title="Impact Governance" icon={Gauge} alternate>
                 <p className="text-lg leading-relaxed mb-8 text-muted-foreground">
                   RevitaHub enforces on-chain accountability through a three-contract impact governance loop.
-                  Proposals require impact reports, the Treasury gates founder economics on impact scores,
+                  Proposals require impact reports, the Escrow gates founder economics on impact scores at funding completion,
                   and the PhaseManager tracks real-world outcomes after execution. This creates a closed feedback
                   loop where community outcomes directly shape platform economics.
                 </p>
@@ -1695,8 +1689,8 @@ function castVoteBySignature(
                     </div>
                     <div className="p-4 rounded-xl bg-chart-4/10 border border-chart-4/20 text-center">
                       <Landmark className="h-8 w-8 mx-auto mb-2 text-chart-4" />
-                      <h5 className="font-semibold text-sm mb-1">2. Gate Founder Cut</h5>
-                      <p className="text-xs text-muted-foreground">Treasury.sol reads impact score — if below 70, the 1% founder fee drops to $0</p>
+                      <h5 className="font-semibold text-sm mb-1">2. Gate Founder Fee</h5>
+                      <p className="text-xs text-muted-foreground">Escrow.sol reads impact score at funding completion — if below 70, the 1% founder fee drops to $0</p>
                     </div>
                     <div className="p-4 rounded-xl bg-chart-2/10 border border-chart-2/20 text-center">
                       <Activity className="h-8 w-8 mx-auto mb-2 text-chart-2" />
@@ -1750,32 +1744,46 @@ function getImpactReport(uint256 proposalId) external view
 
                 <Subsection title="Impact-Gated Founder Economics">
                   <p className="leading-relaxed mb-6 text-muted-foreground">
-                    The Treasury contract reads the impact score from Governance before applying the 1% founder
-                    sustainability fee. If the impact score is below 70, the founder cut is zeroed — the full
-                    disbursement goes to the project. If the Governance contract isn't linked yet (pre-deployment
-                    fallback), the founder cut applies as normal.
+                    The Escrow contract reads the impact score from Governance when a property reaches 100% funding.
+                    If the impact score is below 70, the 1% founder fee is zeroed — the full raise goes to the project.
+                    If the Governance contract isn't linked yet (pre-deployment fallback), the founder fee applies as normal.
+                    A second 1% fee applies to quarterly income distributions, automated via Chainlink every 90 days.
                   </p>
 
                   <CodeBlock
-                    title="Treasury.sol - Impact-Gated Founder Cut"
-                    code={`function execute(
-    address target,
-    uint256 value,
-    bytes calldata data,
-    uint256 proposalId           // NEW: 4th parameter
-) external onlyRole(EXECUTOR_ROLE) nonReentrant returns (bytes memory) {
-    uint256 founderCut = (value * FOUNDER_CUT_BPS) / 10000; // 1%
+                    title="Escrow.sol - Impact-Gated Founder Fee at Funding"
+                    code={`// RAISE MATH: fundingTarget = projectBudget / 0.99
+// Example: $500K project → $505,051 raise → $5,051 founder fee → $500K to Treasury
+function initializeEscrow(uint256 propertyId, uint256 projectBudget, 
+    uint256 deadline, uint256 proposalId) external onlyRole(OPERATOR_ROLE) {
+    uint256 fundingTarget = (projectBudget * 10000) / 9900;
+    // ... escrow setup with projectBudget, fundingTarget, proposalId ...
+}
 
-    // Impact gate: if governance is linked, check impact score
+function _completeFunding(uint256 propertyId) internal {
+    uint256 founderFee = (escrow.totalRaised * FOUNDER_FEE_BPS) / BASIS_POINTS; // 1%
+
     if (governanceContract != address(0)) {
         (, uint256 impactScore) = IGovernanceImpact(governanceContract)
-            .getImpactReport(proposalId);
-        if (impactScore < 70) {
-            founderCut = 0;  // Low-impact = no founder fee
-            emit FounderCutZeroedByImpact(proposalId, impactScore);
+            .getImpactReport(escrow.proposalId);
+        if (impactScore < MIN_IMPACT_SCORE) {  // < 70
+            payFounder = false;
+            emit FounderFeeSkipped(propertyId, impactScore, "Impact score below 70");
         }
     }
-    // ... execution continues with adjusted founder cut ...
+    if (payFounder && founderFee > 0) {
+        // Send 1% to founder wallet
+        (bool success, ) = payable(founderWallet).call{value: founderFee}("");
+        emit FounderFundingFeePaid(propertyId, founderWallet, founderFee, impactScore);
+    }
+    _enableQuarterlyTracking(propertyId);
+}
+
+// Payment 2: Quarterly distributions — 1% of income to founder, 99% to investors
+function _executeQuarterlyDistribution(uint256 propertyId) internal {
+    uint256 founderShare = (totalIncome * FOUNDER_FEE_BPS) / BASIS_POINTS;
+    uint256 investorShare = totalIncome - founderShare;
+    // Automated via Chainlink every 90 days
 }`}
                   />
 
@@ -1787,11 +1795,11 @@ function getImpactReport(uint256 proposalId) external view
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
                       <div className="p-3 rounded-lg bg-background border">
                         <p className="font-semibold text-foreground mb-1">Score &ge; 70</p>
-                        <p>Normal 1% founder sustainability fee applies. Project demonstrates meaningful community impact.</p>
+                        <p>Normal 1% founder fee applies at funding completion. Project demonstrates meaningful community impact.</p>
                       </div>
                       <div className="p-3 rounded-lg bg-background border">
                         <p className="font-semibold text-foreground mb-1">Score &lt; 70</p>
-                        <p>Founder cut = $0. Full disbursement goes to the project. Founder only earns when the community benefits.</p>
+                        <p>Founder fee = $0. Full raise goes to the project. Founder only earns when the community benefits.</p>
                       </div>
                     </div>
                   </div>
@@ -1853,18 +1861,17 @@ function getPropertyHealthScore(uint256 propertyId)
 
               <Section id="treasury" title="Treasury & Founder Economics" icon={Landmark}>
                 <p className="leading-relaxed mb-8 text-muted-foreground">
-                  The Treasury contract manages all DAO funds with institutional-grade security. Two execution 
-                  paths exist: multi-sig for operational disbursements and direct DAO execution for governance-approved 
-                  proposals. On the DAO execution path, the 1% founder sustainability fee is impact-gated — it only 
-                  applies when the proposal's impact score meets the 70-point threshold. Multi-sig operational 
-                  disbursements apply the standard 1% fee.
+                  The Treasury contract manages all DAO funds with institutional-grade security as a pure pass-through.
+                  Two execution paths exist: multi-sig for operational disbursements and direct DAO execution for 
+                  governance-approved proposals. The founder sustainability fee is handled entirely by the Escrow contract —
+                  1% at funding completion (impact-gated) and 1% of quarterly income distributions.
                 </p>
 
                 <Subsection title="2-of-3 Multi-Sig">
                   <p className="leading-relaxed mb-6 text-muted-foreground">
                     Operational disbursements require approval from 2 of 3 designated signers. Transactions 
                     are submitted, confirmed, and executed through a structured approval flow. Each signer can 
-                    also revoke their confirmation before execution.
+                    also revoke their confirmation before execution. The full value passes through without deductions.
                   </p>
 
                   <div className="rounded-xl border overflow-hidden mb-6">
@@ -1890,7 +1897,7 @@ function getPropertyHealthScore(uint256 propertyId)
                         <tr className="border-t">
                           <td className="p-4 font-medium">3</td>
                           <td className="p-4 font-mono text-xs text-primary">executeTransaction()</td>
-                          <td className="p-4 text-muted-foreground">With 2 confirmations, transaction executes (1% founder cut deducted)</td>
+                          <td className="p-4 text-muted-foreground">With 2 confirmations, full value passes through to target</td>
                         </tr>
                       </tbody>
                     </table>
@@ -1899,57 +1906,46 @@ function getPropertyHealthScore(uint256 propertyId)
 
                 <Subsection title="Founder Sustainability Fee — Full Transparency">
                   <p className="leading-relaxed mb-6 text-muted-foreground">
-                    The founder sustainability model is designed for radical transparency. Every parameter is 
-                    hardcoded in the smart contract and verifiable on-chain by any investor at any time.
+                    The founder sustainability model lives in the Escrow contract with two payment paths, both 
+                    hardcoded at 1% and verifiable on-chain by any investor at any time. The Treasury is a clean 
+                    pass-through for DAO funds — no fees are deducted at the Treasury level.
                   </p>
 
                   <CodeBlock 
-                    title="Treasury.sol - Founder Fee, Impact Gate & Vesting"
-                    code={`uint256 public constant FOUNDER_CUT_BPS = 100;     // 1% — cannot be changed
-uint256 public constant VESTING_PERIOD = 730 days;  // 24 months
-uint256 public constant VESTING_CLIFF = 90 days;    // 3 month cliff — zero claims before
+                    title="Escrow.sol - Two-Payment Founder Fee Model"
+                    code={`uint256 public constant FOUNDER_FEE_BPS = 100;     // 1% — cannot be changed
+uint256 public constant MIN_IMPACT_SCORE = 70;     // Impact gate threshold
+uint256 public constant QUARTERLY_INTERVAL = 90 days;
 
-// DAO execution path — impact-gated founder cut
-function execute(
-    address target, uint256 value, bytes calldata data,
-    uint256 proposalId  // Governance proposal ID for impact lookup
-) external onlyRole(EXECUTOR_ROLE) nonReentrant returns (bytes memory) {
-    uint256 founderCut = (value * FOUNDER_CUT_BPS) / 10000;
-
-    // Impact gate: score < 70 = founder earns nothing
+// PAYMENT 1: 1% of gross raise at funding completion (impact-gated)
+function _completeFunding(uint256 propertyId) internal {
+    uint256 founderFee = (escrow.totalRaised * FOUNDER_FEE_BPS) / BASIS_POINTS;
+    
+    // Impact gate: score < 70 = founder earns nothing on this raise
     if (governanceContract != address(0)) {
         (, uint256 impactScore) = IGovernanceImpact(governanceContract)
-            .getImpactReport(proposalId);
+            .getImpactReport(escrow.proposalId);
         if (impactScore < 70) {
-            founderCut = 0;
-            emit FounderCutZeroedByImpact(proposalId, impactScore);
+            payFounder = false;
+            emit FounderFeeSkipped(propertyId, impactScore, "Below threshold");
         }
     }
-    // ... execution with adjusted founder cut ...
+    if (payFounder) {
+        (bool success, ) = payable(founderWallet).call{value: founderFee}("");
+        emit FounderFundingFeePaid(propertyId, founderWallet, founderFee, impactScore);
+    }
 }
 
-// Multi-sig path — 2-of-3 operational disbursements
-function executeTransaction(uint256 txId) external onlyRole(SIGNER_ROLE) nonReentrant {
-    Transaction storage txn = transactions[txId];
-    require(txn.confirmationCount >= requiredConfirmations);
-    txn.executed = true;
-    
-    uint256 founderCut = (txn.value * FOUNDER_CUT_BPS) / 10000;
-    // ... founder cut + execution ...
+// PAYMENT 2: 1% of quarterly income (rent + appreciation)
+function _executeQuarterlyDistribution(uint256 propertyId) internal {
+    uint256 founderShare = (totalIncome * FOUNDER_FEE_BPS) / BASIS_POINTS;
+    uint256 investorShare = totalIncome - founderShare;
+    // Automated by Chainlink Automation every 90 days
 }
 
-function getClaimableVested(address founder) public view returns (uint256) {
-    if (vestingStart[founder] == 0) return 0;
-    uint256 elapsed = block.timestamp - vestingStart[founder];
-    if (elapsed < VESTING_CLIFF) return 0; // Nothing before 90-day cliff
-    
-    uint256 totalVested = vestedCuts[founder];
-    uint256 vestedAmount = elapsed >= VESTING_PERIOD 
-        ? totalVested 
-        : (totalVested * elapsed) / VESTING_PERIOD; // Linear vesting
-    
-    return vestedAmount - claimedCuts[founder];
-}`}
+// RAISE MATH: project always gets full budget
+// fundingTarget = projectBudget / 0.99
+// $500K project → $505,051 raise → $5,051 founder → $500K to Treasury`}
                   />
 
                   <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 p-6 mb-6">
@@ -1957,11 +1953,11 @@ function getClaimableVested(address founder) public view returns (uint256) {
                     <div className="space-y-2 text-sm text-muted-foreground">
                       <p>As a solo-founder project, the 1% fee is designed to be:</p>
                       <ul className="space-y-1 ml-4">
-                        <li>• <strong className="text-foreground">Sustainable</strong> — enough to fund ongoing development and operations</li>
+                        <li>• <strong className="text-foreground">Sustainable</strong> — two revenue streams (funding + quarterly) provide ongoing sustainability</li>
                         <li>• <strong className="text-foreground">Modest</strong> — well below typical platform fees in the industry</li>
-                        <li>• <strong className="text-foreground">Aligned</strong> — vesting ensures the founder only benefits as the platform succeeds over time</li>
-                        <li>• <strong className="text-foreground">Impact-Gated</strong> — proposals scoring below 70 on impact zero the founder cut entirely</li>
-                        <li>• <strong className="text-foreground">Immutable</strong> — FOUNDER_CUT_BPS is a constant, not a variable — it cannot be changed without a new contract deployment requiring DAO approval</li>
+                        <li>• <strong className="text-foreground">Aligned</strong> — quarterly distributions tie founder income to actual property performance</li>
+                        <li>• <strong className="text-foreground">Impact-Gated</strong> — funding fee zeroed if impact score is below 70</li>
+                        <li>• <strong className="text-foreground">Immutable</strong> — FOUNDER_FEE_BPS is a constant, not a variable — it cannot be changed without a new contract deployment requiring DAO approval</li>
                       </ul>
                     </div>
                   </div>
@@ -2191,8 +2187,8 @@ function getClaimableVested(address founder) public view returns (uint256) {
                     <p className="text-sm">
                       <strong>Audit Functions:</strong> Compliance officers can call <code className="text-xs bg-muted px-1 py-0.5 rounded">getPurchaseForAudit()</code>, 
                       <code className="text-xs bg-muted px-1 py-0.5 rounded ml-1">getInvestorContribution()</code>, and 
-                      <code className="text-xs bg-muted px-1 py-0.5 rounded ml-1">getVestingInfo()</code> to retrieve 
-                      detailed transaction and founder vesting data for regulatory examinations.
+                      <code className="text-xs bg-muted px-1 py-0.5 rounded ml-1">getQuarterlyState()</code> to retrieve 
+                      detailed transaction and founder fee data for regulatory examinations.
                     </p>
                   </div>
                 </Subsection>
@@ -2382,7 +2378,7 @@ function getClaimableVested(address founder) public view returns (uint256) {
                         <tr className="border-t bg-primary/5">
                           <td className="p-4 font-medium">Founder Sustainability</td>
                           <td className="p-4 text-primary font-semibold">1.0%</td>
-                          <td className="p-4 text-muted-foreground">Per disbursement, 24-mo vesting, 90-day cliff</td>
+                          <td className="p-4 text-muted-foreground">1% at funding (impact-gated) + 1% quarterly via Chainlink</td>
                         </tr>
                       </tbody>
                     </table>

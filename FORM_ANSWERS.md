@@ -1,7 +1,7 @@
 # RevitaHub Smart Contract Enhancement Notes (FORM_ANSWERS.md)
 
 ## Overview
-This doc captures enhancement suggestions, status, rationale, compliance ties (per Amundi report: tech-neutral regs require AML/KYC/custody for RWAs), and founder profit impact. Prioritize for functionality: Escrow for secure funding, Governance for fair votes, PhaseManager for engagement, PropertyToken for RWAs, Treasury for disbursements. Goal: Scale to 100-300 waitlist conversions, feeding 1% treasury cut.
+This doc captures enhancement suggestions, status, rationale, compliance ties (per Amundi report: tech-neutral regs require AML/KYC/custody for RWAs), and founder profit impact. Prioritize for functionality: Escrow for secure funding, Governance for fair votes, PhaseManager for engagement, PropertyToken for RWAs, Treasury for disbursements. Goal: Scale to 100-300 waitlist conversions, feeding 1% founder fee via Escrow (at funding + quarterly).
 
 ## Strong Existing Features (No Build Needed)
 - AML/KYC oracle hooks in Escrow.sol: Builds investor trust, reduces fraud risks.
@@ -14,7 +14,7 @@ This doc captures enhancement suggestions, status, rationale, compliance ties (p
 - KYC verification flow: User submits → admin approves (PropertyToken.sol whitelist).
 - 3% APR refund logic: In API/Escrow.sol.
 - Phase-based pricing/multipliers: PropertyToken.sol.
-- 1% founder cut: Treasury.sol (FOUNDER_CUT_BPS).
+- 1% founder fee: Escrow.sol (FOUNDER_FEE_BPS) — two payments: 1% at funding (impact-gated) + 1% quarterly.
 - Chainlink automation: PhaseManager.sol.
 
 ## Build Gaps and Plans
@@ -121,20 +121,15 @@ function updateLLCBacking(uint256 propertyId, string calldata llcId, address cus
 ### 6. Multi-Sig Treasury Execution
 - **Status**: Implemented
 - **Rationale**: 2-of-3 for credibility; Amundi on supportive regs but practice caution.
-- **Profit Tie**: Secure founder cut without control loss.
-- **Implementation**: Treasury.sol — Full 2-of-3 multi-sig with `SIGNER_ROLE` for DAO-appointed signers. `submitTransaction()` → `confirmTransaction()` → `executeTransaction()` flow. 1% founder cut (`FOUNDER_CUT_BPS = 100`) deducted on every execution. 24-month vesting with 90-day cliff. Chainlink reserve verification. Relayer reimbursement pool for gasless voting.
+- **Profit Tie**: Secure DAO fund management — founder fee handled by Escrow.
+- **Implementation**: Treasury.sol — Full 2-of-3 multi-sig with `SIGNER_ROLE` for DAO-appointed signers. `submitTransaction()` → `confirmTransaction()` → `executeTransaction()` flow. Treasury is a pure pass-through (no fee deductions). Chainlink reserve verification. Relayer reimbursement pool for gasless voting. Founder sustainability fee moved entirely to Escrow.sol.
 
 ```solidity
-// In executeTransaction — 2-of-3 multi-sig with founder cut
+// In executeTransaction — 2-of-3 multi-sig, full pass-through
 require(txn.confirmationCount >= requiredConfirmations, "Not enough confirmations");
-
-uint256 founderCut = (txn.value * FOUNDER_CUT_BPS) / 10000;
-if (founderCut > 0) {
-    (bool founderSuccess, ) = payable(founderWallet).call{value: founderCut}("");
-    require(founderSuccess, "Founder cut transfer failed");
-}
-uint256 netValue = txn.value - founderCut;
-(bool success, ) = txn.target.call{value: netValue}(txn.data);
+txn.executed = true;
+(bool success, bytes memory result) = txn.target.call{value: txn.value}(txn.data);
+require(success, "Transaction execution failed");
 ```
 
 ## All Build Gaps Complete
@@ -144,7 +139,7 @@ All 6 enhancement areas are now implemented across the 5 core contracts:
 3. Suspicious Activity Flagging (Escrow.sol) — Automated via AML oracle + manual reporting
 4. Geo-Verification (PhaseManager.sol) — County-local 1.5x bonus via oracle
 5. LLC-Backed Properties (PropertyToken.sol) — Custodian + LLC ID per property
-6. Multi-Sig Treasury (Treasury.sol) — 2-of-3 with founder vesting + reserve verification
+6. Multi-Sig Treasury (Treasury.sol) — 2-of-3 pure pass-through + reserve verification
 
 ## Impact Governance Enhancements (March 2026)
 Three contracts updated to add impact-based accountability:
@@ -157,15 +152,23 @@ Three contracts updated to add impact-based accountability:
 - New `getImpactReport(uint256 proposalId)` view function returns (ipfsHash, impactScore)
 - Poll-to-proposal conversions default to empty impact fields (can be updated separately)
 
-### Treasury.sol — Impact-Gated Founder Cut
-- `execute()` signature changed: 3 params → 4 params (added `uint256 proposalId`)
-- New `IGovernanceImpact` interface for cross-contract impact score reads
-- New `governanceContract` state variable + `setGovernance(address)` admin setter
-- Logic: If governance is set, reads `impactScore` via `getImpactReport(proposalId)`
-  - If `impactScore < 70` → founder cut = $0 (emits `FounderCutZeroedByImpact`)
-  - If `impactScore >= 70` → normal 1% founder cut applies
-- Fallback: If governance address not set (address(0)), founder cut works as before
-- Events: `GovernanceContractUpdated`, `FounderCutZeroedByImpact`
+### Treasury.sol — Pure Pass-Through DAO Fund Management
+- `execute()` keeps 4-param signature (proposalId retained for audit trail) but no longer deducts any fees
+- Removed: `IGovernanceImpact` interface, `governanceContract` state variable, `setGovernance()`, `founderWallet`, vesting logic, `FounderCutSent`/`FounderCutZeroedByImpact` events
+- `executeTransaction()` (multi-sig path) also passes through full value — no fee deduction
+- Constructor simplified: no parameters (was `address _founderWallet`)
+- Founder sustainability fee moved entirely to Escrow.sol
+
+### Escrow.sol — Founder Revenue Model (NEW)
+- Two-payment founder fee model replaces Treasury-based approach
+- Payment 1: 1% of gross raise at funding completion, impact-gated (score >= 70 via Governance)
+- Payment 2: 1% of quarterly income distributions, automated by Chainlink every 90 days
+- Raise math: `fundingTarget = projectBudget / 0.99` — project always gets full budget
+- Constructor: `(address _propertyToken, address _founderWallet)` — founderWallet is immutable
+- `initializeEscrow()`: takes `(propertyId, projectBudget, deadline, proposalId)` instead of `(propertyId, fundingTarget, deadline)`
+- New: `depositIncome()`, `_executeQuarterlyDistribution()`, `QuarterlyState` struct
+- Chainlink dual-trigger: refund deadline monitoring + quarterly distribution scheduling
+- Impact gate: `setGovernanceContract()` links to Governance for score lookup at `_completeFunding()`
 
 ### PhaseManager.sol — Post-Execution Health Tracking
 - New `HealthDelta` struct: category (string), delta (int256), timestamp
@@ -178,8 +181,11 @@ Three contracts updated to add impact-based accountability:
 - `getPropertyHealthHistory(uint256 propertyId)` — view, returns full delta history
 
 ### Deploy Scripts Updated
-- `deploy.cjs` and `deploy.js` both call `treasury.setGovernance(governanceAddress)` post-deploy
-- Role summary updated to show Treasury ↔ Governance linkage
+- `deploy.cjs` and `deploy.js` updated for new constructor signatures
+- Escrow: `Escrow.deploy(propertyTokenAddress, deployer.address)` — 2 params
+- Treasury: `Treasury.deploy()` — no params (constructor simplified)
+- Post-deploy: `escrow.setGovernanceContract(governanceAddress)` replaces `treasury.setGovernance()`
+- Role summary updated to show Escrow → Governance linkage and founder fee model
 - All contracts compile (Solidity 0.8.24) and deploy successfully on local Hardhat
 
 ## Next Steps

@@ -1,7 +1,7 @@
 {
   "_format": "hh-sol-artifact-1",
   "contractName": "IGovernanceImpact",
-  "sourceName": "contracts/Treasury.sol",
+  "sourceName": "contracts/Escrow.sol",
   "abi": [
     {
       "inputs": [

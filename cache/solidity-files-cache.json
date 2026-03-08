@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/runner/workspace/contracts/Escrow.sol": {
-      "lastModificationDate": 1772920564898,
-      "contentHash": "8f141e81a47b2a7310d4a063b16a310c",
+      "lastModificationDate": 1773005324927,
+      "contentHash": "5d1269627562d5eabd6afe16bb67ee7f",
       "sourceName": "contracts/Escrow.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -42,6 +42,7 @@
       "artifacts": [
         "Escrow",
         "IAMLOracle",
+        "IGovernanceImpact",
         "IPropertyToken"
       ]
     },
@@ -988,8 +989,8 @@
       ]
     },
     "/home/runner/workspace/contracts/Treasury.sol": {
-      "lastModificationDate": 1773001009896,
-      "contentHash": "d25f87fd81f497d4d59e0a3800fcc5e1",
+      "lastModificationDate": 1773004891092,
+      "contentHash": "88ccc68ae27f441941ab5c9d725cc9ba",
       "sourceName": "contracts/Treasury.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -1025,7 +1026,6 @@
       ],
       "artifacts": [
         "IChainlinkFunctions",
-        "IGovernanceImpact",
         "Treasury"
       ]
     },
