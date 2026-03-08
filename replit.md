@@ -75,9 +75,14 @@ Preferred communication style: Simple, everyday language.
 
 ### Blockchain / Smart Contracts
 - **Target Network**: Base (Coinbase L2)
+- **Testnet**: Base Sepolia (chainId 84532)
 - **Framework**: Chainlink Build Program (Oracles, Automation, Cross-chain)
 - **Wallet Connection**: RainbowKit + wagmi
 - **Smart Contracts**: PropertyToken.sol, Escrow.sol, Governance.sol, PhaseManager.sol, Treasury.sol
+- **Deployment**: `npx hardhat run scripts/deploy.cjs --network base-sepolia` (requires PRIVATE_KEY env var + Base Sepolia ETH)
+- **Deployment Order**: PropertyToken → Escrow → Governance → PhaseManager → Treasury (dependency chain)
+- **Post-Deploy**: Role assignments automated in deploy script; contract addresses saved to `deployment-addresses.json`
+- **GitHub**: github.com/WattsDali3020/buildourcommunity (connected as origin remote)
 
 ### Third-Party Integrations
 - Stripe (payment processing + webhooks)

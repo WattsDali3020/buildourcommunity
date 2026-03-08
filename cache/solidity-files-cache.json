@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/runner/workspace/contracts/Escrow.sol": {
-      "lastModificationDate": 1769804868760,
-      "contentHash": "30d4bdbad75a5cc3e23e7570b2783cba",
+      "lastModificationDate": 1772920564898,
+      "contentHash": "8f141e81a47b2a7310d4a063b16a310c",
       "sourceName": "contracts/Escrow.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -41,6 +41,7 @@
       ],
       "artifacts": [
         "Escrow",
+        "IAMLOracle",
         "IPropertyToken"
       ]
     },
@@ -426,8 +427,8 @@
       ]
     },
     "/home/runner/workspace/contracts/PhaseManager.sol": {
-      "lastModificationDate": 1770897765784,
-      "contentHash": "174309e0be66e19b96916afc3a12030a",
+      "lastModificationDate": 1772923820972,
+      "contentHash": "62144e05d3fd136380d8ffa75b52e08d",
       "sourceName": "contracts/PhaseManager.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -462,6 +463,7 @@
         "^0.8.20"
       ],
       "artifacts": [
+        "IGeoOracle",
         "IGovernance",
         "IPropertyToken",
         "PhaseManager"
@@ -822,8 +824,8 @@
       ]
     },
     "/home/runner/workspace/contracts/PropertyToken.sol": {
-      "lastModificationDate": 1769173219863,
-      "contentHash": "1d6091eca5702fef68af5bdff849d1b4",
+      "lastModificationDate": 1772923965378,
+      "contentHash": "296e2b782bdfa061f3312bdb755f4154",
       "sourceName": "contracts/PropertyToken.sol",
       "solcConfig": {
         "version": "0.8.24",
