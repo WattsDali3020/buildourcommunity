@@ -43,7 +43,9 @@ import {
   Briefcase,
   ClipboardList,
   Star,
-  UserCheck
+  UserCheck,
+  Gauge,
+  FileCheck
 } from "lucide-react";
 
 const tableOfContents = [
@@ -63,6 +65,7 @@ const tableOfContents = [
   { id: "professional-matching", title: "Professional Matching", icon: Briefcase },
   { id: "chainlink", title: "Chainlink Integration", icon: Link2 },
   { id: "governance", title: "DAO Governance", icon: Vote },
+  { id: "impact-governance", title: "Impact Governance", icon: Gauge },
   { id: "treasury", title: "Treasury & Founder Economics", icon: Landmark },
   { id: "protection", title: "Investor Protections", icon: Shield },
   { id: "compliance", title: "Regulatory Compliance", icon: CheckCircle2 },
@@ -182,7 +185,7 @@ export default function Litepaper() {
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-1.5 text-sm font-medium text-primary mb-6 print:hidden">
                 <FileText className="h-4 w-4" />
-                Technical Litepaper v3.2 — Alpha
+                Technical Litepaper v3.3 — Alpha
               </div>
               
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6" data-testid="litepaper-title">
@@ -665,19 +668,19 @@ export default function Litepaper() {
                     <div className="p-4 rounded-xl bg-chart-1/10 border border-chart-1/20 text-center">
                       <Vote className="h-8 w-8 mx-auto mb-2 text-chart-1" />
                       <h5 className="font-semibold text-sm">Governance.sol</h5>
-                      <p className="text-xs text-muted-foreground">AI-moderated DAO voting, EIP-712 gasless votes, community polls, demand analytics</p>
+                      <p className="text-xs text-muted-foreground">AI-moderated DAO voting, EIP-712 gasless votes, impact reports on proposals, community polls</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-4 rounded-xl bg-chart-2/10 border border-chart-2/20 text-center">
                       <RefreshCw className="h-8 w-8 mx-auto mb-2 text-chart-2" />
                       <h5 className="font-semibold text-sm">PhaseManager.sol</h5>
-                      <p className="text-xs text-muted-foreground">Chainlink Automation for 75% engagement-based phase advancement, vote-to-earn bonuses</p>
+                      <p className="text-xs text-muted-foreground">Chainlink Automation for phase advancement, vote-to-earn bonuses, post-execution health tracking</p>
                     </div>
                     <div className="p-4 rounded-xl bg-chart-4/10 border border-chart-4/20 text-center">
                       <Landmark className="h-8 w-8 mx-auto mb-2 text-chart-4" />
                       <h5 className="font-semibold text-sm">Treasury.sol</h5>
-                      <p className="text-xs text-muted-foreground">2-of-3 multi-sig, 1% founder vesting, relayer reimbursements, reserve verification</p>
+                      <p className="text-xs text-muted-foreground">2-of-3 multi-sig, impact-gated 1% founder cut, vesting, relayer reimbursements, reserve verification</p>
                     </div>
                   </div>
                 </div>
@@ -1609,6 +1612,39 @@ function castVoteBySignature(
                   </div>
                 </Subsection>
 
+                <Subsection title="Impact-Gated Proposals">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    PropertyDevelopment proposals require an on-chain impact report before they can be submitted for a vote.
+                    Proposers must attach an IPFS-hosted impact report and an impact score (0–100). Without both, the 
+                    proposal reverts — enforcing "no report, no vote." The impact score also flows downstream to the Treasury,
+                    where it determines whether the founder sustainability fee applies.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="flex items-start gap-3 p-4 rounded-xl border">
+                      <FileCheck className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-sm font-medium">IPFS Report</span>
+                        <p className="text-xs text-muted-foreground mt-1">Impact documentation stored immutably off-chain</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-4 rounded-xl border">
+                      <Gauge className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-sm font-medium">Impact Score</span>
+                        <p className="text-xs text-muted-foreground mt-1">0–100 score stored on-chain with the proposal</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-4 rounded-xl border">
+                      <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-sm font-medium">Founder Gate</span>
+                        <p className="text-xs text-muted-foreground mt-1">Score &lt; 70 = founder cut zeroed at Treasury</p>
+                      </div>
+                    </div>
+                  </div>
+                </Subsection>
+
                 <Subsection title="Community Polls (Demand Gauges)">
                   <p className="leading-relaxed mb-6 text-muted-foreground">
                     Before formal proposals, community members can create lightweight polls to gauge demand for 
@@ -1641,11 +1677,187 @@ function castVoteBySignature(
 
               <div className="divider-gradient" />
 
+              <Section id="impact-governance" title="Impact Governance" icon={Gauge} alternate>
+                <p className="text-lg leading-relaxed mb-8 text-muted-foreground">
+                  RevitaHub enforces on-chain accountability through a three-contract impact governance loop.
+                  Proposals require impact reports, the Treasury gates founder economics on impact scores,
+                  and the PhaseManager tracks real-world outcomes after execution. This creates a closed feedback
+                  loop where community outcomes directly shape platform economics.
+                </p>
+
+                <div className="rounded-2xl border p-6 mb-8">
+                  <h4 className="text-center font-bold text-lg mb-6 text-primary">Impact Governance Loop</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 rounded-xl bg-chart-1/10 border border-chart-1/20 text-center">
+                      <FileCheck className="h-8 w-8 mx-auto mb-2 text-chart-1" />
+                      <h5 className="font-semibold text-sm mb-1">1. Propose with Impact</h5>
+                      <p className="text-xs text-muted-foreground">Governance.sol requires IPFS impact report + score (0–100) for PropertyDevelopment proposals</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-chart-4/10 border border-chart-4/20 text-center">
+                      <Landmark className="h-8 w-8 mx-auto mb-2 text-chart-4" />
+                      <h5 className="font-semibold text-sm mb-1">2. Gate Founder Cut</h5>
+                      <p className="text-xs text-muted-foreground">Treasury.sol reads impact score — if below 70, the 1% founder fee drops to $0</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-chart-2/10 border border-chart-2/20 text-center">
+                      <Activity className="h-8 w-8 mx-auto mb-2 text-chart-2" />
+                      <h5 className="font-semibold text-sm mb-1">3. Track Outcomes</h5>
+                      <p className="text-xs text-muted-foreground">PhaseManager.sol records health deltas (jobs, traffic, revenue) clamped 0–10,000</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Subsection title="Impact Reports on Proposals">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    The Governance contract extends the Proposal struct with two new fields: an IPFS hash pointing to a
+                    detailed impact report, and a numeric impact score (0–100). For PropertyDevelopment proposals, both
+                    fields are mandatory — the contract reverts if either is missing. Other proposal types (Treasury,
+                    ParameterChange, Emergency) allow empty impact fields.
+                  </p>
+
+                  <CodeBlock
+                    title="Governance.sol - Impact-Gated Proposal Creation"
+                    code={`struct Proposal {
+    // ... existing fields ...
+    string impactReportIPFS;    // IPFS hash for impact report
+    uint256 impactScore;        // 0-100 impact score
+}
+
+function createProposal(
+    uint256 propertyId,
+    ProposalType proposalType,
+    string memory title,
+    string memory description,
+    string memory ipfsHash,
+    bytes memory executionData,
+    string memory impactReportIPFS,  // NEW: required for PropertyDevelopment
+    uint256 impactScore              // NEW: required for PropertyDevelopment
+) external onlyRole(PROPOSER_ROLE) returns (uint256) {
+    if (proposalType == ProposalType.PropertyDevelopment) {
+        require(bytes(impactReportIPFS).length > 0, "Impact report required");
+        require(impactScore > 0, "Impact score required");
+    }
+    require(impactScore <= 100, "Impact score must be 0-100");
+    // ... proposal creation continues ...
+}
+
+function getImpactReport(uint256 proposalId) external view 
+    returns (string memory ipfsHash, uint256 impactScore) {
+    Proposal storage proposal = proposals[proposalId];
+    return (proposal.impactReportIPFS, proposal.impactScore);
+}`}
+                  />
+                </Subsection>
+
+                <Subsection title="Impact-Gated Founder Economics">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    The Treasury contract reads the impact score from Governance before applying the 1% founder
+                    sustainability fee. If the impact score is below 70, the founder cut is zeroed — the full
+                    disbursement goes to the project. If the Governance contract isn't linked yet (pre-deployment
+                    fallback), the founder cut applies as normal.
+                  </p>
+
+                  <CodeBlock
+                    title="Treasury.sol - Impact-Gated Founder Cut"
+                    code={`function execute(
+    address target,
+    uint256 value,
+    bytes calldata data,
+    uint256 proposalId           // NEW: 4th parameter
+) external onlyRole(EXECUTOR_ROLE) nonReentrant returns (bytes memory) {
+    uint256 founderCut = (value * FOUNDER_CUT_BPS) / 10000; // 1%
+
+    // Impact gate: if governance is linked, check impact score
+    if (governanceContract != address(0)) {
+        (, uint256 impactScore) = IGovernanceImpact(governanceContract)
+            .getImpactReport(proposalId);
+        if (impactScore < 70) {
+            founderCut = 0;  // Low-impact = no founder fee
+            emit FounderCutZeroedByImpact(proposalId, impactScore);
+        }
+    }
+    // ... execution continues with adjusted founder cut ...
+}`}
+                  />
+
+                  <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 p-6 mb-6">
+                    <h4 className="font-semibold mb-3 flex items-center gap-2">
+                      <Gauge className="h-5 w-5 text-primary" />
+                      Impact Score Thresholds
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
+                      <div className="p-3 rounded-lg bg-background border">
+                        <p className="font-semibold text-foreground mb-1">Score &ge; 70</p>
+                        <p>Normal 1% founder sustainability fee applies. Project demonstrates meaningful community impact.</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-background border">
+                        <p className="font-semibold text-foreground mb-1">Score &lt; 70</p>
+                        <p>Founder cut = $0. Full disbursement goes to the project. Founder only earns when the community benefits.</p>
+                      </div>
+                    </div>
+                  </div>
+                </Subsection>
+
+                <Subsection title="Post-Execution Health Tracking">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    After a proposal executes, the PhaseManager records real-world impact data on-chain. Operators
+                    or Chainlink Automation post health deltas by category — jobs created, foot traffic changes, or
+                    revenue shifts. Each property maintains a running health score clamped between 0 and 10,000,
+                    queryable by any investor at any time.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="p-4 rounded-xl border text-center">
+                      <p className="text-2xl font-bold text-primary mb-1">Jobs</p>
+                      <p className="text-xs text-muted-foreground">Employment impact from revitalization projects</p>
+                    </div>
+                    <div className="p-4 rounded-xl border text-center">
+                      <p className="text-2xl font-bold text-primary mb-1">Traffic</p>
+                      <p className="text-xs text-muted-foreground">Foot traffic and commercial activity changes</p>
+                    </div>
+                    <div className="p-4 rounded-xl border text-center">
+                      <p className="text-2xl font-bold text-primary mb-1">Revenue</p>
+                      <p className="text-xs text-muted-foreground">Tax revenue and property value improvements</p>
+                    </div>
+                  </div>
+
+                  <CodeBlock
+                    title="PhaseManager.sol - Recording Impact After Execution"
+                    code={`function recordImpactAfterExecution(
+    uint256 propertyId,
+    string calldata category,   // "jobs", "traffic", "revenue"
+    int256 delta                // positive or negative change
+) external onlyRole(OPERATOR_ROLE) {
+    // Update running health score (clamped 0-10000)
+    uint256 currentScore = propertyHealthScores[propertyId];
+    uint256 newScore;
+    if (delta >= 0) {
+        newScore = currentScore + uint256(delta);
+        if (newScore > 10000) newScore = 10000;
+    } else {
+        uint256 absDelta = uint256(-delta);
+        newScore = absDelta >= currentScore ? 0 : currentScore - absDelta;
+    }
+    propertyHealthScores[propertyId] = newScore;
+    emit ImpactRecorded(propertyId, category, delta, newScore);
+}
+
+function getPropertyHealthScore(uint256 propertyId) 
+    external view returns (uint256) {
+    return propertyHealthScores[propertyId]; // 0-10000
+}`}
+                  />
+                </Subsection>
+              </Section>
+
+              <div className="divider-gradient" />
+
               <Section id="treasury" title="Treasury & Founder Economics" icon={Landmark}>
                 <p className="leading-relaxed mb-8 text-muted-foreground">
                   The Treasury contract manages all DAO funds with institutional-grade security. Two execution 
                   paths exist: multi-sig for operational disbursements and direct DAO execution for governance-approved 
-                  proposals. Both paths apply the 1% founder sustainability fee.
+                  proposals. On the DAO execution path, the 1% founder sustainability fee is impact-gated — it only 
+                  applies when the proposal's impact score meets the 70-point threshold. Multi-sig operational 
+                  disbursements apply the standard 1% fee.
                 </p>
 
                 <Subsection title="2-of-3 Multi-Sig">
@@ -1692,28 +1904,38 @@ function castVoteBySignature(
                   </p>
 
                   <CodeBlock 
-                    title="Treasury.sol - Founder Fee & Vesting"
+                    title="Treasury.sol - Founder Fee, Impact Gate & Vesting"
                     code={`uint256 public constant FOUNDER_CUT_BPS = 100;     // 1% — cannot be changed
 uint256 public constant VESTING_PERIOD = 730 days;  // 24 months
 uint256 public constant VESTING_CLIFF = 90 days;    // 3 month cliff — zero claims before
 
+// DAO execution path — impact-gated founder cut
+function execute(
+    address target, uint256 value, bytes calldata data,
+    uint256 proposalId  // Governance proposal ID for impact lookup
+) external onlyRole(EXECUTOR_ROLE) nonReentrant returns (bytes memory) {
+    uint256 founderCut = (value * FOUNDER_CUT_BPS) / 10000;
+
+    // Impact gate: score < 70 = founder earns nothing
+    if (governanceContract != address(0)) {
+        (, uint256 impactScore) = IGovernanceImpact(governanceContract)
+            .getImpactReport(proposalId);
+        if (impactScore < 70) {
+            founderCut = 0;
+            emit FounderCutZeroedByImpact(proposalId, impactScore);
+        }
+    }
+    // ... execution with adjusted founder cut ...
+}
+
+// Multi-sig path — 2-of-3 operational disbursements
 function executeTransaction(uint256 txId) external onlyRole(SIGNER_ROLE) nonReentrant {
     Transaction storage txn = transactions[txId];
-    require(txn.confirmationCount >= requiredConfirmations, "Not enough confirmations");
-    
+    require(txn.confirmationCount >= requiredConfirmations);
     txn.executed = true;
     
-    // 1% founder cut deducted from every disbursement
     uint256 founderCut = (txn.value * FOUNDER_CUT_BPS) / 10000;
-    uint256 amountToSend = txn.value - founderCut;
-    
-    if (founderCut > 0) {
-        payable(founderWallet).call{value: founderCut}("");
-        emit FounderCutSent(founderWallet, founderCut);
-    }
-    
-    txn.target.call{value: amountToSend}(txn.data);
-    emit TransactionExecuted(txId);
+    // ... founder cut + execution ...
 }
 
 function getClaimableVested(address founder) public view returns (uint256) {
@@ -1738,6 +1960,7 @@ function getClaimableVested(address founder) public view returns (uint256) {
                         <li>• <strong className="text-foreground">Sustainable</strong> — enough to fund ongoing development and operations</li>
                         <li>• <strong className="text-foreground">Modest</strong> — well below typical platform fees in the industry</li>
                         <li>• <strong className="text-foreground">Aligned</strong> — vesting ensures the founder only benefits as the platform succeeds over time</li>
+                        <li>• <strong className="text-foreground">Impact-Gated</strong> — proposals scoring below 70 on impact zero the founder cut entirely</li>
                         <li>• <strong className="text-foreground">Immutable</strong> — FOUNDER_CUT_BPS is a constant, not a variable — it cannot be changed without a new contract deployment requiring DAO approval</li>
                       </ul>
                     </div>
@@ -2227,7 +2450,8 @@ function getClaimableVested(address founder) public view returns (uint256) {
                       "Professional matching system — 8 license types, verification workflow, county-based service areas, endorsements",
                       "Agent task queue — AI-assisted property sourcing, owner outreach, grant research, contractor sourcing",
                       "Reputation system — event-based scoring for project completions, ratings, and disputes",
-                      "Platform security hardening — CSP, auth middleware on all write endpoints, ownership authorization, server-side identity injection, Stripe webhook verification, authenticated file uploads"
+                      "Platform security hardening — CSP, auth middleware on all write endpoints, ownership authorization, server-side identity injection, Stripe webhook verification, authenticated file uploads",
+                      "Impact governance — on-chain accountability with impact-gated founder economics, post-execution health tracking, and mandatory impact reports on PropertyDevelopment proposals"
                     ]},
                     { quarter: "Q2 2026", status: "upcoming", items: [
                       "Security audits (third-party)",
