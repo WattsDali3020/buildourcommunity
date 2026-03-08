@@ -657,7 +657,7 @@ export default function Litepaper() {
                     <div className="p-4 rounded-xl bg-chart-3/10 border border-chart-3/20 text-center">
                       <Lock className="h-8 w-8 mx-auto mb-2 text-chart-3" />
                       <h5 className="font-semibold text-sm">Escrow.sol</h5>
-                      <p className="text-xs text-muted-foreground">Token purchases, 3% APR refunds, 1% founder fee (impact-gated at funding + quarterly), Chainlink dual-trigger</p>
+                      <p className="text-xs text-muted-foreground">Token purchases, 3% APR refunds, 1% founder fee (impact-gated at funding + quarterly via Chainlink)</p>
                     </div>
                     <div className="p-4 rounded-xl bg-chart-1/10 border border-chart-1/20 text-center">
                       <Vote className="h-8 w-8 mx-auto mb-2 text-chart-1" />
@@ -2170,9 +2170,14 @@ function _executeQuarterlyDistribution(uint256 propertyId) internal {
                           <td className="p-4 text-muted-foreground">Account, timestamp, verificationId</td>
                         </tr>
                         <tr className="border-t">
-                          <td className="p-4 font-mono text-xs text-primary">FounderCutSent</td>
-                          <td className="p-4 text-muted-foreground">Treasury disbursement</td>
-                          <td className="p-4 text-muted-foreground">Founder address, amount</td>
+                          <td className="p-4 font-mono text-xs text-primary">FounderFundingFeePaid</td>
+                          <td className="p-4 text-muted-foreground">Escrow funding completion</td>
+                          <td className="p-4 text-muted-foreground">propertyId, founderWallet, feeAmount, impactScore</td>
+                        </tr>
+                        <tr className="border-t">
+                          <td className="p-4 font-mono text-xs text-primary">FounderFeeSkipped</td>
+                          <td className="p-4 text-muted-foreground">Impact score below 70</td>
+                          <td className="p-4 text-muted-foreground">propertyId, impactScore, reason</td>
                         </tr>
                         <tr className="border-t">
                           <td className="p-4 font-mono text-xs text-primary">ComplianceCheckpoint</td>
@@ -2549,7 +2554,7 @@ function _executeQuarterlyDistribution(uint256 propertyId) internal {
 
               <div className="py-16 text-center">
                 <p className="text-sm text-muted-foreground mb-4">
-                  RevitaHub Technical Litepaper v3.2 (Alpha) — March 2026
+                  RevitaHub Technical Litepaper v3.4 (Alpha) — March 2026
                 </p>
                 <p className="text-xs text-muted-foreground">
                   &copy; {new Date().getFullYear()} Build Our Community, LLC. All rights reserved.
