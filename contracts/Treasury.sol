@@ -13,6 +13,10 @@ interface IChainlinkFunctions {
     function getReserves(uint256 propertyId) external view returns (uint256);
 }
 
+interface IGovernanceImpact {
+    function getImpactReport(uint256 proposalId) external view returns (string memory ipfsHash, uint256 impactScore);
+}
+
 /**
  * @title RevitaHub Treasury
  * @notice DAO-controlled treasury with multi-sig, founder sustainability fee, and reserve verification
@@ -24,6 +28,7 @@ contract Treasury is AccessControl, ReentrancyGuard {
     
     address public founderWallet;
     address public chainlinkOracle;
+    address public governanceContract;
     uint256 public constant FOUNDER_CUT_BPS = 100; // 1% in basis points
     
     // Multi-sig configuration
@@ -67,6 +72,9 @@ contract Treasury is AccessControl, ReentrancyGuard {
     event RequiredConfirmationsUpdated(uint256 oldRequired, uint256 newRequired);
     event SignerAdded(address indexed signer);
     event SignerRemoved(address indexed signer);
+    
+    event GovernanceContractUpdated(address indexed oldGovernance, address indexed newGovernance);
+    event FounderCutZeroedByImpact(uint256 indexed proposalId, uint256 impactScore);
     
     // Vesting and reimbursement events
     event VestedCutAccrued(address indexed founder, uint256 amount, uint256 totalVested);
@@ -215,25 +223,37 @@ contract Treasury is AccessControl, ReentrancyGuard {
      * @notice Direct execute for DAO-approved proposals via Governance contract
      * @dev EXECUTOR_ROLE should ONLY be assigned to Governance contract (which has its own voting approval)
      * @dev This is NOT a bypass - Governance proposals require majority vote to reach this point
+     * @param target Target address for the transaction
+     * @param value ETH value to send
+     * @param data Calldata for the transaction
+     * @param proposalId Governance proposal ID (used to check impact score)
      */
     function execute(
         address target,
         uint256 value,
-        bytes calldata data
+        bytes calldata data,
+        uint256 proposalId
     ) external onlyRole(EXECUTOR_ROLE) nonReentrant returns (bytes memory) {
         require(address(this).balance >= value, "Insufficient treasury balance");
         
-        uint256 founderCut = (value * FOUNDER_CUT_BPS) / 10000; // 1% basis points
+        uint256 founderCut = (value * FOUNDER_CUT_BPS) / 10000;
+
+        if (governanceContract != address(0)) {
+            (, uint256 impactScore) = IGovernanceImpact(governanceContract).getImpactReport(proposalId);
+            if (impactScore < 70) {
+                founderCut = 0;
+                emit FounderCutZeroedByImpact(proposalId, impactScore);
+            }
+        }
+
         uint256 amountToSend = value - founderCut;
 
-        // Send founder cut first
         if (founderCut > 0) {
             (bool founderSuccess, ) = payable(founderWallet).call{value: founderCut}("");
             require(founderSuccess, "Founder cut transfer failed");
             emit FounderCutSent(founderWallet, founderCut);
         }
 
-        // Execute the rest
         (bool success, bytes memory result) = target.call{value: amountToSend}(data);
         require(success, "Call failed");
         
@@ -279,6 +299,17 @@ contract Treasury is AccessControl, ReentrancyGuard {
         address oldWallet = founderWallet;
         founderWallet = _newFounderWallet;
         emit FounderWalletUpdated(oldWallet, _newFounderWallet);
+    }
+
+    /**
+     * @notice Set the Governance contract address for impact score lookups
+     * @param _governance Address of the Governance contract
+     */
+    function setGovernance(address _governance) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_governance != address(0), "Invalid governance address");
+        address oldGovernance = governanceContract;
+        governanceContract = _governance;
+        emit GovernanceContractUpdated(oldGovernance, _governance);
     }
 
     function withdraw(uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {

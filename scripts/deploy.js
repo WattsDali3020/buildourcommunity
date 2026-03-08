@@ -52,6 +52,9 @@ async function main() {
   await governance.grantRole(await governance.PROPOSER_ROLE(), deployer.address);
   console.log("Governance PROPOSER_ROLE granted to deployer");
 
+  await treasury.setGovernance(await governance.getAddress());
+  console.log("Treasury governance set (impact-gated founder cut)");
+
   console.log("\n=== Deployment Complete ===");
   console.log("PropertyToken:", await propertyToken.getAddress());
   console.log("Escrow:", await escrow.getAddress());
@@ -67,6 +70,7 @@ async function main() {
   console.log("Governance   -> Treasury:      EXECUTOR_ROLE");
   console.log("Deployer     -> Treasury:      SIGNER_ROLE");
   console.log("Deployer     -> Governance:    PROPOSER_ROLE");
+  console.log("Treasury     -> Governance:    setGovernance (impact scoring)");
 }
 
 main().catch((error) => {

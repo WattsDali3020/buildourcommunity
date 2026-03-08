@@ -87,6 +87,9 @@ async function main() {
   console.log("- Adding Deployer as Treasury SIGNER...");
   await (await treasury.grantRole(SIGNER_ROLE, deployer.address)).wait();
 
+  console.log("- Setting Governance address on Treasury (impact-gated founder cut)...");
+  await (await treasury.setGovernance(governanceAddress)).wait();
+
   const addresses = {
     network: network.name,
     chainId: Number(network.chainId),
@@ -126,6 +129,7 @@ async function main() {
   console.log("- Governance   -> Treasury:      EXECUTOR_ROLE");
   console.log("- Deployer     -> Governance:    PROPOSER_ROLE");
   console.log("- Deployer     -> Treasury:      SIGNER_ROLE");
+  console.log("- Treasury     -> Governance:    setGovernance (impact scoring)");
   console.log("");
   console.log(`Addresses saved to: ${outputPath}`);
   console.log("");

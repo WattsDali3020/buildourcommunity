@@ -70,6 +70,8 @@ contract Governance is AccessControl, ReentrancyGuard {
         uint256 quorumRequired;
         ProposalStatus status;
         bytes executionData;
+        string impactReportIPFS;
+        uint256 impactScore;
     }
 
     // Vote record
@@ -239,6 +241,8 @@ contract Governance is AccessControl, ReentrancyGuard {
      * @param description Proposal description
      * @param ipfsHash IPFS hash for detailed documentation
      * @param executionData Encoded execution data
+     * @param impactReportIPFS IPFS hash for impact report (required for PropertyDevelopment)
+     * @param impactScore Impact score 0-100 (required for PropertyDevelopment)
      */
     function createProposal(
         uint256 propertyId,
@@ -246,9 +250,16 @@ contract Governance is AccessControl, ReentrancyGuard {
         string memory title,
         string memory description,
         string memory ipfsHash,
-        bytes memory executionData
+        bytes memory executionData,
+        string memory impactReportIPFS,
+        uint256 impactScore
     ) external onlyRole(PROPOSER_ROLE) returns (uint256) {
-        // Require token holdings to create proposal
+        if (proposalType == ProposalType.PropertyDevelopment) {
+            require(bytes(impactReportIPFS).length > 0, "Impact report required for PropertyDevelopment");
+            require(impactScore > 0, "Impact score required for PropertyDevelopment");
+        }
+        require(impactScore <= 100, "Impact score must be 0-100");
+
         require(
             propertyToken.getVotingPower(propertyId, msg.sender) > 0,
             "Must hold tokens to propose"
@@ -257,8 +268,6 @@ contract Governance is AccessControl, ReentrancyGuard {
         uint256 proposalId = proposalCount++;
         uint256 quorum = _getQuorum(proposalType);
         
-        // Snapshot total WEIGHTED voting power at proposal creation
-        // Uses the same weighting as individual votes for consistency
         uint256 snapshotVotingPower = propertyToken.getTotalWeightedVotingPower(propertyId);
         require(snapshotVotingPower > 0, "No voting power exists for this property");
         totalVotingPower[proposalId] = snapshotVotingPower;
@@ -278,11 +287,25 @@ contract Governance is AccessControl, ReentrancyGuard {
             endTime: block.timestamp + votingPeriod,
             quorumRequired: quorum,
             status: ProposalStatus.Active,
-            executionData: executionData
+            executionData: executionData,
+            impactReportIPFS: impactReportIPFS,
+            impactScore: impactScore
         });
 
         emit ProposalCreated(proposalId, propertyId, msg.sender, proposalType, title);
         return proposalId;
+    }
+
+    /**
+     * @notice Get impact report for a proposal
+     * @param proposalId Proposal ID
+     * @return ipfsHash IPFS hash of the impact report
+     * @return impactScore Impact score (0-100)
+     */
+    function getImpactReport(uint256 proposalId) external view returns (string memory ipfsHash, uint256 impactScore) {
+        require(proposalId < proposalCount, "Proposal does not exist");
+        Proposal storage proposal = proposals[proposalId];
+        return (proposal.impactReportIPFS, proposal.impactScore);
     }
 
     /**
@@ -645,12 +668,21 @@ contract Governance is AccessControl, ReentrancyGuard {
      * @param pollId Poll ID to convert
      * @param proposalType Type of proposal to create
      * @param executionData Encoded execution data
+     * @param impactReportIPFS IPFS hash for impact report (required for PropertyDevelopment)
+     * @param impactScore Impact score 0-100 (required for PropertyDevelopment)
      */
     function createProposalFromPoll(
         uint256 pollId,
         ProposalType proposalType,
-        bytes memory executionData
+        bytes memory executionData,
+        string memory impactReportIPFS,
+        uint256 impactScore
     ) external onlyRole(PROPOSER_ROLE) returns (uint256) {
+        if (proposalType == ProposalType.PropertyDevelopment) {
+            require(bytes(impactReportIPFS).length > 0, "Impact report required for PropertyDevelopment");
+            require(impactScore > 0, "Impact score required for PropertyDevelopment");
+        }
+        require(impactScore <= 100, "Impact score must be 0-100");
         Poll storage poll = polls[pollId];
         require(poll.status == PollStatus.Ended, "Poll must be ended first");
         require(poll.linkedProposalId == 0, "Already converted");
@@ -695,7 +727,9 @@ contract Governance is AccessControl, ReentrancyGuard {
             endTime: block.timestamp + votingPeriod,
             quorumRequired: adjustedQuorum,
             status: ProposalStatus.Active,
-            executionData: executionData
+            executionData: executionData,
+            impactReportIPFS: impactReportIPFS,
+            impactScore: impactScore
         });
         
         // Link poll to proposal

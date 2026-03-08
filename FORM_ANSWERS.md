@@ -146,6 +146,42 @@ All 6 enhancement areas are now implemented across the 5 core contracts:
 5. LLC-Backed Properties (PropertyToken.sol) — Custodian + LLC ID per property
 6. Multi-Sig Treasury (Treasury.sol) — 2-of-3 with founder vesting + reserve verification
 
+## Impact Governance Enhancements (March 2026)
+Three contracts updated to add impact-based accountability:
+
+### Governance.sol — Impact Reports on Proposals
+- `Proposal` struct extended with `impactReportIPFS` (string) and `impactScore` (uint256, 0-100)
+- `createProposal()` now takes 8 params (added `impactReportIPFS`, `impactScore`)
+- PropertyDevelopment proposals require both fields (non-empty IPFS hash, non-zero score) — "no report, no vote"
+- Other proposal types allow empty/zero impact fields
+- New `getImpactReport(uint256 proposalId)` view function returns (ipfsHash, impactScore)
+- Poll-to-proposal conversions default to empty impact fields (can be updated separately)
+
+### Treasury.sol — Impact-Gated Founder Cut
+- `execute()` signature changed: 3 params → 4 params (added `uint256 proposalId`)
+- New `IGovernanceImpact` interface for cross-contract impact score reads
+- New `governanceContract` state variable + `setGovernance(address)` admin setter
+- Logic: If governance is set, reads `impactScore` via `getImpactReport(proposalId)`
+  - If `impactScore < 70` → founder cut = $0 (emits `FounderCutZeroedByImpact`)
+  - If `impactScore >= 70` → normal 1% founder cut applies
+- Fallback: If governance address not set (address(0)), founder cut works as before
+- Events: `GovernanceContractUpdated`, `FounderCutZeroedByImpact`
+
+### PhaseManager.sol — Post-Execution Health Tracking
+- New `HealthDelta` struct: category (string), delta (int256), timestamp
+- New mappings: `propertyHealthScores` (uint256 → uint256), `propertyHealthHistory` (uint256 → HealthDelta[])
+- `recordImpactAfterExecution(uint256 propertyId, string category, int256 delta)` — OPERATOR_ROLE only
+  - Categories: "jobs", "traffic", "revenue"
+  - Running score clamped 0–10000
+  - Emits `ImpactRecorded(propertyId, category, delta, newScore)`
+- `getPropertyHealthScore(uint256 propertyId)` — view, returns clamped score
+- `getPropertyHealthHistory(uint256 propertyId)` — view, returns full delta history
+
+### Deploy Scripts Updated
+- `deploy.cjs` and `deploy.js` both call `treasury.setGovernance(governanceAddress)` post-deploy
+- Role summary updated to show Treasury ↔ Governance linkage
+- All contracts compile (Solidity 0.8.24) and deploy successfully on local Hardhat
+
 ## Next Steps
 - Test on Base Sepolia (low gas).
 - Cost Estimate: Chainlink ~$100 initial LINK.

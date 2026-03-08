@@ -102,7 +102,22 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
     mapping(uint256 => uint256) public propertyPollCount; // Number of polls per property
     uint256 public constant POLL_BONUS_MULTIPLIER = 50; // 0.5 extra engagement credit per poll vote (in basis points)
 
+    // Property health score tracking (post-execution impact)
+    struct HealthDelta {
+        string category;
+        int256 delta;
+        uint256 timestamp;
+    }
+    mapping(uint256 => uint256) public propertyHealthScores;
+    mapping(uint256 => HealthDelta[]) public propertyHealthHistory;
+
     // Events
+    event ImpactRecorded(
+        uint256 indexed propertyId,
+        string category,
+        int256 delta,
+        uint256 newScore
+    );
     event EngagementUpdated(
         uint256 indexed propertyId,
         uint256 activeVoters,
@@ -590,5 +605,66 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
         isReadyForAdvancement = engagement.isTracking && 
             demandBars[0] >= ENGAGEMENT_THRESHOLD &&
             block.timestamp >= engagement.phaseStartTime + MIN_ENGAGEMENT_PERIOD;
+    }
+
+    // ============ Post-Execution Impact Recording ============
+
+    /**
+     * @notice Record impact health delta after a proposal executes
+     * @dev Called by operator or Chainlink Automation after any proposal execution
+     * @param propertyId Property ID
+     * @param category Impact category: "jobs", "traffic", "revenue"
+     * @param delta Health score change (positive or negative)
+     */
+    function recordImpactAfterExecution(
+        uint256 propertyId,
+        string calldata category,
+        int256 delta
+    ) external onlyRole(OPERATOR_ROLE) {
+        require(bytes(category).length > 0, "Category required");
+
+        propertyHealthHistory[propertyId].push(HealthDelta({
+            category: category,
+            delta: delta,
+            timestamp: block.timestamp
+        }));
+
+        uint256 currentScore = propertyHealthScores[propertyId];
+        uint256 newScore;
+
+        if (delta >= 0) {
+            newScore = currentScore + uint256(delta);
+            if (newScore > 10000) {
+                newScore = 10000;
+            }
+        } else {
+            uint256 absDelta = uint256(-delta);
+            if (absDelta >= currentScore) {
+                newScore = 0;
+            } else {
+                newScore = currentScore - absDelta;
+            }
+        }
+
+        propertyHealthScores[propertyId] = newScore;
+        emit ImpactRecorded(propertyId, category, delta, newScore);
+    }
+
+    /**
+     * @notice Get the current health score for a property
+     * @param propertyId Property ID
+     * @return score Current health score (0-10000)
+     */
+    function getPropertyHealthScore(uint256 propertyId) external view returns (uint256 score) {
+        return propertyHealthScores[propertyId];
+    }
+
+    /**
+     * @notice Get the full health history for a property
+     * @param propertyId Property ID
+     * @return history Array of health deltas
+     */
+    function getPropertyHealthHistory(uint256 propertyId) external view returns (HealthDelta[] memory history) {
+        return propertyHealthHistory[propertyId];
     }
 }

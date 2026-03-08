@@ -427,8 +427,8 @@
       ]
     },
     "/home/runner/workspace/contracts/PhaseManager.sol": {
-      "lastModificationDate": 1772923820972,
-      "contentHash": "62144e05d3fd136380d8ffa75b52e08d",
+      "lastModificationDate": 1773000945826,
+      "contentHash": "8733cb93429affeec93ad59b0b1dd571",
       "sourceName": "contracts/PhaseManager.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -945,8 +945,8 @@
       ]
     },
     "/home/runner/workspace/contracts/Governance.sol": {
-      "lastModificationDate": 1770897730671,
-      "contentHash": "0bce4c60c8b0a70005c3a2b8c40fad19",
+      "lastModificationDate": 1773001289297,
+      "contentHash": "3b529c23696742bbc9b94f8626fd0767",
       "sourceName": "contracts/Governance.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -988,8 +988,8 @@
       ]
     },
     "/home/runner/workspace/contracts/Treasury.sol": {
-      "lastModificationDate": 1769804922748,
-      "contentHash": "acb759b82d33680129c25f4f818ace84",
+      "lastModificationDate": 1773001009896,
+      "contentHash": "d25f87fd81f497d4d59e0a3800fcc5e1",
       "sourceName": "contracts/Treasury.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -1025,6 +1025,7 @@
       ],
       "artifacts": [
         "IChainlinkFunctions",
+        "IGovernanceImpact",
         "Treasury"
       ]
     },
