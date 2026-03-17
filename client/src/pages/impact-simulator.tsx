@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,6 @@ import {
   Building2,
   Briefcase,
   TrendingUp,
-  RefreshCw,
   Home,
   GraduationCap,
   Zap,
@@ -114,14 +113,13 @@ const CONTRACT_CARDS = [
 
 export default function ImpactSimulator() {
   const [selectedTierIndex, setSelectedTierIndex] = useState(1);
-  const [projectSeed, setProjectSeed] = useState(0);
 
   const selectedTier = ADOPTION_TIERS[selectedTierIndex];
   const tierImpact = useMemo(() => calculateTierImpact(selectedTier), [selectedTier]);
 
   const sampleProjects = useMemo(
     () => generateProjects(selectedTier, 5),
-    [selectedTier, projectSeed]
+    [selectedTier]
   );
 
   const founderRevenues = useMemo(
@@ -136,10 +134,6 @@ export default function ImpactSimulator() {
     []
   );
 
-  const handleRegenerate = useCallback(() => {
-    setProjectSeed((s) => s + 1);
-  }, []);
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -153,7 +147,7 @@ export default function ImpactSimulator() {
               </h1>
             </div>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-simulator-subtitle">
-              Hypothetical GDP projections based on Forrester-style urban dynamics models.
+              GDP projections calibrated against BEA RIMS II multipliers and ARC distress classifications.
               Explore how tokenized community development could transform Georgia counties.
             </p>
           </div>
@@ -273,14 +267,6 @@ export default function ImpactSimulator() {
           <div>
             <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
               <h2 className="text-xl font-semibold">Sample Projects</h2>
-              <Button
-                variant="outline"
-                onClick={handleRegenerate}
-                data-testid="button-regenerate-projects"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Regenerate Projects
-              </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {sampleProjects.map((project, idx) => {
@@ -421,12 +407,11 @@ export default function ImpactSimulator() {
                 <div className="space-y-2">
                   <h3 className="font-semibold" data-testid="text-disclaimer-title">Compliance Disclaimer</h3>
                   <p className="text-sm text-muted-foreground">
-                    All projections displayed on this page are hypothetical and for educational
-                    purposes only. Data will be oracle-sourced and disclaimed once Chainlink
-                    integration is live. Past performance does not equal future results. This is
-                    not financial advice. Multiplier estimates are inspired by Forrester's Urban
-                    Dynamics feedback loop models and Appalachian Regional Commission (ARC) FY2025
-                    distress classifications.
+                    All projections displayed on this page are modeled estimates for educational
+                    purposes only. Scoring methodology uses BEA RIMS II regional multipliers,
+                    DOL/HUD employment benchmarks, CDC Social Vulnerability Index data, and
+                    Appalachian Regional Commission (ARC) county distress classifications.
+                    Past performance does not equal future results. This is not financial advice.
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Investment in tokenized real estate involves risk. Consult a qualified

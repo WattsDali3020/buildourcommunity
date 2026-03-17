@@ -937,8 +937,8 @@ function _checkPhaseAdvancement(uint256 propertyId, uint256 engagementPercent) i
                   <p className="leading-relaxed mb-6 text-muted-foreground">
                     Every property is automatically ranked across four competitive leagues, each measuring 
                     a different dimension of revitalization impact. League scores are calculated from 
-                    on-chain ImpactMetrics via Chainlink Functions running Forrester/Sterman/Meadows 
-                    system dynamics models on public data.
+                    on-chain ImpactMetrics derived from ARC distress classifications, BEA RIMS II 
+                    multipliers, and CDC Social Vulnerability Index data.
                   </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -1020,7 +1020,7 @@ function updateLeagueScore(uint256 propertyId, uint256 newScore)
                     title="PhaseManager.sol - Daily League Update (Chainlink Automation)"
                     code={`function runLeagueUpdate() external {  // called by Chainlink Automation daily
     for each tracked property {
-        uint256 score = calculateForresterGDP(...) * socialScore / 10000;
+        uint256 score = calculateRevitaScore(...) * socialScore / 10000;
         propertyToken.updateLeagueScore(propertyId, score);
         if (score > top10Threshold) emit LeagueLeaderChange(propertyId, score);
     }
@@ -1050,8 +1050,9 @@ function updateLeagueScore(uint256 propertyId, uint256 newScore)
                 <Subsection title="Impact Metrics (ImpactMetrics Struct)">
                   <p className="leading-relaxed mb-6 text-muted-foreground">
                     Every property generates an on-chain ImpactMetrics struct that feeds into league 
-                    scoring, property detail cards, and the GDP simulator. These metrics are designed 
-                    to eventually be populated by Chainlink Functions running system dynamics models.
+                    scoring, property detail cards, and the GDP simulator. Metrics are calculated using 
+                    deterministic, ARC-calibrated formulas based on BEA RIMS II multipliers, DOL/HUD 
+                    employment benchmarks, and CDC Social Vulnerability Index county scores.
                   </p>
 
                   <div className="rounded-xl border overflow-hidden mb-6">
