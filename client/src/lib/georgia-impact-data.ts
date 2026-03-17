@@ -185,7 +185,7 @@ export function generateProjects(tier: AdoptionTier, count: number): GeneratedPr
 
   for (let i = 0; i < count; i++) {
     const county = availableCounties[i % availableCounties.length];
-    const projectType = county.topNeeds[i % county.topNeeds.length];
+    const projectType = county.topNeeds[0];
     const typeConfig = PROJECT_TYPES[projectType];
 
     const percentile = getDistressPercentile(county.distressLevel);
