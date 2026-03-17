@@ -35,7 +35,7 @@ import {
   STATE_GDP,
   TOTAL_COUNTIES,
   ADOPTION_TIERS,
-  generateRandomProjects,
+  generateProjects,
   calculateTierImpact,
   calculateFounderRevenue,
   getDistressColor,
@@ -120,7 +120,7 @@ export default function ImpactSimulator() {
   const tierImpact = useMemo(() => calculateTierImpact(selectedTier), [selectedTier]);
 
   const sampleProjects = useMemo(
-    () => generateRandomProjects(selectedTier, 5),
+    () => generateProjects(selectedTier, 5),
     [selectedTier, projectSeed]
   );
 
