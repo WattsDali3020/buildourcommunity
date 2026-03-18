@@ -61,6 +61,7 @@ const tableOfContents = [
   { id: "engagement", title: "Engagement & Phase Advancement", icon: Activity },
   { id: "revitaleague", title: "RevitaLeague Competition", icon: Trophy },
   { id: "impact", title: "Georgia Impact Simulation", icon: MapPin },
+  { id: "revitascore-api", title: "RevitaScore API", icon: Code },
   { id: "marketplace", title: "Service Marketplace & Wishlist", icon: Store },
   { id: "professional-matching", title: "Professional Matching", icon: Briefcase },
   { id: "chainlink", title: "Chainlink Integration", icon: Link2 },
@@ -1157,6 +1158,118 @@ function updateLeagueScore(uint256 propertyId, uint256 newScore)
                       </ul>
                     </div>
                   </div>
+                </Subsection>
+              </Section>
+
+              <div className="divider-gradient" />
+
+              <Section id="revitascore-api" title="RevitaScore API — B2B Scoring Service" icon={Code}>
+                <p className="text-lg leading-relaxed mb-8 text-muted-foreground" data-testid="text-revitascore-api-intro">
+                  RevitaScore is also available as a standalone B2B API for banks, CDFIs, municipal planners, 
+                  and impact investors who need programmatic access to county-level impact scoring. The same 
+                  deterministic engine that powers RevitaHub's property cards and impact simulator is exposed 
+                  via authenticated REST endpoints with tiered rate limiting.
+                </p>
+
+                <Subsection title="API Endpoints">
+                  <div className="rounded-xl border overflow-hidden mb-6" data-testid="table-revitascore-endpoints">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="text-left p-4 font-semibold">Endpoint</th>
+                          <th className="text-left p-4 font-semibold">Auth</th>
+                          <th className="text-left p-4 font-semibold">Description</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-t" data-testid="row-endpoint-counties">
+                          <td className="p-4 font-mono text-xs text-primary">GET /api/revitascore/counties</td>
+                          <td className="p-4">None</td>
+                          <td className="p-4 text-muted-foreground">Lists all 25 supported Georgia counties with distress levels, SVI scores, and top needs</td>
+                        </tr>
+                        <tr className="border-t" data-testid="row-endpoint-project-types">
+                          <td className="p-4 font-mono text-xs text-primary">GET /api/revitascore/project-types</td>
+                          <td className="p-4">None</td>
+                          <td className="p-4 text-muted-foreground">Lists all 10 project types with GDP multiplier ranges, job ranges, and categories</td>
+                        </tr>
+                        <tr className="border-t" data-testid="row-endpoint-scoring">
+                          <td className="p-4 font-mono text-xs text-primary">GET /api/revitascore/:county/:projectType</td>
+                          <td className="p-4 font-mono text-xs">X-RevitaScore-Key</td>
+                          <td className="p-4 text-muted-foreground">Returns full ImpactMetrics with methodology metadata for a county + project type pair</td>
+                        </tr>
+                        <tr className="border-t" data-testid="row-endpoint-admin-keys">
+                          <td className="p-4 font-mono text-xs text-primary">POST /api/admin/revitascore/keys</td>
+                          <td className="p-4">Admin</td>
+                          <td className="p-4 text-muted-foreground">Issues new API keys with tier assignment (free / pro / enterprise)</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </Subsection>
+
+                <Subsection title="Tiered Access">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    API keys are issued in three tiers with different rate limits. All tiers receive the same 
+                    scoring quality — rate limits control query volume, not data access.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="p-4 rounded-xl border text-center" data-testid="card-tier-free">
+                      <p className="text-lg font-bold text-muted-foreground mb-1">Free</p>
+                      <p className="text-2xl font-bold text-primary">3</p>
+                      <p className="text-xs text-muted-foreground">queries / day</p>
+                      <p className="text-xs text-muted-foreground mt-2">For evaluation and testing</p>
+                    </div>
+                    <div className="p-4 rounded-xl border text-center" data-testid="card-tier-pro">
+                      <p className="text-lg font-bold text-muted-foreground mb-1">Pro</p>
+                      <p className="text-2xl font-bold text-primary">Unlimited</p>
+                      <p className="text-xs text-muted-foreground">queries / day</p>
+                      <p className="text-xs text-muted-foreground mt-2">For CDFIs and municipal planners</p>
+                    </div>
+                    <div className="p-4 rounded-xl border text-center" data-testid="card-tier-enterprise">
+                      <p className="text-lg font-bold text-muted-foreground mb-1">Enterprise</p>
+                      <p className="text-2xl font-bold text-primary">Unlimited</p>
+                      <p className="text-xs text-muted-foreground">queries / day</p>
+                      <p className="text-xs text-muted-foreground mt-2">For banks and institutional investors</p>
+                    </div>
+                  </div>
+                </Subsection>
+
+                <Subsection title="Response Format">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    Every scoring response includes the full ImpactMetrics struct, county context, 
+                    and data source citations for auditability.
+                  </p>
+
+                  <CodeBlock title="RevitaScore API Response" code={`// GET /api/revitascore/Wheeler/Affordable%20Housing
+{
+  "county": "Wheeler",
+  "projectType": "Affordable Housing",
+  "distressLevel": "distressed",
+  "sviScore": 0.92,
+  "metrics": {
+    "projectedAnnualROI": 985,
+    "economicScore": 8025,
+    "socialScore": 7420,
+    "leverageRank": 8,
+    "riskAdjustedScore": 79
+  },
+  "methodology_version": "1.0",
+  "data_sources": {
+    "gdp_multiplier": "BEA RIMS II",
+    "job_estimates": "DOL ETA / HUD CDBG",
+    "social_vulnerability": "CDC SVI",
+    "distress_classification": "ARC Annual County Classifications"
+  }
+}`} />
+                </Subsection>
+
+                <Subsection title="Audit & Compliance">
+                  <p className="leading-relaxed mb-6 text-muted-foreground">
+                    Every API query is logged to the platform's audit_log table with the requesting key ID, 
+                    county, project type, budget parameter, and tier. This creates a full audit trail for 
+                    regulatory review and usage analytics. Rate limit counters reset daily at midnight UTC.
+                  </p>
                 </Subsection>
               </Section>
 

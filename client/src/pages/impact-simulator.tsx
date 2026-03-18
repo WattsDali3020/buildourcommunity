@@ -400,6 +400,45 @@ export default function ImpactSimulator() {
             </div>
           </div>
 
+          <Card className="border-primary/30 bg-primary/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                RevitaScore API
+              </CardTitle>
+              <CardDescription>
+                The same deterministic scoring engine that powers this simulator is available as a B2B API.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Banks, CDFIs, municipal planners, and impact investors can access county-level
+                impact scoring programmatically via authenticated REST endpoints.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-3 rounded-lg border bg-background">
+                  <p className="text-xs text-muted-foreground mb-1">Discovery</p>
+                  <p className="font-mono text-xs text-primary" data-testid="text-api-discovery">/api/revitascore/counties</p>
+                  <p className="text-xs text-muted-foreground mt-1">No auth required</p>
+                </div>
+                <div className="p-3 rounded-lg border bg-background">
+                  <p className="text-xs text-muted-foreground mb-1">Scoring</p>
+                  <p className="font-mono text-xs text-primary" data-testid="text-api-scoring">/api/revitascore/:county/:projectType</p>
+                  <p className="text-xs text-muted-foreground mt-1">API key required</p>
+                </div>
+                <div className="p-3 rounded-lg border bg-background">
+                  <p className="text-xs text-muted-foreground mb-1">Tiers</p>
+                  <p className="text-sm font-semibold" data-testid="text-api-tiers">Free / Pro / Enterprise</p>
+                  <p className="text-xs text-muted-foreground mt-1">3/day free, unlimited pro+</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Briefcase className="h-3 w-3" />
+                <span>Data sources: BEA RIMS II, DOL/HUD, CDC SVI, ARC Classifications</span>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="border-destructive/30">
             <CardContent className="p-6">
               <div className="flex items-start gap-3">
