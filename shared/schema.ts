@@ -1139,3 +1139,24 @@ export const insertReputationEventSchema = createInsertSchema(reputationEvents).
 
 export type InsertReputationEvent = z.infer<typeof insertReputationEventSchema>;
 export type ReputationEvent = typeof reputationEvents.$inferSelect;
+
+export const revitascoreApiKeys = pgTable("revitascore_api_keys", {
+  id: serial("id").primaryKey(),
+  key: varchar("key", { length: 64 }).notNull().unique(),
+  tier: varchar("tier", { length: 20 }).notNull().default("free"),
+  ownerEmail: varchar("owner_email", { length: 255 }).notNull(),
+  dailyLimit: integer("daily_limit").notNull().default(3),
+  queriesToday: integer("queries_today").notNull().default(0),
+  lastResetDate: varchar("last_reset_date", { length: 10 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertRevitascoreApiKeySchema = createInsertSchema(revitascoreApiKeys).omit({
+  id: true,
+  queriesToday: true,
+  lastResetDate: true,
+  createdAt: true,
+});
+
+export type InsertRevitascoreApiKey = z.infer<typeof insertRevitascoreApiKeySchema>;
+export type RevitascoreApiKey = typeof revitascoreApiKeys.$inferSelect;

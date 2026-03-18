@@ -23,6 +23,13 @@ import {
 } from "./services/tokenizationOrchestrator";
 import { getExplorerUrl } from "./services/blockchain";
 import { logAuditEvent } from "./services/auditLog";
+import { 
+  calculateImpactMetrics as revitascoreCalculate, 
+  getCountyByName as revitascoreGetCounty, 
+  getAllCounties as revitascoreGetCounties, 
+  getAllProjectTypes as revitascoreGetProjectTypes, 
+  isValidProjectType 
+} from "./services/revitascore";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -2657,6 +2664,158 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Failed to create refund request:", error);
       res.status(500).json({ error: "Failed to create refund request" });
+    }
+  });
+
+  // ═══════════════════════════════════════════════════
+  // RevitaScore Public API
+  // ═══════════════════════════════════════════════════
+
+  app.get("/api/revitascore/counties", async (_req: Request, res: Response) => {
+    res.json({ counties: revitascoreGetCounties(), count: revitascoreGetCounties().length });
+  });
+
+  app.get("/api/revitascore/project-types", async (_req: Request, res: Response) => {
+    res.json({ projectTypes: revitascoreGetProjectTypes(), count: revitascoreGetProjectTypes().length });
+  });
+
+  app.get("/api/revitascore/:county/:projectType", async (req: Request, res: Response) => {
+    try {
+      const apiKey = req.headers["x-revitascore-key"] as string | undefined;
+      if (!apiKey) {
+        return res.status(401).json({ error: "Missing API key. Include X-RevitaScore-Key header." });
+      }
+
+      const { revitascoreApiKeys } = await import("@shared/schema");
+      const { db } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+
+      const [keyRecord] = await db.select().from(revitascoreApiKeys).where(eq(revitascoreApiKeys.key, apiKey)).limit(1);
+      if (!keyRecord) {
+        return res.status(401).json({ error: "Invalid API key." });
+      }
+
+      const today = new Date().toISOString().slice(0, 10);
+      if (keyRecord.lastResetDate !== today) {
+        await db.update(revitascoreApiKeys)
+          .set({ queriesToday: 0, lastResetDate: today })
+          .where(eq(revitascoreApiKeys.id, keyRecord.id));
+        keyRecord.queriesToday = 0;
+      }
+
+      if (keyRecord.tier === "free" && keyRecord.queriesToday >= keyRecord.dailyLimit) {
+        return res.status(429).json({
+          error: "Daily query limit reached for free tier.",
+          limit: keyRecord.dailyLimit,
+          tier: keyRecord.tier,
+          resetsAt: `${today}T00:00:00Z (next day)`,
+        });
+      }
+
+      const countyName = decodeURIComponent(req.params.county);
+      const projectTypeName = decodeURIComponent(req.params.projectType);
+
+      const county = revitascoreGetCounty(countyName);
+      if (!county) {
+        return res.status(404).json({
+          error: `County "${countyName}" not found. Use GET /api/revitascore/counties for supported counties.`,
+        });
+      }
+
+      if (!isValidProjectType(projectTypeName)) {
+        return res.status(400).json({
+          error: `Invalid project type "${projectTypeName}". Use GET /api/revitascore/project-types for supported types.`,
+        });
+      }
+
+      const budget = req.query.budget ? Number(req.query.budget) : 500_000;
+      if (isNaN(budget) || budget <= 0) {
+        return res.status(400).json({ error: "Budget must be a positive number." });
+      }
+
+      const metrics = revitascoreCalculate(county, projectTypeName, budget);
+
+      await db.update(revitascoreApiKeys)
+        .set({ queriesToday: (keyRecord.queriesToday || 0) + 1 })
+        .where(eq(revitascoreApiKeys.id, keyRecord.id));
+
+      await logAuditEvent({
+        action: "revitascore_query",
+        targetTable: "revitascore_api_keys",
+        targetId: String(keyRecord.id),
+        metadata: { county: countyName, projectType: projectTypeName, budget, tier: keyRecord.tier },
+        req,
+      });
+
+      res.json({
+        county: countyName,
+        projectType: projectTypeName,
+        budget,
+        distressLevel: county.distressLevel,
+        sviScore: county.sviScore,
+        metrics,
+        methodology_version: "1.0",
+        arc_vintage: "2024",
+        data_sources: {
+          gdp_multiplier: "BEA RIMS II",
+          job_estimates: "DOL ETA / HUD CDBG",
+          social_vulnerability: "CDC SVI",
+          distress_classification: "ARC Annual County Classifications",
+        },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("[RevitaScore] Query error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/revitascore/keys", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { revitascoreApiKeys } = await import("@shared/schema");
+      const { db } = await import("./db");
+      const { randomUUID } = await import("crypto");
+
+      const { owner_email, tier } = req.body;
+      if (!owner_email || !tier) {
+        return res.status(400).json({ error: "owner_email and tier are required." });
+      }
+
+      const validTiers = ["free", "pro", "enterprise"];
+      if (!validTiers.includes(tier)) {
+        return res.status(400).json({ error: `tier must be one of: ${validTiers.join(", ")}` });
+      }
+
+      const dailyLimit = tier === "free" ? 3 : 999999;
+      const key = randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "").slice(0, 32);
+
+      const [created] = await db.insert(revitascoreApiKeys).values({
+        key: key.slice(0, 64),
+        tier,
+        ownerEmail: owner_email,
+        dailyLimit,
+      }).returning();
+
+      await logAuditEvent({
+        userId: (req as any).user?.id,
+        action: "revitascore_key_created",
+        targetTable: "revitascore_api_keys",
+        targetId: String(created.id),
+        metadata: { tier, owner_email },
+        req,
+      });
+
+      res.status(201).json({
+        id: created.id,
+        key: created.key,
+        tier: created.tier,
+        ownerEmail: created.ownerEmail,
+        dailyLimit: created.dailyLimit,
+        createdAt: created.createdAt,
+      });
+    } catch (error) {
+      console.error("[RevitaScore] Key creation error:", error);
+      res.status(500).json({ error: "Failed to create API key" });
     }
   });
 

@@ -37,7 +37,8 @@ Preferred communication style: Simple, everyday language.
 - **Governance Voting**: API-backed proposals with token-weighted voting.
 - **Admin Panel**: Property/nomination approval, KYC management, payment reconciliation, professional verification (approve/reject/suspend), and project-professional matching (invite/select verified professionals for active offerings).
 - **Investor Protection API**: 3% APR refund calculation for unfunded properties.
-- **Impact Simulator**: Georgia county-level adoption scenarios, GDP multiplier projections, and founder revenue scaling.
+- **Impact Simulator**: Georgia county-level adoption scenarios, GDP multiplier projections, and founder revenue scaling. Deterministic scoring engine using ARC-calibrated percentile formulas (BEA RIMS II, DOL/HUD, CDC SVI).
+- **RevitaScore API**: B2B scoring endpoint (`GET /api/revitascore/:county/:projectType`) with API key auth (`X-RevitaScore-Key` header), free/pro/enterprise tiers, daily rate limiting, audit logging. Discovery endpoints at `/api/revitascore/counties` and `/api/revitascore/project-types` (no auth). Admin key issuance via `POST /api/admin/revitascore/keys`.
 - **Community Wishlist**: Zip-code-driven business voting and community need submission.
 - **Service Provider Marketplace**: Platform for service providers to bid on property services.
 - **Professional Directory**: Public listing of verified professionals filtered by license type and county. 8 license types supported (contractor, realtor, attorney, engineer, architect, lender, inspector, appraiser).
