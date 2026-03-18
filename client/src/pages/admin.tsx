@@ -26,7 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, FileText, Users, CheckCircle, XCircle, Eye, RefreshCw, AlertTriangle, DollarSign, Briefcase, UserCheck, ChevronDown, ChevronRight, Search, Star, MapPin } from "lucide-react";
+import { Building2, FileText, Users, CheckCircle, XCircle, Eye, RefreshCw, AlertTriangle, DollarSign, Briefcase, UserCheck, ChevronDown, ChevronRight, Search, Star, MapPin, Key } from "lucide-react";
 import type { Property, PropertyNomination, PropertySubmission, TokenPurchase, ProfessionalProfile, TokenOffering, ProjectProfessionalMatch } from "@shared/schema";
 
 interface ReconciliationPurchase extends TokenPurchase {
@@ -202,6 +202,23 @@ export default function AdminPanel() {
 
   const verifiedProfessionals = searchedProfessionals.filter(p => p.isLicenseVerified);
 
+  interface RevitaScoreKey {
+    id: number;
+    tier: string;
+    ownerEmail: string;
+    ownerName: string | null;
+    organization: string | null;
+    useCase: string | null;
+    dailyLimit: number;
+    queriesToday: number;
+    createdAt: string;
+  }
+
+  const { data: revitascoreKeysData, isLoading: keysLoading } = useQuery<{ keys: RevitaScoreKey[]; count: number }>({
+    queryKey: ["/api/admin/revitascore/keys"],
+    refetchInterval: 30000,
+  });
+
   const inviteProfessionalMutation = useMutation({
     mutationFn: async ({ offeringId, professionalId, roleNeeded }: { offeringId: string; professionalId: string; roleNeeded: string }) => {
       return apiRequest("POST", `/api/offerings/${offeringId}/professionals/invite`, { professionalId, roleNeeded });
@@ -362,6 +379,10 @@ export default function AdminPanel() {
               )}
             </TabsTrigger>
             <TabsTrigger value="matching" data-testid="tab-matching">Project Matching</TabsTrigger>
+            <TabsTrigger value="revitascore" data-testid="tab-revitascore">
+              <Key className="h-4 w-4 mr-1" />
+              RevitaScore Keys
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="nominations" className="mt-6">
@@ -858,6 +879,69 @@ export default function AdminPanel() {
                         </Card>
                       );
                     })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="revitascore" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Key className="h-5 w-5" />
+                  RevitaScore API Keys
+                  {revitascoreKeysData && (
+                    <Badge variant="secondary" className="ml-2">{revitascoreKeysData.count}</Badge>
+                  )}
+                </CardTitle>
+                <CardDescription>All registered API keys for the RevitaScore scoring service</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {keysLoading ? (
+                  <p className="text-muted-foreground text-sm">Loading...</p>
+                ) : !revitascoreKeysData?.keys.length ? (
+                  <p className="text-muted-foreground text-sm">No API keys registered yet.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Organization</TableHead>
+                          <TableHead>Use Case</TableHead>
+                          <TableHead>Tier</TableHead>
+                          <TableHead>Queries Today</TableHead>
+                          <TableHead>Registered</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {revitascoreKeysData.keys.map((k) => (
+                          <TableRow key={k.id} data-testid={`row-revitascore-key-${k.id}`}>
+                            <TableCell className="font-medium">{k.ownerName || "—"}</TableCell>
+                            <TableCell>{k.ownerEmail}</TableCell>
+                            <TableCell>{k.organization || "—"}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-xs">
+                                {k.useCase?.replace(/_/g, " ") || "—"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={k.tier === "free" ? "secondary" : k.tier === "enterprise" ? "default" : "outline"}>
+                                {k.tier}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {k.queriesToday} / {k.dailyLimit === 999999 ? "∞" : k.dailyLimit}
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {k.createdAt ? new Date(k.createdAt).toLocaleDateString() : "—"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 )}
               </CardContent>

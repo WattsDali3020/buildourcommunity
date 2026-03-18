@@ -39,6 +39,7 @@ import RiskDisclosure from "@/pages/risk-disclosure";
 import Professionals from "@/pages/professionals";
 import ProfessionalApply from "@/pages/professional-apply";
 import ProfessionalDashboard from "@/pages/professional-dashboard";
+import RevitaScore from "@/pages/revitascore";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -77,6 +78,7 @@ function Router() {
       <Route path="/professionals" component={Professionals} />
       <Route path="/professionals/apply" component={ProfessionalApply} />
       <Route path="/dashboard/professional" component={ProfessionalDashboard} />
+      <Route path="/revitascore" component={RevitaScore} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -143,6 +143,44 @@ export async function sendPhaseAdvancementNotification(
   });
 }
 
+export async function sendRevitaScoreApiKey(
+  email: string,
+  name: string,
+  apiKey: string,
+  organization?: string,
+): Promise<boolean> {
+  const orgLine = organization ? `<p><strong>Organization:</strong> ${organization}</p>` : "";
+  return sendEmail({
+    to: email,
+    subject: "Your RevitaScore API Key",
+    html: `
+      <h1>Welcome to RevitaScore, ${name}!</h1>
+      <p>Your free API key is ready to use.</p>
+      ${orgLine}
+      <div style="background: #f4f4f5; border-radius: 8px; padding: 16px; margin: 16px 0; font-family: monospace; word-break: break-all;">
+        ${apiKey}
+      </div>
+      <h3>Quick Start</h3>
+      <p><strong>Discovery (no auth required):</strong></p>
+      <ul>
+        <li><code>GET /api/revitascore/counties</code> — 25 supported Georgia counties</li>
+        <li><code>GET /api/revitascore/project-types</code> — 10 project types</li>
+      </ul>
+      <p><strong>Scoring (API key required):</strong></p>
+      <ul>
+        <li><code>GET /api/revitascore/:county/:projectType</code></li>
+        <li>Header: <code>X-RevitaScore-Key: your-key</code></li>
+      </ul>
+      <p><strong>Free Tier:</strong> 3 queries per day. Contact us to upgrade to Pro or Enterprise for unlimited access.</p>
+      <h3>Data Sources</h3>
+      <p>BEA RIMS II (GDP multipliers) · DOL/HUD (employment benchmarks) · CDC SVI (social vulnerability) · ARC (distress classifications)</p>
+      <p style="color: #888; font-size: 12px; margin-top: 24px;">
+        This key is linked to ${email}. Keep it secure and do not share publicly.
+      </p>
+    `,
+  });
+}
+
 const ADMIN_EMAIL = "DEmery@buildourcommunity.co";
 
 function escapeHtml(unsafe: string): string {

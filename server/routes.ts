@@ -23,6 +23,7 @@ import {
 } from "./services/tokenizationOrchestrator";
 import { getExplorerUrl } from "./services/blockchain";
 import { logAuditEvent } from "./services/auditLog";
+import { sendRevitaScoreApiKey } from "./services/email";
 import { 
   calculateImpactMetrics as revitascoreCalculate, 
   getCountyByName as revitascoreGetCounty, 
@@ -2672,7 +2673,8 @@ export async function registerRoutes(
   // ═══════════════════════════════════════════════════
 
   app.get("/api/revitascore/counties", async (_req: Request, res: Response) => {
-    res.json({ counties: revitascoreGetCounties(), count: revitascoreGetCounties().length });
+    const counties = revitascoreGetCounties();
+    res.json({ counties, count: counties.length });
   });
 
   app.get("/api/revitascore/project-types", async (_req: Request, res: Response) => {
@@ -2767,6 +2769,102 @@ export async function registerRoutes(
     } catch (error) {
       console.error("[RevitaScore] Query error:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/revitascore/register", async (req: Request, res: Response) => {
+    try {
+      const { revitascoreApiKeys } = await import("@shared/schema");
+      const { db } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const { randomUUID } = await import("crypto");
+
+      const { name: ownerName, email: rawEmail, organization, use_case } = req.body;
+      if (!ownerName || !rawEmail || !use_case) {
+        return res.status(400).json({ error: "name, email, and use_case are required." });
+      }
+
+      const email = rawEmail.trim().toLowerCase();
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: "Invalid email address." });
+      }
+
+      const validUseCases = ["cdfi", "city_planning", "bank_cra", "impact_investor", "grant_writer", "other"];
+      if (!validUseCases.includes(use_case)) {
+        return res.status(400).json({ error: `use_case must be one of: ${validUseCases.join(", ")}` });
+      }
+
+      const { sql } = await import("drizzle-orm");
+      const [existing] = await db.select().from(revitascoreApiKeys).where(sql`LOWER(${revitascoreApiKeys.ownerEmail}) = ${email}`).limit(1);
+      if (existing) {
+        return res.status(409).json({ error: "An API key already exists for this email. Check your inbox or contact us for support." });
+      }
+
+      const key = randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "").slice(0, 32);
+
+      let created;
+      try {
+        [created] = await db.insert(revitascoreApiKeys).values({
+          key: key.slice(0, 64),
+          tier: "free",
+          ownerEmail: email,
+          ownerName: ownerName.trim(),
+          organization: organization?.trim() || null,
+          useCase: use_case,
+          dailyLimit: 3,
+        }).returning();
+      } catch (insertErr: any) {
+        if (insertErr.code === "23505") {
+          return res.status(409).json({ error: "An API key already exists for this email. Check your inbox or contact us for support." });
+        }
+        throw insertErr;
+      }
+
+      await sendRevitaScoreApiKey(email, ownerName, created.key, organization);
+
+      await logAuditEvent({
+        action: "revitascore_self_registration",
+        targetTable: "revitascore_api_keys",
+        targetId: String(created.id),
+        metadata: { email, ownerName, organization, use_case },
+        req,
+      });
+
+      res.status(201).json({
+        key: created.key,
+        ownerEmail: created.ownerEmail,
+        tier: created.tier,
+      });
+    } catch (error) {
+      console.error("[RevitaScore] Registration error:", error);
+      res.status(500).json({ error: "Failed to register API key" });
+    }
+  });
+
+  app.get("/api/admin/revitascore/keys", isAuthenticated, isAdmin, async (_req: Request, res: Response) => {
+    try {
+      const { revitascoreApiKeys } = await import("@shared/schema");
+      const { db } = await import("./db");
+      const { desc } = await import("drizzle-orm");
+
+      const keys = await db.select({
+        id: revitascoreApiKeys.id,
+        tier: revitascoreApiKeys.tier,
+        ownerEmail: revitascoreApiKeys.ownerEmail,
+        ownerName: revitascoreApiKeys.ownerName,
+        organization: revitascoreApiKeys.organization,
+        useCase: revitascoreApiKeys.useCase,
+        dailyLimit: revitascoreApiKeys.dailyLimit,
+        queriesToday: revitascoreApiKeys.queriesToday,
+        createdAt: revitascoreApiKeys.createdAt,
+      }).from(revitascoreApiKeys).orderBy(desc(revitascoreApiKeys.createdAt));
+
+      res.json({ keys, count: keys.length });
+    } catch (error) {
+      console.error("[RevitaScore] Admin list error:", error);
+      res.status(500).json({ error: "Failed to list API keys" });
     }
   });
 
