@@ -8,11 +8,11 @@ import type { User } from "@shared/schema";
 
 const publicNavLinks = [
   { href: "/", label: "Home" },
-  { href: "/properties", label: "Explore" },
-  { href: "/wishlist", label: "Wishlist" },
-  { href: "/services", label: "Services" },
-  { href: "/how-it-works", label: "How It Works" },
-  { href: "/litepaper", label: "Learn" },
+  { href: "/explore", label: "Explore" },
+  { href: "/community", label: "Community" },
+  { href: "/participate", label: "Participate" },
+  { href: "/learn", label: "Learn" },
+  { href: "/invest", label: "Invest" },
 ];
 
 export function SimpleHeader() {

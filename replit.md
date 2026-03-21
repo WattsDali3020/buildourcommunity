@@ -28,6 +28,13 @@ Preferred communication style: Simple, everyday language.
 - **Validation**: Zod schemas generated from Drizzle via `drizzle-zod`
 - **Storage Pattern**: `IStorage` interface with `DatabaseStorage` (PostgreSQL) and `MemStorage` (dev fallback)
 
+### Information Architecture (Section Restructure)
+- **Two-Layer Pattern**: All main sections use surface (headline stats) + depth (expandable sub-sections via IconTray chips)
+- **Reusable Components**: `IconTray` (pill-shaped chips, configurable max items, amber/gold active state) and `ExpandableSection` (accordion with 0.3s cubic-bezier animation, URL hash deep-linking)
+- **Main Sections**: Explore (/explore), Community (/community), Participate (/participate), Learn (/learn), Invest (/invest)
+- **Consolidated Pages**: Community merges Impact Simulator + Wishlist; Participate merges Services + League; Learn merges How It Works + Litepaper
+- **Legacy Route Redirects**: /wishlist → /community#wishlist, /impact → /community#gdp-simulator, /services → /participate#directories, /league → /participate#revitaleague, /litepaper → /learn#blockchain-101, /how-it-works → /learn#process-guide
+
 ### Core Features
 - **Wallet Connection**: RainbowKit + wagmi for Base network.
 - **KYC Verification**: User identity verification with admin approval, enforced via middleware.

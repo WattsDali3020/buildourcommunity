@@ -12,13 +12,13 @@ const PROFESSIONAL_ROLES = ["contractor", "realtor", "attorney", "engineer", "ar
 
 const basePublicNavLinks = [
   { href: "/", label: "Home" },
-  { href: "/properties", label: "Explore" },
-  { href: "/impact", label: "Community" },
-  { href: "/services", label: "Participate" },
-  { href: "/litepaper", label: "Learn" },
+  { href: "/explore", label: "Explore" },
+  { href: "/community", label: "Community" },
+  { href: "/participate", label: "Participate" },
+  { href: "/learn", label: "Learn" },
 ];
 
-const investNavLink = { href: "/dashboard", label: "Invest" };
+const investNavLink = { href: "/invest", label: "Invest" };
 
 const authenticatedNavLinks = [
   { href: "/dashboard", label: "Dashboard" },

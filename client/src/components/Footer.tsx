@@ -5,17 +5,17 @@ import { Button } from "@/components/ui/button";
 
 const footerLinks = {
   platform: [
-    { href: "/properties", label: "Browse Properties" },
+    { href: "/explore", label: "Browse Properties" },
     { href: "/governance", label: "Governance" },
     { href: "/dashboard", label: "Dashboard" },
     { href: "/submit", label: "Submit Project" },
-    { href: "/services", label: "Services" },
-    { href: "/league", label: "RevitaLeague" },
+    { href: "/participate", label: "Participate" },
+    { href: "/participate#revitaleague", label: "RevitaLeague" },
   ],
   resources: [
-    { href: "/litepaper", label: "Litepaper" },
-    { href: "/how-it-works", label: "How It Works" },
-    { href: "/impact", label: "Impact Simulator" },
+    { href: "/learn#blockchain-101", label: "Litepaper" },
+    { href: "/learn#process-guide", label: "How It Works" },
+    { href: "/community#gdp-simulator", label: "Impact Simulator" },
     { href: "/grants", label: "Grants & Funding" },
     { href: "/faq", label: "FAQ" },
   ],

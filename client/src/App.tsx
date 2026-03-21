@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -11,6 +11,8 @@ import Properties from "@/pages/properties";
 import PropertyDetail from "@/pages/property-detail";
 import Governance from "@/pages/governance";
 import Community from "@/pages/community";
+import Participate from "@/pages/participate";
+import Invest from "@/pages/invest";
 import Learn from "@/pages/learn";
 import Dashboard from "@/pages/dashboard";
 import About from "@/pages/about";
@@ -19,19 +21,13 @@ import Tokenize from "@/pages/tokenize";
 import Nominate from "@/pages/nominate";
 import OwnerResponse from "@/pages/owner-response";
 import AdminPanel from "@/pages/admin";
-import Litepaper from "@/pages/litepaper";
-import TokenizationProcess from "@/pages/tokenization-process";
 import FAQ from "@/pages/faq";
 import AIInsights from "@/pages/ai-insights";
 import BusinessLayer from "@/pages/business-layer";
 import Grants from "@/pages/grants";
 import DemandDashboard from "@/pages/demand-dashboard";
 import FounderDashboard from "@/pages/founder-dashboard";
-import Wishlist from "@/pages/wishlist";
 import Treasury from "@/pages/treasury";
-import Services from "@/pages/services";
-import ImpactSimulator from "@/pages/impact-simulator";
-import League from "@/pages/league";
 import Transfers from "@/pages/transfers";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
@@ -46,10 +42,13 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/explore" component={Properties} />
       <Route path="/properties" component={Properties} />
       <Route path="/properties/:id" component={PropertyDetail} />
       <Route path="/governance" component={Governance} />
       <Route path="/community" component={Community} />
+      <Route path="/participate" component={Participate} />
+      <Route path="/invest" component={Invest} />
       <Route path="/nominate" component={Nominate} />
       <Route path="/learn" component={Learn} />
       <Route path="/dashboard" component={Dashboard} />
@@ -58,19 +57,13 @@ function Router() {
       <Route path="/tokenize" component={Tokenize} />
       <Route path="/owner-response/:token" component={OwnerResponse} />
       <Route path="/admin" component={AdminPanel} />
-      <Route path="/litepaper" component={Litepaper} />
-      <Route path="/how-it-works" component={TokenizationProcess} />
       <Route path="/faq" component={FAQ} />
       <Route path="/ai-insights" component={AIInsights} />
       <Route path="/business" component={BusinessLayer} />
       <Route path="/grants" component={Grants} />
       <Route path="/demand" component={DemandDashboard} />
       <Route path="/founder" component={FounderDashboard} />
-      <Route path="/wishlist" component={Wishlist} />
       <Route path="/treasury" component={Treasury} />
-      <Route path="/services" component={Services} />
-      <Route path="/impact" component={ImpactSimulator} />
-      <Route path="/league" component={League} />
       <Route path="/transfers" component={Transfers} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
@@ -79,6 +72,14 @@ function Router() {
       <Route path="/professionals/apply" component={ProfessionalApply} />
       <Route path="/dashboard/professional" component={ProfessionalDashboard} />
       <Route path="/revitascore" component={RevitaScore} />
+
+      <Route path="/wishlist"><Redirect to="/community#wishlist" /></Route>
+      <Route path="/impact"><Redirect to="/community#gdp-simulator" /></Route>
+      <Route path="/services"><Redirect to="/participate#directories" /></Route>
+      <Route path="/league"><Redirect to="/participate#revitaleague" /></Route>
+      <Route path="/litepaper"><Redirect to="/learn#blockchain-101" /></Route>
+      <Route path="/how-it-works"><Redirect to="/learn#process-guide" /></Route>
+
       <Route component={NotFound} />
     </Switch>
   );

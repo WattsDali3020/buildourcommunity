@@ -3,18 +3,26 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PropertyCard, type Property } from "@/components/PropertyCard";
 import { ROICalculator } from "@/components/ROICalculator";
+import { IconTray, type IconTrayItem } from "@/components/IconTray";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LayoutGrid, Map as MapIcon, MapPin, Search, Building2 } from "lucide-react";
+import { LayoutGrid, Map as MapIcon, MapPin, Search, Building2, SlidersHorizontal, Columns2 } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import Map, { Marker, NavigationControl } from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { Property as DBProperty } from "@shared/schema";
+
+const exploreIconTrayItems: IconTrayItem[] = [
+  { id: "grid", label: "Grid View", icon: LayoutGrid },
+  { id: "map", label: "Map View", icon: MapIcon },
+  { id: "filter", label: "Filters", icon: SlidersHorizontal },
+  { id: "compare", label: "Compare", icon: Columns2 },
+];
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || "";
 
@@ -59,11 +67,21 @@ function PropertyMarkerPopup({ property }: { property: PropertyWithCoords }) {
 }
 
 export default function Properties() {
-  const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
+  const [activeView, setActiveView] = useState<string>("grid");
+  const [showFilters, setShowFilters] = useState(true);
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [phaseFilter, setPhaseFilter] = useState("all");
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+
+  const handleTraySelect = (id: string) => {
+    if (id === "filter") {
+      setShowFilters(prev => !prev);
+    } else if (id) {
+      setActiveView(id);
+    }
+  };
   const [viewState, setViewState] = useState({
     longitude: -98.5795,
     latitude: 39.8283,
@@ -113,71 +131,58 @@ export default function Properties() {
         <div className="mx-auto max-w-7xl px-4 py-8">
           <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
             <div>
-              <h1 className="text-3xl font-semibold mb-2" data-testid="text-page-title">Browse Properties</h1>
+              <h1 className="text-3xl font-semibold mb-2" data-testid="text-page-title">Explore</h1>
               <p className="text-muted-foreground">
                 Discover tokenized revitalization projects across all 50 states
               </p>
             </div>
-            {hasMapToken && (
-              <div className="flex items-center gap-1 border rounded-md p-1" data-testid="view-mode-toggle">
-                <Button
-                  variant={viewMode === "grid" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("grid")}
-                  data-testid="button-grid-view"
-                >
-                  <LayoutGrid className="h-4 w-4 mr-1.5" />
-                  Grid
-                </Button>
-                <Button
-                  variant={viewMode === "map" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("map")}
-                  data-testid="button-map-view"
-                >
-                  <MapIcon className="h-4 w-4 mr-1.5" />
-                  Map
-                </Button>
-              </div>
-            )}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 mb-8" data-testid="filters-bar">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search properties..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-                data-testid="input-search-properties"
-              />
+          <IconTray
+            items={exploreIconTrayItems}
+            activeId={activeView}
+            onSelect={handleTraySelect}
+            className="mb-6"
+          />
+
+          {showFilters && (
+            <div className="flex flex-col sm:flex-row gap-3 mb-6" data-testid="filters-bar">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search properties..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-properties"
+                />
+              </div>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-[180px]" data-testid="select-type-filter">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="vacant_land">Vacant Land</SelectItem>
+                  <SelectItem value="historic_building">Historic Building</SelectItem>
+                  <SelectItem value="commercial">Commercial</SelectItem>
+                  <SelectItem value="downtown">Downtown</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={phaseFilter} onValueChange={setPhaseFilter}>
+                <SelectTrigger className="w-[180px]" data-testid="select-phase-filter">
+                  <SelectValue placeholder="All Phases" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Phases</SelectItem>
+                  <SelectItem value="County">County</SelectItem>
+                  <SelectItem value="State">State</SelectItem>
+                  <SelectItem value="National">National</SelectItem>
+                  <SelectItem value="International">International</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[180px]" data-testid="select-type-filter">
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="vacant_land">Vacant Land</SelectItem>
-                <SelectItem value="historic_building">Historic Building</SelectItem>
-                <SelectItem value="commercial">Commercial</SelectItem>
-                <SelectItem value="downtown">Downtown</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-              <SelectTrigger className="w-[180px]" data-testid="select-phase-filter">
-                <SelectValue placeholder="All Phases" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Phases</SelectItem>
-                <SelectItem value="County">County</SelectItem>
-                <SelectItem value="State">State</SelectItem>
-                <SelectItem value="National">National</SelectItem>
-                <SelectItem value="International">International</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          )}
 
           {isLoading ? (
             <div className="text-center py-16" data-testid="text-loading">
@@ -197,26 +202,69 @@ export default function Properties() {
           ) : filteredProperties.length === 0 ? (
             <div className="text-center py-16" data-testid="text-no-results">
               <p className="text-muted-foreground text-lg">No properties match your filters</p>
-              <Button variant="link" onClick={() => { setSearchQuery(""); setTypeFilter("all"); setPhaseFilter("all"); }} data-testid="button-clear-filters">
+              <Button variant="ghost" onClick={() => { setSearchQuery(""); setTypeFilter("all"); setPhaseFilter("all"); }} data-testid="button-clear-filters">
                 Clear all filters
               </Button>
             </div>
-          ) : viewMode === "grid" ? (
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-              <div className="lg:col-span-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {filteredProperties.map((property) => (
-                    <PropertyCard key={property.id} property={property} />
-                  ))}
-                </div>
+          ) : activeView === "compare" ? (
+            <div className="space-y-6">
+              <p className="text-muted-foreground text-sm">Select up to 2 properties to compare side by side.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredProperties.map((property) => {
+                  const isSelected = compareIds.includes(property.id);
+                  return (
+                    <Card
+                      key={property.id}
+                      className={`cursor-pointer transition-all ${isSelected ? "ring-2 ring-primary" : "hover:bg-muted/50"}`}
+                      onClick={() => {
+                        setCompareIds(prev => {
+                          if (prev.includes(property.id)) return prev.filter(id => id !== property.id);
+                          if (prev.length >= 2) return [prev[1], property.id];
+                          return [...prev, property.id];
+                        });
+                      }}
+                      data-testid={`card-compare-${property.id}`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <h3 className="font-semibold text-sm">{property.name}</h3>
+                          {isSelected && <Badge variant="default" className="text-xs">Selected</Badge>}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{property.location.city}, {property.location.state}</p>
+                        <div className="flex justify-between mt-2 text-xs">
+                          <span>${property.tokenPrice}/token</span>
+                          <span className="text-chart-3">{property.projectedROI}% ROI</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
-              <div className="lg:col-span-1">
-                <div className="sticky top-20 z-50">
-                  <ROICalculator />
-                </div>
-              </div>
+              {compareIds.length === 2 && (
+                <Card className="p-6">
+                  <h3 className="font-semibold mb-4">Side-by-Side Comparison</h3>
+                  <div className="grid grid-cols-2 gap-6">
+                    {compareIds.map(id => {
+                      const p = filteredProperties.find(fp => fp.id === id);
+                      if (!p) return null;
+                      const fundingPct = Math.round((p.fundingRaised / p.fundingGoal) * 100) || 0;
+                      return (
+                        <div key={id} className="space-y-3">
+                          <h4 className="font-semibold">{p.name}</h4>
+                          <div className="text-sm space-y-1">
+                            <div className="flex justify-between"><span className="text-muted-foreground">Location</span><span>{p.location.city}, {p.location.state}</span></div>
+                            <div className="flex justify-between"><span className="text-muted-foreground">Token Price</span><span>${p.tokenPrice}</span></div>
+                            <div className="flex justify-between"><span className="text-muted-foreground">ROI</span><span>{p.projectedROI}%</span></div>
+                            <div className="flex justify-between"><span className="text-muted-foreground">Funded</span><span>{fundingPct}%</span></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+              )}
             </div>
-          ) : (
+          ) : activeView === "map" && hasMapToken ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <Card>
@@ -310,6 +358,21 @@ export default function Properties() {
                     </Card>
                   );
                 })}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+              <div className="lg:col-span-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredProperties.map((property) => (
+                    <PropertyCard key={property.id} property={property} />
+                  ))}
+                </div>
+              </div>
+              <div className="lg:col-span-1">
+                <div className="sticky top-20 z-50">
+                  <ROICalculator />
+                </div>
               </div>
             </div>
           )}
