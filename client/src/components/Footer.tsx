@@ -30,12 +30,12 @@ const footerLinks = {
 export function Footer() {
   return (
     <footer className="border-t bg-muted/30">
-      <div className="mx-auto max-w-7xl px-4 py-12">
+      <div className="mx-auto px-5 md:px-10 py-12" style={{ maxWidth: '1100px' }}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4" data-testid="link-footer-home">
               <Building2 className="h-8 w-8 text-primary" />
-              <span className="text-xl font-semibold">RevitaHub</span>
+              <span className="font-serif text-xl">RevitaHub</span>
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs mb-4">
               A Build Our Community, LLC project. Transforming vacant properties into thriving community assets through blockchain-enabled fractional ownership.

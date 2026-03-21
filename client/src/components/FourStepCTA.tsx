@@ -38,10 +38,10 @@ const steps = [
 
 export function FourStepCTA() {
   return (
-    <section className="py-24">
-      <div className="mx-auto max-w-7xl px-4">
+    <section className="py-20 md:py-24">
+      <div className="mx-auto px-5 md:px-10" style={{ maxWidth: '1100px' }}>
         <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
+          <h2 className="font-serif text-3xl sm:text-4xl tracking-tight mb-4" style={{ letterSpacing: '-1px' }}>
             Four Steps to Community Ownership
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
