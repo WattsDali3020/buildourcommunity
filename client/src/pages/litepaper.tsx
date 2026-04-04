@@ -173,8 +173,31 @@ export default function Litepaper() {
     return () => observer.disconnect();
   }, []);
 
-  const handlePrint = () => {
-    window.print();
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    setIsGeneratingPdf(true);
+    try {
+      const html2pdf = (await import("html2pdf.js")).default;
+      const content = document.getElementById("litepaper-content");
+      if (!content) return;
+
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: "RevitaHub-Litepaper-v3.4.pdf",
+        image: { type: "jpeg", quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+      };
+
+      await html2pdf().set(opt).from(content).save();
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      window.print();
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   return (
@@ -207,9 +230,9 @@ export default function Litepaper() {
               </p>
 
               <div className="flex flex-wrap items-center justify-center gap-3 mb-12 print:hidden">
-                <Button onClick={handlePrint} variant="outline" size="lg" data-testid="button-download-pdf">
+                <Button onClick={handleDownloadPdf} variant="outline" size="lg" data-testid="button-download-pdf" disabled={isGeneratingPdf}>
                   <Download className="mr-2 h-4 w-4" />
-                  Download PDF
+                  {isGeneratingPdf ? "Generating PDF..." : "Download PDF"}
                 </Button>
               </div>
             </div>
@@ -302,7 +325,7 @@ export default function Litepaper() {
               </div>
             </nav>
 
-            <article className="flex-1 max-w-none">
+            <article id="litepaper-content" className="flex-1 max-w-none">
 
               <Section id="executive" title="Executive Summary" icon={Sparkles}>
                 <p className="text-lg leading-relaxed mb-8 text-muted-foreground">

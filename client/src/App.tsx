@@ -36,6 +36,7 @@ import Professionals from "@/pages/professionals";
 import ProfessionalApply from "@/pages/professional-apply";
 import ProfessionalDashboard from "@/pages/professional-dashboard";
 import RevitaScore from "@/pages/revitascore";
+import Litepaper from "@/pages/litepaper";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -77,7 +78,7 @@ function Router() {
       <Route path="/impact"><Redirect to="/community#gdp-simulator" /></Route>
       <Route path="/services"><Redirect to="/participate#directories" /></Route>
       <Route path="/league"><Redirect to="/participate#revitaleague" /></Route>
-      <Route path="/litepaper"><Redirect to="/learn#blockchain-101" /></Route>
+      <Route path="/litepaper" component={Litepaper} />
       <Route path="/how-it-works"><Redirect to="/learn#process-guide" /></Route>
 
       <Route component={NotFound} />
