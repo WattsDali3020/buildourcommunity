@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "A7_IkdKVHiPt7RQbuuIS3"
+uri = "file://RevitaHub-Litepaper-v3.4.pdf"
+type = "pdf"
+title = "RevitaHub Litepaper v3.4"
