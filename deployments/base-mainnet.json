@@ -1,0 +1,13 @@
+{
+  "network": "base-mainnet",
+  "chainId": 8453,
+  "deployer": "",
+  "contracts": {
+    "propertyToken": "",
+    "escrow": "",
+    "phaseManager": "",
+    "governance": "",
+    "treasury": ""
+  },
+  "deployedAt": ""
+}
