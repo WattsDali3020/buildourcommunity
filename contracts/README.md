@@ -13,7 +13,7 @@ your-project/
 │   ├── PhaseManager.sol     # Dynamic phase advancement
 │   └── README.md
 ├── scripts/
-│   └── deploy.js            # Hardhat deployment script
+│   └── deploy.cjs           # Hardhat deployment script
 ├── hardhat.config.js        # Hardhat configuration
 ├── .env.example             # Environment variables template
 └── package.json
@@ -75,18 +75,23 @@ npx hardhat compile
 
 ### Deploy (Local)
 ```bash
-npx hardhat run scripts/deploy.js --network hardhat
+npx hardhat run scripts/deploy.cjs --network hardhat
 ```
 
 ### Deploy (Base Sepolia Testnet)
 ```bash
-npx hardhat run scripts/deploy.js --network base-sepolia
+npx hardhat run scripts/deploy.cjs --network base-sepolia
 ```
 
 ### Deploy (Base Mainnet)
 ```bash
-npx hardhat run scripts/deploy.js --network base-mainnet
+npx hardhat run scripts/deploy.cjs --network base-mainnet
 ```
+
+After a Base Sepolia or Base Mainnet deploy, the script also writes the deployed
+addresses back into the app's frontend config
+(`client/src/lib/contracts/addresses.ts` and `client/src/lib/contracts.ts`) in
+addition to `deployment-addresses.json`.
 
 ## Contract Addresses (Testnet)
 To be populated after deployment.

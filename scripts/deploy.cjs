@@ -2,6 +2,37 @@ const { ethers, network: hreNetwork } = require("hardhat");
 const fs = require("fs");
 const path = require("path");
 
+// Maps an on-chain chainId to the network keys used in the app's address config files.
+const APP_NETWORK_CONFIG = {
+  84532: { addressesKey: "baseSepolia", contractsKey: '"base-sepolia"' },
+  8453: { addressesKey: "baseMainnet", contractsKey: '"base-mainnet"' },
+};
+
+// Replaces the address values for a single network block inside a TS address-config file.
+function updateAddressConfigFile(filePath, networkKey, fieldMap) {
+  if (!fs.existsSync(filePath)) {
+    console.warn(`  Address config not found, skipping: ${filePath}`);
+    return false;
+  }
+  let content = fs.readFileSync(filePath, "utf8");
+  const escapedKey = networkKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const blockRegex = new RegExp(`(${escapedKey}:\\s*\\{)([\\s\\S]*?)(\\})`);
+  if (!blockRegex.test(content)) {
+    console.warn(`  Network block ${networkKey} not found in ${filePath}`);
+    return false;
+  }
+  content = content.replace(blockRegex, (_match, open, body, close) => {
+    let newBody = body;
+    for (const [field, value] of Object.entries(fieldMap)) {
+      const fieldRegex = new RegExp(`(${field}:\\s*")[^"]*(")`);
+      newBody = newBody.replace(fieldRegex, `$1${value}$2`);
+    }
+    return open + newBody + close;
+  });
+  fs.writeFileSync(filePath, content);
+  return true;
+}
+
 async function main() {
   const [deployer] = await ethers.getSigners();
   const network = await ethers.provider.getNetwork();
@@ -107,6 +138,28 @@ async function main() {
 
   const outputPath = path.join(__dirname, "..", "deployment-addresses.json");
   fs.writeFileSync(outputPath, JSON.stringify(addresses, null, 2));
+
+  // Write deployed addresses back into the app's frontend address config so the
+  // dApp picks them up automatically (only for the known Base networks).
+  const appNetwork = APP_NETWORK_CONFIG[Number(network.chainId)];
+  if (appNetwork) {
+    const fieldMap = {
+      propertyToken: propertyTokenAddress,
+      escrow: escrowAddress,
+      governance: governanceAddress,
+      phaseManager: phaseManagerAddress,
+      treasury: treasuryAddress,
+    };
+    const addressesTs = path.join(__dirname, "..", "client", "src", "lib", "contracts", "addresses.ts");
+    const contractsTs = path.join(__dirname, "..", "client", "src", "lib", "contracts.ts");
+    const a = updateAddressConfigFile(addressesTs, appNetwork.addressesKey, fieldMap);
+    const c = updateAddressConfigFile(contractsTs, appNetwork.contractsKey, fieldMap);
+    if (a || c) {
+      console.log(`App contract address config updated for ${appNetwork.addressesKey}.`);
+    }
+  } else {
+    console.log(`Skipping app config writeback (chainId ${network.chainId} is not a Base network).`);
+  }
 
   console.log("");
   console.log("=".repeat(60));

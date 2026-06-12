@@ -946,8 +946,8 @@
       ]
     },
     "/home/runner/workspace/contracts/Governance.sol": {
-      "lastModificationDate": 1773001289297,
-      "contentHash": "3b529c23696742bbc9b94f8626fd0767",
+      "lastModificationDate": 1781269274802,
+      "contentHash": "46329fc0288901a5f641c167a8b4218e",
       "sourceName": "contracts/Governance.sol",
       "solcConfig": {
         "version": "0.8.24",
