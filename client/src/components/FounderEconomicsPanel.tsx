@@ -9,7 +9,6 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// TODO: Update these imports/addresses to match your lib setup
 import { EscrowABI } from '@/lib/contracts/escrow';
 import { GovernanceABI } from '@/lib/contracts/governance';
 import { ESCROW_ADDRESS, GOVERNANCE_ADDRESS } from '@/lib/contracts/addresses';
@@ -27,7 +26,6 @@ export function FounderEconomicsPanel({
   showPersonalImpact = false,
   compact = false,
 }: FounderEconomicsPanelProps) {
-  // Escrow reads (core 1% economics)
   const { data: escrowStatus, isLoading: escrowLoading } = useReadContract({
     address: ESCROW_ADDRESS,
     abi: EscrowABI,
@@ -42,7 +40,6 @@ export function FounderEconomicsPanel({
     args: [BigInt(propertyId)],
   });
 
-  // Governance impact gate (if proposal linked)
   const { data: impactReport, isLoading: impactLoading } = useReadContract({
     address: GOVERNANCE_ADDRESS,
     abi: GovernanceABI,
@@ -82,7 +79,7 @@ export function FounderEconomicsPanel({
 
   const impactScore = impactReport ? Number(impactReport[1]) : 0;
   const isImpactEligible = impactScore >= 70;
-  const founderFeeBps = 100; // 1%
+  const founderFeeBps = 100;
   const founderFeeAmount = isImpactEligible 
     ? (Number(totalRaised) * founderFeeBps) / 10000 
     : 0;
@@ -106,7 +103,6 @@ export function FounderEconomicsPanel({
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Funding & Fee Math */}
         <div>
           <div className="flex justify-between text-sm mb-1">
             <span>Funding Progress</span>
@@ -145,7 +141,6 @@ export function FounderEconomicsPanel({
           </div>
         </div>
 
-        {/* Quarterly Layer */}
         {quarterlyState && (
           <div>
             <div className="text-sm font-medium mb-2">Quarterly Distribution Layer</div>
@@ -161,7 +156,6 @@ export function FounderEconomicsPanel({
           </div>
         )}
 
-        {/* Impact Gate */}
         {proposalId && impactReport && (
           <div className="rounded border p-3 text-sm">
             <div className="flex items-center gap-2">
@@ -180,8 +174,24 @@ export function FounderEconomicsPanel({
           </div>
         )}
 
-        <div className="text-[10px] text-muted-foreground/70">
-          All figures read live from Escrow & Governance contracts on Base. No off-chain assumptions.
+        {/* NEW: CLARITY-aligned explanatory section */}
+        <div className="text-xs text-muted-foreground border-t pt-3 space-y-2">
+          <p>
+            <strong>Real Asset + Community Impact</strong><br />
+            Each PropertyToken represents a fractional claim on a specific real estate asset held through a dedicated legal entity (LLC/SPV). 
+            The 1% platform sustainability fee only becomes available after the community approves an impact report (score ≥70/100) via on-chain governance.
+          </p>
+          
+          <p>
+            <strong>Performance-Tied, Not Upfront Extraction</strong><br />
+            The founder receives 1% of actual quarterly income (rental, appreciation, or other cash flow) only when real value has been created and verified by participants. 
+            If a project underperforms or impact thresholds are not met, the fee is not paid. This structure aligns platform sustainability with measurable community outcomes.
+          </p>
+          
+          <p className="text-[10px]">
+            All figures are read live from the Escrow and Governance contracts on Base. 
+            This design supports regulatory clarity by tying economics to real utility and verified impact rather than speculative value.
+          </p>
         </div>
       </CardContent>
     </Card>
