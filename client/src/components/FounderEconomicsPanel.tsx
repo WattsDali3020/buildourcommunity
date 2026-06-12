@@ -26,6 +26,10 @@ export function FounderEconomicsPanel({
   showPersonalImpact = false,
   compact = false,
 }: FounderEconomicsPanelProps) {
+  const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+  const escrowConfigured = !!ESCROW_ADDRESS && ESCROW_ADDRESS !== ZERO_ADDRESS;
+  const governanceConfigured = !!GOVERNANCE_ADDRESS && GOVERNANCE_ADDRESS !== ZERO_ADDRESS;
+
   let onChainPropertyId: bigint | null = null;
   try {
     if (propertyId !== undefined && propertyId !== null && /^\d+$/.test(String(propertyId))) {
@@ -35,12 +39,14 @@ export function FounderEconomicsPanel({
     onChainPropertyId = null;
   }
 
+  const escrowReadEnabled = onChainPropertyId !== null && escrowConfigured;
+
   const { data: escrowStatus, isLoading: escrowLoading } = useReadContract({
     address: ESCROW_ADDRESS,
     abi: EscrowABI,
     functionName: 'getEscrowStatus',
     args: onChainPropertyId !== null ? [onChainPropertyId] : undefined,
-    query: { enabled: onChainPropertyId !== null },
+    query: { enabled: escrowReadEnabled },
   });
 
   const { data: quarterlyState, isLoading: quarterlyLoading } = useReadContract({
@@ -48,18 +54,20 @@ export function FounderEconomicsPanel({
     abi: EscrowABI,
     functionName: 'getQuarterlyState',
     args: onChainPropertyId !== null ? [onChainPropertyId] : undefined,
-    query: { enabled: onChainPropertyId !== null },
+    query: { enabled: escrowReadEnabled },
   });
+
+  const impactReadEnabled = !!proposalId && governanceConfigured;
 
   const { data: impactReport, isLoading: impactLoading } = useReadContract({
     address: GOVERNANCE_ADDRESS,
     abi: GovernanceABI,
     functionName: 'getImpactReport',
     args: proposalId ? [BigInt(proposalId)] : undefined,
-    query: { enabled: !!proposalId },
+    query: { enabled: impactReadEnabled },
   });
 
-  const isLoading = escrowLoading || quarterlyLoading || (proposalId && impactLoading);
+  const isLoading = Boolean(escrowLoading || quarterlyLoading || (proposalId && impactLoading));
 
   if (isLoading) {
     return (
