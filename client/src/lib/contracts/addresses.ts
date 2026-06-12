@@ -1,0 +1,23 @@
+export const CONTRACT_ADDRESSES = {
+  baseSepolia: {
+    propertyToken: "0x0000000000000000000000000000000000000000", // Update after deployment
+    escrow: "0x0000000000000000000000000000000000000000",
+    phaseManager: "0x0000000000000000000000000000000000000000",
+    governance: "0x0000000000000000000000000000000000000000",
+    treasury: "0x0000000000000000000000000000000000000000",
+  },
+  baseMainnet: {
+    propertyToken: "0x0000000000000000000000000000000000000000",
+    escrow: "0x0000000000000000000000000000000000000000",
+    phaseManager: "0x0000000000000000000000000000000000000000",
+    governance: "0x0000000000000000000000000000000000000000",
+    treasury: "0x0000000000000000000000000000000000000000",
+  },
+} as const;
+
+export type Network = keyof typeof CONTRACT_ADDRESSES;
+
+export const getAddresses = (network: Network = "baseSepolia") => CONTRACT_ADDRESSES[network];
+
+export const ESCROW_ADDRESS = CONTRACT_ADDRESSES.baseSepolia.escrow as `0x${string}`;
+export const GOVERNANCE_ADDRESS = CONTRACT_ADDRESSES.baseSepolia.governance as `0x${string}`;

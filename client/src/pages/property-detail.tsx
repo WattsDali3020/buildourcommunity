@@ -8,6 +8,7 @@ import { FundingTimeline } from "@/components/FundingTimeline";
 import { SimplePurchaseModal } from "@/components/SimplePurchaseModal";
 import { PrivateAccessGate } from "@/components/PrivateAccessGate";
 import { CapitalStackDisplay } from "@/components/CapitalStackDisplay";
+import { FounderEconomicsPanel } from "@/components/FounderEconomicsPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -434,7 +435,7 @@ export default function PropertyDetail() {
                         </span>
                       </div>
                       <p className="text-xs font-medium">Economic Score</p>
-                      <p className="text-[10px] text-muted-foreground">Jobs + GDP</p>
+                      <p className="text-xs text-muted-foreground">Jobs + GDP</p>
                     </div>
                     <div className="text-center p-3 rounded-md bg-muted/50" data-testid="gauge-social-score">
                       <div className="relative mx-auto mb-2 h-16 w-16">
@@ -451,7 +452,7 @@ export default function PropertyDetail() {
                         </span>
                       </div>
                       <p className="text-xs font-medium">Social Score</p>
-                      <p className="text-[10px] text-muted-foreground">Affordability + Community</p>
+                      <p className="text-xs text-muted-foreground">Affordability + Community</p>
                     </div>
                     <div className="text-center p-3 rounded-md bg-muted/50" data-testid="gauge-risk-score">
                       <div className="relative mx-auto mb-2 h-16 w-16">
@@ -468,7 +469,7 @@ export default function PropertyDetail() {
                         </span>
                       </div>
                       <p className="text-xs font-medium">Risk-Adjusted</p>
-                      <p className="text-[10px] text-muted-foreground">Score 0-100</p>
+                      <p className="text-xs text-muted-foreground">Score 0-100</p>
                     </div>
                   </div>
 
@@ -533,13 +534,13 @@ export default function PropertyDetail() {
                     <div className="flex-1 min-w-0 p-3 rounded-md bg-muted/50 text-center">
                       <Users className="h-5 w-5 mx-auto mb-1 text-chart-4" />
                       <p className="text-sm font-bold">{Math.round((impactMetrics.economicScore / 100) * 0.8)}</p>
-                      <p className="text-[10px] text-muted-foreground">Jobs Supported</p>
+                      <p className="text-xs text-muted-foreground">Jobs Supported</p>
                     </div>
                     <ArrowRight className="h-4 w-4 self-center shrink-0 text-muted-foreground" />
                     <div className="flex-1 min-w-0 p-3 rounded-md bg-muted/50 text-center">
                       <TrendingUp className="h-5 w-5 mx-auto mb-1 text-chart-5" />
                       <p className="text-sm font-bold">{formatCurrency(investmentPreview.fiveYearGDPImpact, true)}</p>
-                      <p className="text-[10px] text-muted-foreground">5-Yr GDP Impact</p>
+                      <p className="text-xs text-muted-foreground">5-Yr GDP Impact</p>
                     </div>
                   </div>
 
@@ -701,6 +702,12 @@ export default function PropertyDetail() {
 
               <CapitalStackDisplay propertyId={property.id} />
 
+              {/* === NEW: Founder Economics Transparency (1% impact-gated model) === */}
+              <FounderEconomicsPanel
+                propertyId={property.id}
+                showPersonalImpact={!!user}
+              />
+
               {cityForProperty && (
                 <Card data-testid="card-city-competition">
                   <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
@@ -755,15 +762,6 @@ export default function PropertyDetail() {
                         </p>
                       </div>
                       <div className="flex items-center gap-1">
-                        {cityForProperty.trend === "up" && <TrendingUp className="h-4 w-4 text-chart-3" />}
-                        {cityForProperty.trend === "down" && <TrendingUp className="h-4 w-4 text-red-400 rotate-180" />}
-                        {cityForProperty.trend === "steady" && <Activity className="h-4 w-4 text-muted-foreground" />}
-                        <span className="text-xs text-muted-foreground capitalize" data-testid="text-trend">{cityForProperty.trend}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-muted/50">
-                      <div>
                         <p className="text-xs text-muted-foreground">Season Trophies</p>
                         <p className="text-sm font-bold" data-testid="text-season-wins">{cityForProperty.seasonWins}</p>
                       </div>
