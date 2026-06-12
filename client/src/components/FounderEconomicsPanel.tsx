@@ -12,9 +12,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EscrowABI } from '@/lib/contracts/escrow';
 import { GovernanceABI } from '@/lib/contracts/governance';
 import { ESCROW_ADDRESS, GOVERNANCE_ADDRESS } from '@/lib/contracts/addresses';
+import { toOnChainPropertyId } from '@/lib/contracts/propertyId';
 
 interface FounderEconomicsPanelProps {
-  propertyId: number;
+  propertyId: string | number;
   proposalId?: number;
   showPersonalImpact?: boolean;
   compact?: boolean;
@@ -30,14 +31,7 @@ export function FounderEconomicsPanel({
   const escrowConfigured = !!ESCROW_ADDRESS && ESCROW_ADDRESS !== ZERO_ADDRESS;
   const governanceConfigured = !!GOVERNANCE_ADDRESS && GOVERNANCE_ADDRESS !== ZERO_ADDRESS;
 
-  let onChainPropertyId: bigint | null = null;
-  try {
-    if (propertyId !== undefined && propertyId !== null && /^\d+$/.test(String(propertyId))) {
-      onChainPropertyId = BigInt(propertyId);
-    }
-  } catch {
-    onChainPropertyId = null;
-  }
+  const onChainPropertyId = toOnChainPropertyId(propertyId);
 
   const escrowReadEnabled = onChainPropertyId !== null && escrowConfigured;
 
