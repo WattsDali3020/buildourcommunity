@@ -43,4 +43,4 @@ integrations = ["javascript_object_storage:2.0.0", "javascript_log_in_with_repli
 
 [postMerge]
 path = "scripts/post-merge.sh"
-timeoutMs = 20000
+timeoutMs = 180000
