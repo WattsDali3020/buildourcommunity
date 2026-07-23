@@ -6,6 +6,23 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 
 ---
 
+## Token Design Posture (Locked 2026-07-23)
+
+**Single source of truth:** [`docs/HYBRID_TOKEN_DESIGN_DECISION.md`](docs/HYBRID_TOKEN_DESIGN_DECISION.md)
+
+RevitaHub uses a **hybrid** token design:
+
+- Issuer-sponsored tokenization (token represents actual membership / beneficial interests in the SPV that holds title).
+- Permissioned transferability enforced on-chain (identity registry + compliance rule engine pattern). Transfers are gated, never free by default.
+- Primary on-chain activity signals are governance votes, demand-oracle updates, PhaseManager state, and distributions — **not** secondary market transfer volume.
+- Full, repeated disclosure of illiquidity risk and the gated nature of any secondary market is mandatory.
+
+Pure zero-transfer "represented" design was rejected for community real-estate SPVs because it conflicts with the Primary Directive (realistic path to generational wealth for everyday holders).
+
+All future contract work, frontend surfaces, and disclosure language must conform to this posture. Reg retains advisory veto on deviations that increase regulatory or investor-protection risk.
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
