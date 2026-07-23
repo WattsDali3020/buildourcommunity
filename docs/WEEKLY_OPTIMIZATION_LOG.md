@@ -4,7 +4,7 @@ Living record of Horsemen deep-dive cycles. Each entry captures persons status, 
 
 ---
 
-## 2026-07-23 — First Full Weekly Cycle
+## 2026-07-23 — Full System Pressure Cycle
 
 ### Persons / Reference Set
 - Rika Goldberg — reference point only (no active outreach)
@@ -13,24 +13,27 @@ Living record of Horsemen deep-dive cycles. Each entry captures persons status, 
 - Dana Love, PhD — source of distributed vs represented distinction that drove hybrid decision
 - Justoken/JMWH — negative design reference (commodity model ≠ community equity)
 
-### X Surface (@bornbronco25 / @RevitaHub)
-- Content quality high and aligned with Primary Directive
-- Engagement extremely low (most posts <50 views)
-- Incoming mostly spam
-- Diagnosis: broadcast channel with almost no feedback or conversion loop
+### X Surface
+- Previous voice diagnosed problems and expressed frustration
+- New mandatory standard: every message must contain mechanism + specific platform-supported action
 
-### Key Decisions
-- Hybrid token design locked (permissioned transferability, governance/demand as primary activity)
-- Pure zero-transfer represented model rejected for community SPVs
-- Rika Goldberg reclassified as reference only
+### Key Decisions Executed
+- Hybrid token design locked
+- Funding-cliff transfer lock removed from PropertyToken
+- Permanent permissioned gate (`isTransferAllowed`) implemented
+- Governance and demand forced as lead public metrics
+- Diagnosis-style messaging banned; mechanism + action system required
+- Ownership-and-voice metrics defined as primary success signals (capital raised secondary)
 
 ### Artifacts Pushed This Cycle
-- `docs/HYBRID_TOKEN_DESIGN_DECISION.md` (created)
-- `ARCHITECTURE.md` updated with Token Design Posture section
-- `docs/DISCLOSURE_LANGUAGE_HYBRID.md` (created)
+- `docs/HYBRID_TOKEN_DESIGN_DECISION.md`
+- `ARCHITECTURE.md` (Token Design Posture section)
+- `docs/DISCLOSURE_LANGUAGE_HYBRID.md`
+- `contracts/PropertyToken.sol` — permanent permissioned transfer gate (commit 15a04b30)
+- `docs/PUBLIC_METRICS_AND_SURFACES.md`
+- `docs/MESSAGING_AND_ACTION_SYSTEM.md`
+- `docs/OWNERSHIP_AND_VOICE_MEASUREMENT.md`
 - `docs/WEEKLY_OPTIMIZATION_LOG.md` (this file)
 
-### Next Cycle Focus
-- Continue aligning contracts and frontend surfaces to hybrid posture
-- Instrument primary activity metrics as visible success signals
-- Force X surface into participation mechanics rather than pure broadcast
+### System State After This Cycle
+Transfer logic now matches the locked hybrid model. Public surfaces, messaging, and measurement frameworks have been forced into alignment with the Primary Directive. Remaining work is implementation of the frontend metric surfaces and live tracking of the ownership/voice numbers.
