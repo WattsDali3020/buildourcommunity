@@ -24,18 +24,21 @@ Living record of Horsemen deep-dive cycles.
 - Permanent `isTransferAllowed` gate live
 - Governance/demand forced as lead public metrics
 - Ownership-and-voice metrics defined as primary success signals
+- Risk disclosure UI updated to permanent permissioned + ownership model language
+- Transfer gate test skeleton added
 - Frontend lead-metrics specification written
 - Query/instrumentation specification written
 - Second-order effects of permanent gate analyzed
 - PhaseManager parameters reviewed under hybrid model
 - Local intelligence and persons reference locked
-- Test requirements for transfer gate defined
 
 ### Full Artifact List Pushed This Cycle
 - docs/HYBRID_TOKEN_DESIGN_DECISION.md
 - ARCHITECTURE.md (Token Design Posture)
 - docs/DISCLOSURE_LANGUAGE_HYBRID.md
 - contracts/PropertyToken.sol (permanent permissioned gate)
+- client/src/pages/risk-disclosure.tsx (hybrid liquidity + ownership language)
+- test/PropertyToken.transferGate.test.cjs
 - docs/PUBLIC_METRICS_AND_SURFACES.md
 - docs/MESSAGING_AND_ACTION_SYSTEM.md
 - docs/OWNERSHIP_AND_VOICE_MEASUREMENT.md
@@ -48,4 +51,4 @@ Living record of Horsemen deep-dive cycles.
 - docs/WEEKLY_OPTIMIZATION_LOG.md
 
 ### System State
-Control layer, policy layer, measurement layer, messaging layer, local reference layer, test requirements, and second-order analysis are now aligned with the Primary Directive. Remaining engineering work is implementation of the frontend surfaces and live metric computation against the specifications written today.
+Primary Directive remains locked. Control layer, policy layer, measurement layer, messaging layer, risk disclosure UI, transfer gate tests, local reference layer, and second-order analysis are aligned. Demand dashboard already surfaces governance/demand as primary signals. Remaining pure engineering is live computation of ownership-and-voice metrics and full expansion of the transfer-gate test fixture.
