@@ -6,6 +6,31 @@ RevitaHub is a community-owned real estate revitalization platform on Base (Coin
 
 ---
 
+## Macro Compliance Architecture (Locked)
+
+**Single source of truth:** [`docs/MACRO_COMPLIANCE_SKELETON.md`](docs/MACRO_COMPLIANCE_SKELETON.md)
+
+RevitaHub uses a **fixed federal layer + modular state plug-in** design:
+
+- **Fixed Federal Layer** (written once, never rebuilt):
+  - Delaware Series LLC as master entity (Tirios precedent)
+  - Regulation A Tier 2 for nationwide retail access (10% income/net-worth limit)
+  - Registered Transfer Agent holds legal title primacy
+  - Permissioned on-chain layer (ERC-3643-style) for governance, identity, and transfer rules only — never the primary security
+
+- **Modular State Plug-in** (the only variable part):
+  Each state supplies exactly four items:
+  1. Legal Opinion Letter (Series LLC enforceability + insulation)
+  2. County Recording Package (deed + title insurance)
+  3. Blue-Sky Filing (notice or qualification)
+  4. State-Specific Add-ons (tax, extra protections, local programs)
+
+Once the federal layer is qualified with the SEC, any new state can be added by simply dropping in its plug-in module. No changes to the core Offering Circular, risk factors, or on-chain contracts are required.
+
+See `states/template/` for the reusable four-item structure.
+
+---
+
 ## Token Design Posture (Locked 2026-07-23)
 
 **Single source of truth:** [`docs/HYBRID_TOKEN_DESIGN_DECISION.md`](docs/HYBRID_TOKEN_DESIGN_DECISION.md)
@@ -187,6 +212,17 @@ All future contract work, frontend surfaces, and disclosure language must confor
 │   ├── Governance.sol               # DAO voting, gasless signatures, polls
 │   ├── PhaseManager.sol             # Chainlink Automation for engagement-driven phase advancement
 │   └── Treasury.sol                 # Multi-sig treasury, founder vesting, reserve verification
+├── states/                          # NEW: Modular state plug-in modules
+│   ├── README.md                    # How the plug-in system works
+│   └── template/                    # Reusable four-item template
+│       ├── Legal_Opinion_Letter.md
+│       ├── County_Recording_Package.md
+│       ├── Blue_Sky_Filing.md
+│       └── State_Specific_Addons.md
+├── docs/
+│   ├── MACRO_COMPLIANCE_SKELETON.md # NEW: National fixed federal + state plug-in architecture
+│   └── regulatory/
+│       └── State_Blue_Sky_Preemption.md # Updated to reference the Macro Skeleton
 ├── drizzle.config.ts                # Drizzle Kit config
 ├── vite.config.ts                   # Vite config (aliases: @/, @shared/, @assets/)
 ├── tailwind.config.ts               # Tailwind config (darkMode: class)

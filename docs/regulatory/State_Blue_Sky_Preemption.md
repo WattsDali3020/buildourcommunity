@@ -4,6 +4,9 @@
 **Knowledge Base Entry – 4Horsemen**  
 **Sourced: July 5, 2026**
 
+> **Cross-Reference**: This document is now governed by the national macro compliance architecture defined in [`docs/MACRO_COMPLIANCE_SKELETON.md`](../MACRO_COMPLIANCE_SKELETON.md).  
+> The fixed federal layer (Delaware Series LLC + Reg A Tier 2 + Transfer Agent + permissioned on-chain) is written once. Each state only supplies a lightweight plug-in module (Legal Opinion, County Recording Package, Blue-Sky Filing, State-Specific Add-ons). See that document for the complete reusable skeleton.
+
 This entry focuses on state securities laws (“Blue Sky” laws) and the critical concept of federal preemption — particularly how it interacts with the securities exemptions discussed with Nicki Sanders.
 
 ---
@@ -65,7 +68,7 @@ Even with preemption, issuers may still need to:
 - Register broker-dealers and agents in states where they are operating (if applicable)
 - Handle state-specific investor qualification or disclosure requirements in limited cases
 
-**Platform Implication**: The compliance layer and backend systems should be designed to support multi-state notice filings and tracking, even if full qualification is preempted under Reg A+ Tier 2.
+**Platform Implication**: The compliance layer and backend systems should be designed to support multi-state notice filings and tracking, even if full qualification is preempted under Reg A+ Tier 2. This is now formalized in the Macro Compliance Skeleton — the federal layer remains fixed while each state supplies only its four-item plug-in module.
 
 ---
 
@@ -84,8 +87,4 @@ This reinforces a phased approach: Start with Reg D for speed and lower cost on 
 
 **Primary Sources**: National Securities Markets Improvement Act of 1996 (NSMIA), Securities Act of 1933, and SEC Regulation A resources (as of mid-2026).
 
-This entry is now part of the 4Horsemen knowledge base.
-
----
-
-**Next**: I can create the final remaining entry on **Data Privacy considerations for KYC/AML data handling** if you’d like. Just confirm and I’ll proceed under Option A.
+This entry is now part of the 4Horsemen knowledge base and is subordinate to the Macro Compliance Skeleton.
