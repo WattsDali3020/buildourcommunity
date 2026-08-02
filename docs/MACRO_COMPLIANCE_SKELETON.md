@@ -1,13 +1,19 @@
 # MACRO_COMPLIANCE_SKELETON.md
 *National compliance architecture for RevitaHub — fixed federal layer + reusable state plug-in modules*
 
+**Updated August 1, 2026** — Mapped to SEC + CFTC Joint Interpretive Release Nos. 33-11412 / 34-105020 (March 17, 2026).
+
 ### 1. Purpose
 This document defines the single national skeleton that allows RevitaHub to operate in every U.S. state without rebuilding the securities or governance plumbing for each new jurisdiction. The federal layer is written once and qualified with the SEC. Each state then drops in a lightweight plug-in module containing only its local requirements.
 
 ### 2. Fixed Federal Layer (Immutable — Never Rebuilt)
+
+**Classification under SEC 33-11412:**  
+RevitaHub PropertyTokens are **Category 5 Digital Securities** — financial instruments that represent membership interests in a Series LLC and are merely formatted as crypto assets. Tokenization does not change their legal character. They remain full securities for the life of the interest. We do not rely on, and will never market, any investment-contract separation doctrine for these tokens.
+
 - **Master Entity**: Delaware Series LLC (Tirios Propco Series LLC precedent) — each property or tightly related cluster is its own Series with ring-fenced assets and liabilities under Delaware Act §18-215.
 - **Securities Qualification**: Regulation A Tier 2 — nationwide general solicitation, non-accredited investor access subject to the 10% of greater of annual income or net worth limit, registered broker-dealer and Transfer Agent.
-- **Legal Title Primacy**: Registered Transfer Agent (e.g., VStock or equivalent) holds the authoritative book-entry records of ownership. Blockchain records are explicitly “digital courtesy copies” only.
+- **Legal Title Primacy**: Registered Transfer Agent (e.g., VStock or equivalent) holds the authoritative book-entry records of ownership. Blockchain records are explicitly “digital courtesy copies” only. This hybrid recordkeeping model is now the preferred architecture under the March 2026 Release.
 - **On-Chain Layer**: Permissioned security tokens (ERC-3643 or equivalent with identity registry) that enforce governance, voting, transfer restrictions, and PhaseManager thresholds — but never claim to be the primary security instrument.
 - **Core Documents** (written once, reused everywhere): Offering Circular, Risk Factor Library, Series Limited Liability Company Agreement, Investor Questionnaire, PhaseManager Operating Logic.
 
@@ -44,7 +50,7 @@ Each new state receives its own folder or file containing exactly these four ite
 
 ### 5. Integration with Existing Repo
 This skeleton slots directly into the current structure:  
-- Regulatory docs folder already contains the federal-layer references (Reg D/A, Howey, Investment Company Act, AML, RESPA, State_Blue_Sky_Preemption.md).  
+- Regulatory docs folder already contains the federal-layer references (Reg D/A, Howey, Investment Company Act, AML, RESPA, State_Blue_Sky_Preemption.md) plus the new SEC_33-11412_Mapping_to_RevitaHub.md.  
 - Contracts folder already contains the on-chain pieces (PropertyToken, PhaseManager, Governance, Escrow, Treasury).  
 - Frontend already has StateComplianceTable.tsx.  
 The only new work is packaging the four-item state module as a clean, reusable template so any future state can adopt it with minimal effort.
@@ -54,3 +60,4 @@ The only new work is packaging the four-item state module as a clean, reusable t
 - Update `State_Blue_Sky_Preemption.md` to reference this skeleton.  
 - Add a `states/` folder with a template subfolder containing the four-item structure.  
 - Update ARCHITECTURE.md to show the federal layer as fixed and state modules as plug-ins.
+- **Completed August 1, 2026**: Mapped to SEC 33-11412 Category 5 Digital Securities classification.

@@ -2,10 +2,11 @@
 **Especially Interaction with Regulation A+ Tier 2**  
 **For RevitaHub Tokenized Real Estate Platform**  
 **Knowledge Base Entry – 4Horsemen**  
-**Sourced: July 5, 2026**
+**Sourced: July 5, 2026**  
+**Updated: August 1, 2026 — SEC 33-11412 mapping**
 
-> **Cross-Reference**: This document is now governed by the national macro compliance architecture defined in [`docs/MACRO_COMPLIANCE_SKELETON.md`](../MACRO_COMPLIANCE_SKELETON.md).  
-> The fixed federal layer (Delaware Series LLC + Reg A Tier 2 + Transfer Agent + permissioned on-chain) is written once. Each state only supplies a lightweight plug-in module (Legal Opinion, County Recording Package, Blue-Sky Filing, State-Specific Add-ons). See that document for the complete reusable skeleton.
+> **Cross-Reference**: This document is now governed by the national macro compliance architecture defined in [`docs/MACRO_COMPLIANCE_SKELETON.md`](../MACRO_COMPLIANCE_SKELETON.md) and the Category 5 Digital Securities classification in [`docs/regulatory/SEC_33-11412_Mapping_to_RevitaHub.md`](SEC_33-11412_Mapping_to_RevitaHub.md).  
+> The fixed federal layer (Delaware Series LLC + Reg A Tier 2 + Transfer Agent + permissioned on-chain) is written once. Each state only supplies a lightweight plug-in module (Legal Opinion, County Recording Package, Blue-Sky Filing, State-Specific Add-ons). See those documents for the complete reusable skeleton.
 
 This entry focuses on state securities laws (“Blue Sky” laws) and the critical concept of federal preemption — particularly how it interacts with the securities exemptions discussed with Nicki Sanders.
 
@@ -27,6 +28,7 @@ Historically, issuers had to comply with the securities laws of every state in w
 - **National Securities Markets Improvement Act of 1996 (NSMIA)** — This is the key federal law that created significant preemption of state blue sky laws for certain “covered securities.”
 - **Securities Act of 1933** (as amended by NSMIA)
 - SEC resources on Regulation A (which discuss preemption)
+- SEC + CFTC Joint Interpretive Release 33-11412 / 34-105020 (March 17, 2026) confirming tokenized real-estate interests as digital securities
 
 ---
 
@@ -57,6 +59,7 @@ This is a major operational advantage compared to pure Reg D offerings, which of
 **RevitaHub Implication**:
 - If the long-term goal is to enable everyday/community investors across multiple states (as aligned with the primary directive), **Reg A+ Tier 2** becomes significantly more attractive because of blue sky preemption.
 - Early raises using Reg D may still require state notice filings, increasing complexity and cost as the number of states and investors grows.
+- Under the March 2026 Release, our tokens are digital securities; the Reg A Tier 2 path remains the correct scale vehicle.
 
 ---
 
@@ -85,6 +88,6 @@ This reinforces a phased approach: Start with Reg D for speed and lower cost on 
 
 ---
 
-**Primary Sources**: National Securities Markets Improvement Act of 1996 (NSMIA), Securities Act of 1933, and SEC Regulation A resources (as of mid-2026).
+**Primary Sources**: National Securities Markets Improvement Act of 1996 (NSMIA), Securities Act of 1933, SEC Regulation A resources, and SEC + CFTC Joint Interpretive Release 33-11412 / 34-105020 (as of mid-2026).
 
-This entry is now part of the 4Horsemen knowledge base and is subordinate to the Macro Compliance Skeleton.
+This entry is now part of the 4Horsemen knowledge base and is subordinate to the Macro Compliance Skeleton and the SEC 33-11412 mapping memo.

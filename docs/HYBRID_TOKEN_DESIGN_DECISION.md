@@ -2,7 +2,8 @@
 
 **Status:** Locked  
 **Date:** 2026-07-23  
-**Authority:** ORCH + full Horsemen review (post Dana Love RWA analysis)  
+**Updated:** 2026-08-01 (SEC 33-11412 mapping)  
+**Authority:** ORCH + full Horsemen review (post Dana Love RWA analysis + March 2026 SEC/CFTC Release)  
 **Primary Directive Alignment:** Required
 
 ---
@@ -25,18 +26,26 @@ They are **not** appropriate as the default for long-duration, community-driven 
 4. Secondary transfers are gated and optional, never the core product promise.
 5. Full, repeated disclosure of illiquidity risk and the gated nature of any secondary market is mandatory in all offering materials and platform UI.
 
+### SEC 33-11412 Classification (August 1, 2026 Update)
+
+Under the March 17, 2026 SEC + CFTC Joint Interpretive Release, RevitaHub PropertyTokens are **Category 5 Digital Securities**. They are financial instruments enumerated in the definition of “security” that are formatted as crypto assets. Tokenization does not alter their legal character. They remain securities for the life of the interest. We do not rely on the investment-contract separation doctrine for these tokens.
+
+**Required language in all materials:**  
+“digital security representing membership interests in a Series LLC”
+
 ### Non-Goals
 
 - Free / unrestricted secondary trading as default
 - Synthetic price exposure without ownership rights
 - Pure zero-transfer "ledger-only" design for community SPV interests
 - Measuring success primarily by transfer velocity
+- Any claim that the tokens can later leave securities regulation via investment-contract ending
 
 ---
 
 ## Rationale (Summary)
 
-- Economic substance governs (SEC Staff Statement on Tokenized Securities, Jan 28 2026).
+- Economic substance governs (SEC Staff Statement on Tokenized Securities, Jan 28 2026 + March 2026 Release).
 - Everyday participants require a realistic (if restricted) path to realize value.
 - Governance and demand feedback loops are the actual product activity that compounds livability and GDP.
 - Compliance-by-design and substance-over-form remain non-negotiable.
@@ -48,7 +57,8 @@ They are **not** appropriate as the default for long-duration, community-driven 
 
 - Token standard path: ERC-3643-style (identity + rules) preferred.
 - Off-chain legal linkage mandatory (PPM, operating agreement, title references hashed or explicitly referenced).
-- All future contract work, frontend messaging, and disclosure language must reference this document.
+- Transfer Agent is the authoritative ownership record; on-chain ledger is a permissioned courtesy copy.
+- All future contract work, frontend messaging, and disclosure language must reference this document and the SEC 33-11412 mapping memo.
 - Reg retains advisory veto on any deviation that increases regulatory or investor-protection risk.
 
 ---
@@ -60,5 +70,7 @@ They are **not** appropriate as the default for long-duration, community-driven 
 - Dana Love analysis of distributed vs represented RWA market (July 2026)
 - rwa.xyz Distributed / Represented framework
 - SEC Staff Statement on Tokenized Securities (Jan 28 2026)
+- SEC + CFTC Joint Interpretive Release 33-11412 / 34-105020 (March 17, 2026)
+- docs/regulatory/SEC_33-11412_Mapping_to_RevitaHub.md
 
 This document is the single source of truth for the hybrid design until explicitly superseded by founder instruction.
