@@ -14,10 +14,10 @@ export function BetaBanner() {
       <div className="bg-primary text-primary-foreground py-2 px-4 text-center text-sm relative z-50">
         <div className="mx-auto max-w-7xl flex items-center justify-center gap-4 flex-wrap">
           <span className="font-medium">
-            Alpha Prototype - Join the waitlist for updates and early access
+            Cherokee County alpha — pins are RevitaHub properties only, not every parcel. Waitlist for early access.
           </span>
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             variant="secondary"
             onClick={() => setWaitlistOpen(true)}
             data-testid="button-join-waitlist-banner"
