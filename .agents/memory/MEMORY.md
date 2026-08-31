@@ -1,2 +1,3 @@
 - [GitHub connector runtime](github-connector-runtime.md) — sandbox GitHub connections expose authenticated requests through proxyFetch on the listed connection.
 - [Replit Git pane rebase behavior](replit-git-pane-rebase.md) — inspect actual branch ancestry before resolving a pane-reported conflict; avoid force-pushes.
+- [GitHub Shell authentication](github-shell-auth.md) — the GitHub App connection is separate from cached HTTPS credentials used by Shell pushes.
