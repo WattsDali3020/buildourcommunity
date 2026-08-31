@@ -20,3 +20,10 @@ uri = "file://attached_assets/replit-version-control-click-here-corrected.png"
 type = "image"
 title = "Click this Git / Version Control icon"
 description = "The red circle marks the branching Git icon in the far-left toolbar. Click it to open the Git pane."
+
+[[outputs]]
+id = "yJ9FNF8PGeINZledBNVHL"
+uri = "file://attached_assets/click-nationwide-revitalization-project.png"
+type = "image"
+title = "Click this project first"
+description = "The red outline marks the recent project row labeled Nationwide Revitali… Open it to enter the project workspace."
