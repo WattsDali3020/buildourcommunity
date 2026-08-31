@@ -4,37 +4,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
 import {
   Wallet,
   ArrowUpRight,
   ArrowDownRight,
   TrendingUp,
-  Building2,
-  Users,
   ShieldCheck,
   PieChart,
   ExternalLink,
   Info,
   Clock,
   UserCheck,
-  Lock,
-  CalendarClock,
 } from "lucide-react";
 import { useState } from "react";
+import { isContractsDeployed } from "@/lib/contracts/addresses";
 
 const treasuryBalance = 0;
 const monthlyInflow = 0;
 const monthlyOutflow = 0;
-
-const founderCutBps = 100;
-const founderCutPercent = founderCutBps / 100;
+const founderCutPercent = 1;
 const totalDisbursed = 0;
-const founderCutAmount = Math.round(totalDisbursed * (founderCutPercent / 100));
-const vestingMonths = 24;
-const cliffMonths = 3;
-const vestingElapsedMonths = 0;
-const vestedPercent = 0;
+const founderCutAmount = 0;
+const contractsLive = isContractsDeployed();
 
 const allocationBreakdown = [
   { label: "Property Development", percentage: 40, amount: 0, color: "bg-primary" },
@@ -87,12 +78,12 @@ export default function Treasury() {
                 Community Treasury
               </h1>
               <p className="text-muted-foreground">
-                Transparent fund management for all community properties
+                2-of-3 multi-sig pass-through. Founder fee is paid by Escrow, not skimmed here.
               </p>
             </div>
             <Badge variant="outline" className="flex items-center gap-1 self-start">
               <ShieldCheck className="h-3.5 w-3.5" />
-              On-Chain Verified
+              {contractsLive ? "On-chain addresses set" : "Not live on Base yet"}
             </Badge>
           </div>
 
@@ -149,11 +140,7 @@ export default function Treasury() {
               <CardContent>
                 <div className="flex h-3 rounded-full overflow-hidden mb-6">
                   {allocationBreakdown.map((item) => (
-                    <div
-                      key={item.label}
-                      className={`${item.color}`}
-                      style={{ width: `${item.percentage}%` }}
-                    />
+                    <div key={item.label} className={`${item.color}`} style={{ width: `${item.percentage}%` }} />
                   ))}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -169,13 +156,11 @@ export default function Treasury() {
                     </div>
                   ))}
                 </div>
-
                 <div className="mt-6 p-3 rounded-md bg-primary/5 border border-primary/20 flex gap-2">
                   <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                   <p className="text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">Full transparency:</span>{" "}
-                    All treasury transactions are recorded on-chain. Fund allocations are governed
-                    by community proposals and DAO voting.
+                    <span className="font-medium text-foreground">Pass-through:</span>{" "}
+                    Treasury holds community funds. Allocations move only after governance. The founder 1% is not taken from this allocation table.
                   </p>
                 </div>
               </CardContent>
@@ -185,59 +170,33 @@ export default function Treasury() {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <UserCheck className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">Founder Sustainability</CardTitle>
+                  <CardTitle className="text-lg">Founder economics</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 text-center">
                   <p className="text-3xl font-bold text-primary" data-testid="text-founder-cut-percent">{founderCutPercent}%</p>
-                  <p className="text-xs text-muted-foreground mt-1">of treasury disbursements</p>
+                  <p className="text-xs text-muted-foreground mt-1">of gross at funding, if impact ≥ 70</p>
                 </div>
-
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Total disbursed</span>
+                    <span className="text-muted-foreground">On-chain disbursed</span>
                     <span className="font-medium" data-testid="text-total-disbursed">{formatCurrency(totalDisbursed)}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Founder cut (1%)</span>
+                    <span className="text-muted-foreground">Payment 1 accrued</span>
                     <span className="font-medium text-primary" data-testid="text-founder-cut-amount">{formatCurrency(founderCutAmount)}</span>
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <CalendarClock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Vesting Schedule</span>
-                  </div>
-                  <Progress value={vestedPercent} className="h-2" data-testid="progress-vesting" />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Month {vestingElapsedMonths} of {vestingMonths}</span>
-                    <span>{vestedPercent}% vested</span>
-                  </div>
-                </div>
-
                 <div className="space-y-1.5 text-xs text-muted-foreground">
-                  <div className="flex items-start gap-2">
-                    <Lock className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                    <span>90-day cliff before vesting begins</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CalendarClock className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                    <span>24-month linear vesting schedule</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <ShieldCheck className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                    <span>On-chain, capped, and fully auditable</span>
-                  </div>
+                  <p>Payment 1: 1% of gross in Escrow when the raise completes and Governance impact score is 70+.</p>
+                  <p>Payment 2: 1% of quarterly property income after the asset produces cash flow.</p>
+                  <p>No 24-month vest. No Treasury skim. No 5% platform cut.</p>
                 </div>
-
                 <div className="p-3 rounded-md bg-muted/50 border flex gap-2">
                   <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                   <p className="text-xs text-muted-foreground">
-                    The 1% founder cut is applied only to DAO-approved outflows.
-                    It is explicit in the Treasury smart contract, capped, and recorded
-                    on-chain for full transparency.
+                    Figures stay at $0 until contracts are deployed to Base and a property actually funds.
                   </p>
                 </div>
               </CardContent>
@@ -256,84 +215,37 @@ export default function Treasury() {
               </Tabs>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {filteredTransactions.map((tx) => (
-                  <div
-                    key={tx.id}
-                    className="flex items-center justify-between gap-4 p-4 rounded-md bg-muted/30"
-                    data-testid={`treasury-tx-${tx.id}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                          tx.type === "inflow"
-                            ? "bg-chart-1/10 text-chart-1"
-                            : "bg-chart-5/10 text-chart-5"
-                        }`}
-                      >
-                        {tx.type === "inflow" ? (
-                          <ArrowUpRight className="h-5 w-5" />
-                        ) : (
-                          <ArrowDownRight className="h-5 w-5" />
+              {filteredTransactions.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No on-chain treasury transactions yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {filteredTransactions.map((tx) => (
+                    <div key={tx.id} className="flex items-center justify-between gap-4 p-4 rounded-md bg-muted/30" data-testid={`treasury-tx-${tx.id}`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${tx.type === "inflow" ? "bg-chart-1/10 text-chart-1" : "bg-chart-5/10 text-chart-5"}`}>
+                          {tx.type === "inflow" ? <ArrowUpRight className="h-5 w-5" /> : <ArrowDownRight className="h-5 w-5" />}
+                        </div>
+                        <div>
+                          <span className="font-medium text-sm">{tx.description}</span>
+                          {tx.status === "pending" && (
+                            <Badge variant="secondary" className="text-xs ml-2"><Clock className="h-3 w-3" /> Pending</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`font-semibold text-sm ${tx.type === "inflow" ? "text-chart-1" : ""}`}>
+                          {tx.type === "inflow" ? "+" : "-"}{formatCurrency(tx.amount)}
+                        </span>
+                        {tx.txHash && (
+                          <Button variant="ghost" size="icon" onClick={() => window.open(`https://basescan.org/tx/${tx.txHash}`, "_blank")}>
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
                         )}
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-sm">{tx.description}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {tx.category}
-                          </Badge>
-                          {tx.status === "pending" && (
-                            <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              Pending
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 mt-0.5">
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(tx.date).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </p>
-                          {tx.founderCut && (
-                            <span className="text-xs text-primary" data-testid={`text-founder-cut-${tx.id}`}>
-                              1% founder: {formatCurrency(tx.founderCut)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`font-semibold text-sm ${
-                          tx.type === "inflow" ? "text-chart-1" : ""
-                        }`}
-                      >
-                        {tx.type === "inflow" ? "+" : "-"}
-                        {formatCurrency(tx.amount)}
-                      </span>
-                      {tx.txHash && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            window.open(
-                              `https://basescan.org/tx/${tx.txHash}`,
-                              "_blank"
-                            )
-                          }
-                          data-testid={`button-view-treasury-tx-${tx.id}`}
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
