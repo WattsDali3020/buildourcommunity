@@ -27,3 +27,10 @@ uri = "file://attached_assets/click-nationwide-revitalization-project.png"
 type = "image"
 title = "Click this project first"
 description = "The red outline marks the recent project row labeled Nationwide Revitali… Open it to enter the project workspace."
+
+[[outputs]]
+id = "pAWpCZWfrpg33DJBFThJ1"
+uri = "file://attached_assets/click-projects-menu.png"
+type = "image"
+title = "Click Projects, not New Task"
+description = "The red outline marks Projects in the upper-left navigation. Use it to open your Replit project list."
