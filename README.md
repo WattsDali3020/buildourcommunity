@@ -5,21 +5,23 @@
 RevitaHub is a blockchain-powered platform that enables communities to collectively invest in distressed properties and transform them into neighborhood assets. Built on Base with Chainlink oracles, it uses fractional tokenization to lower the barrier to real estate investment — starting at just $12.50 per token.
 
 > Solo Founder: **Build Our Community, LLC**
+>
+> Status: **Alpha prototype**. Pins are RevitaHub properties only. Smart contracts are implemented in-repo; Base Sepolia/mainnet addresses are not live until `deployment-addresses.json` is updated off Hardhat.
 
 ---
 
 ## Key Features
 
-- **$12.50 Minimum Token Pricing** — Broad financial inclusion through fractional property ownership
+- **$12.50 Minimum Token Pricing** — County-phase fractional ownership (KYC / whitelist required before mint)
 - **4-Phase Pricing Ramp** — County ($12.50) → State ($18.75) → National ($28.13) → International ($37.50)
-- **DAO Governance** — Token-weighted voting with gasless EIP-712 signatures for mass participation
-- **2-of-3 Multi-Sig Treasury** — Institutional-grade fund management with 1% founder economics (24-month vesting, 90-day cliff)
-- **KYC/AML Compliance** — Automated oracle-based compliance checks on every purchase
-- **Investor Protection** — 3% APR refund calculation for unfunded properties
-- **Professional Marketplace** — Verified contractors, realtors, attorneys, and more matched to projects
+- **DAO Governance** — Token-weighted voting with gasless EIP-712 signatures
+- **2-of-3 Multi-Sig Treasury** — Pass-through treasury. Does **not** skim the founder fee
+- **Impact-gated founder economics** — Escrow Payment 1 = 1% of gross **only if** the offering funds **and** Governance impact score ≥ 70. Payment 2 = 1% of quarterly property income. No 24-month Treasury vest. No 5% platform cut
+- **KYC/AML Compliance** — Checks on every purchase; transfers locked until funded
+- **Investor Protection** — 3% APR refund if an offering misses its target
+- **Professional Marketplace** — Verified contractors, realtors, attorneys, and more
 - **Impact Simulator** — Georgia county-level GDP projections and adoption scenarios
-- **RevitaLeague Gamification** — Community engagement through SimCity-inspired meters
-- **Community Wishlist** — Zip-code-driven business voting and community needs
+- **Community Wishlist** — Zip-code-driven nominations and needs
 
 ---
 
@@ -29,7 +31,7 @@ RevitaHub is a blockchain-powered platform that enables communities to collectiv
 - React 18 + TypeScript
 - Tailwind CSS + shadcn/ui
 - Wouter (routing) + TanStack React Query v5
-- Leaflet + Mapbox GL (interactive maps)
+- Leaflet + OpenStreetMap tiles by default (MapKit JS when `MAPKIT_JS_TOKEN` is set)
 - RainbowKit + wagmi (wallet connection)
 
 ### Backend
@@ -53,19 +55,19 @@ Five core contracts with full role-based access control:
 | Contract | Purpose |
 |----------|---------|
 | **PropertyToken.sol** | ERC-1155 tokens with phase-based voting power, transfer locks, LLC-backed property structs |
-| **Escrow.sol** | Token purchases, 3% APR refunds, AML oracle integration, suspicious activity flagging |
-| **Governance.sol** | DAO voting with phase-weighted power, EIP-712 gasless signatures, quorum enforcement |
-| **PhaseManager.sol** | Chainlink Automation for phase advancement, geo-verification oracles, engagement bonuses |
-| **Treasury.sol** | 2-of-3 multi-sig, 1% founder vesting (24mo/90-day cliff), Chainlink reserve verification, relayer reimbursement |
+| **Escrow.sol** | Purchases, 3% APR refunds, AML gate, impact-gated 1% Payment 1 + quarterly Payment 2 |
+| **Governance.sol** | DAO voting, EIP-712 gasless signatures, demand bars, impact report |
+| **PhaseManager.sol** | 75% engagement threshold, Chainlink Automation, geo bonuses |
+| **Treasury.sol** | 2-of-3 multi-sig pass-through, relayer reimbursement, reserve verification |
 
-### Build Gap Enhancements (All Implemented)
+### Build Gap Enhancements (All Implemented in source)
 
-1. **AML/KYC Oracle** (Escrow.sol) — Automated compliance scoring on purchases (threshold: 80)
-2. **EIP-712 Gasless Voting** (Governance.sol) — Off-chain signatures for zero-cost participation
-3. **Suspicious Activity Flagging** (Escrow.sol) — Automated via AML oracle + manual reporting
-4. **Geo-Verification** (PhaseManager.sol) — County-local 1.5x bonus tokens via oracle
-5. **LLC-Backed Properties** (PropertyToken.sol) — Custodian address + LLC identifier per property
-6. **Multi-Sig Treasury** (Treasury.sol) — 2-of-3 with founder vesting + reserve verification
+1. **AML/KYC Oracle** (Escrow.sol) — Compliance scoring on purchases
+2. **EIP-712 Gasless Voting** (Governance.sol)
+3. **Suspicious Activity Flagging** (Escrow.sol)
+4. **Geo-Verification** (PhaseManager.sol) — County-local bonus via oracle
+5. **LLC-Backed Properties** (PropertyToken.sol)
+6. **Multi-Sig Treasury** (Treasury.sol) — Pass-through only; founder fee lives in Escrow
 
 ---
 
@@ -75,6 +77,7 @@ Five core contracts with full role-based access control:
 - Node.js 18+
 - PostgreSQL database
 - Base Sepolia ETH (for testnet deployment)
+- `PRIVATE_KEY` in env — never commit it
 
 ### Run Locally
 ```bash
@@ -84,67 +87,41 @@ npm run dev
 
 ### Deploy Smart Contracts
 ```bash
-# Compile
 npx hardhat compile
-
-# Deploy to Base Sepolia
 npx hardhat run scripts/deploy.cjs --network base-sepolia
-
-# Deploy to local Hardhat network (for testing)
 npx hardhat run scripts/deploy.cjs --network hardhat
 ```
 
 **Deployment Order** (handled automatically by script):
 1. PropertyToken → 2. Escrow → 3. Governance → 4. PhaseManager → 5. Treasury
 
-Post-deployment role assignments are automated in the deploy script. Contract addresses are saved to `deployment-addresses.json`.
+Post-deployment role assignments are automated. Contract addresses are saved to `deployment-addresses.json`.
+
+`deployment-addresses.json` currently records a **Hardhat local** deploy (chainId 31337). Treat zero-addresses in `client/src/lib/contracts/addresses.ts` as not-live.
+
+---
+
+## Maps and property data
+
+See `docs/MAPKIT_AND_PROPERTY_DATA.md`.
+
+- Apple MapKit JS requires a paid Apple Developer Program token in Replit Secret `MAPKIT_JS_TOKEN`.
+- Until that token exists, the hero map uses OpenStreetMap tiles (no vendor key).
+- Apple does not supply parcels, owners, or offerings. Pins come from Postgres; parcel geometry from Cherokee County GIS when a nomination is confirmed.
 
 ---
 
 ## Project Structure
 
 ```
-├── client/src/          # React frontend (34 pages)
-│   ├── pages/           # Page components
-│   ├── components/      # Shared UI components
-│   └── lib/             # Utilities and hooks
-├── server/              # Express backend (100+ API endpoints)
-│   ├── routes.ts        # API route definitions
-│   ├── storage.ts       # Database storage interface
-│   └── index.ts         # Server entry point
-├── shared/              # Shared types and schema
-│   └── schema.ts        # Drizzle ORM schema (35 tables)
-├── contracts/           # Solidity smart contracts
-│   ├── PropertyToken.sol
-│   ├── Escrow.sol
-│   ├── Governance.sol
-│   ├── PhaseManager.sol
-│   └── Treasury.sol
-├── scripts/             # Deployment scripts
-│   └── deploy.cjs       # Main deployment script
-└── hardhat.config.cjs   # Hardhat configuration
+├── client/src/          # React frontend
+├── server/              # Express backend
+├── shared/              # Drizzle schema
+├── contracts/           # Five Solidity contracts
+├── scripts/             # deploy.cjs
+├── docs/                # MapKit + property-data notes
+└── hardhat.config.cjs
 ```
-
----
-
-## Platform Stats
-
-- **34 pages** — Full-featured web application
-- **100+ API endpoints** — RESTful JSON API
-- **35 database tables** — Comprehensive data model
-- **5 smart contracts** — Complete on-chain architecture
-- **8 professional license types** — Contractor, realtor, attorney, engineer, architect, lender, inspector, appraiser
-
----
-
-## Chainlink Integration
-
-RevitaHub is built within the **Chainlink Build Program**, leveraging:
-
-- **Chainlink Oracles** — AML/KYC scoring and geo-verification for phase eligibility
-- **Chainlink Automation** — Automated phase advancement based on subscription thresholds
-- **Chainlink Functions** — Reserve verification for LLC-backed properties
-- **Cross-chain** — Future multi-chain expansion capability
 
 ---
 
