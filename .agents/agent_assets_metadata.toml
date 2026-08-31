@@ -13,3 +13,10 @@ uri = "file://attached_assets/replit-git-pane.jpg"
 type = "image"
 title = "Replit Git / Version Control pane"
 description = "Public Replit reference image showing the Git pane. Open Version Control from the left sidebar in your Repl, then use Push to GitHub."
+
+[[outputs]]
+id = "v44jxuqTEfyvqfAgpFXFe"
+uri = "file://attached_assets/replit-version-control-click-here-corrected.png"
+type = "image"
+title = "Click this Git / Version Control icon"
+description = "The red circle marks the branching Git icon in the far-left toolbar. Click it to open the Git pane."
