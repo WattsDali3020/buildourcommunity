@@ -34,3 +34,10 @@ uri = "file://attached_assets/click-projects-menu.png"
 type = "image"
 title = "Click Projects, not New Task"
 description = "The red outline marks Projects in the upper-left navigation. Use it to open your Replit project list."
+
+[[outputs]]
+id = "Ii3umk_ieuo3Xs8VvPkms"
+uri = "file://attached_assets/click-push-to-github.png"
+type = "image"
+title = "Click Push here"
+description = "The red outline marks the Push button in the Git pane. Click it to send the Repl commits to GitHub."
