@@ -6,3 +6,10 @@ id = "A7_IkdKVHiPt7RQbuuIS3"
 uri = "file://RevitaHub-Litepaper-v3.4.pdf"
 type = "pdf"
 title = "RevitaHub Litepaper v3.4"
+
+[[outputs]]
+id = "vf5-0WYp2iN6H6zD1-AzC"
+uri = "file://attached_assets/replit-git-pane.jpg"
+type = "image"
+title = "Replit Git / Version Control pane"
+description = "Public Replit reference image showing the Git pane. Open Version Control from the left sidebar in your Repl, then use Push to GitHub."
