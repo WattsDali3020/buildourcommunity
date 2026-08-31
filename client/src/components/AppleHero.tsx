@@ -13,6 +13,11 @@ import type { Property as DBProperty } from "@shared/schema";
 
 const GA_COUNTIES_TOPOJSON_URL = "https://raw.githubusercontent.com/deldersveld/topojson/master/countries/us-states/GA-13-georgia-counties.json";
 
+type PropertyWithCoordinates = DBProperty & {
+  latitude?: string | number | null;
+  longitude?: string | number | null;
+};
+
 const GA_CITY_COORDS: Record<string, [number, number]> = {
   "Canton": [34.2368, -84.4908],
   "Atlanta": [33.7490, -84.3880],
@@ -131,10 +136,11 @@ export function AppleHero() {
     properties.forEach((prop) => {
       let lat: number;
       let lng: number;
+      const propertyWithCoordinates = prop as PropertyWithCoordinates;
 
-      if (prop.latitude != null && prop.longitude != null) {
-        const parsedLat = parseFloat(String(prop.latitude));
-        const parsedLng = parseFloat(String(prop.longitude));
+      if (propertyWithCoordinates.latitude != null && propertyWithCoordinates.longitude != null) {
+        const parsedLat = parseFloat(String(propertyWithCoordinates.latitude));
+        const parsedLng = parseFloat(String(propertyWithCoordinates.longitude));
         if (Number.isFinite(parsedLat) && Number.isFinite(parsedLng)) {
           lat = parsedLat;
           lng = parsedLng;

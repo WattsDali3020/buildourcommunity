@@ -22,55 +22,34 @@ your-project/
 ## Contracts Overview
 
 ### 1. PropertyToken.sol (ERC-1155)
-Fractional property ownership tokens with:
-- ERC1155Supply for total supply tracking
-- ERC1155Burnable for token burning on failed offerings
-- EnumerableSet for property enumeration
-- Phase-based pricing ($12.50 base, increasing through phases)
-- Whitelist-only transfers (KYC compliance)
-- Phase-weighted voting power multipliers
+Fractional property ownership tokens with phase-based pricing, whitelist-only transfers, transfer locks until funded, and phase-weighted voting power.
 
 ### 2. Escrow.sol
 Purchase and refund handling with:
-- 100% funding requirement enforcement
-- 3% APR refund calculation for failed offerings
-- Chainlink Automation for deadline monitoring
-- Multi-signature fund release
+- 100% funding requirement
+- 3% APR refund if the offering fails
+- AML / sanctions gate on purchase
+- **Payment 1:** 1% of gross to founderWallet only if funding completes **and** Governance impact score ≥ 70
+- **Payment 2:** 1% of quarterly property income
+- Treasury does not take this fee
 
 ### 3. Governance.sol
-DAO voting system with:
-- Phase-weighted voting (County 1.5x, State 1.25x, National 1.0x, International 0.75x)
-- Proposal types: Property Development, Treasury, Parameters, Emergency
-- Weighted quorum calculation (votes vs weighted supply)
-- Vote-to-earn bonus APR tracking
+DAO voting with phase-weighted power (County 1.5x … International 0.75x), EIP-712 gasless votes, demand bars, impact report used by Escrow.
 
 ### 4. PhaseManager.sol
-Dynamic phase advancement with:
-- 75% engagement threshold for early advancement
-- Behavioral nudge event triggers
-- Chainlink Automation integration
-- Subscription-based advancement (when phase sells out)
+75% engagement threshold, poll bonuses, Chainlink Automation, geo-oracle local bonus.
+
+### 5. Treasury.sol
+2-of-3 multi-sig pass-through, relayer reimbursement, reserve verification. No founder vest schedule on this contract.
 
 ## Deployment
 
-### Prerequisites
-- Node.js 18+
-- Hardhat with toolbox
-- OpenZeppelin Contracts 5.0+
-
-### Setup
 ```bash
-# Install dependencies
 npm install
-
-# Copy environment template
 cp .env.example .env
-# Edit .env with your PRIVATE_KEY and other values
-```
-
-### Compile
-```bash
 npx hardhat compile
+npx hardhat run scripts/deploy.cjs --network hardhat
+npx hardhat run scripts/deploy.cjs --network base-sepolia
 ```
 
 ### Deploy (Local)
@@ -106,6 +85,10 @@ To be populated after deployment.
 - **Price Feeds**: USD/ETH for accurate token pricing
 - **Automation**: Deadline monitoring and phase advancement
 - **CCIP**: Cross-chain expansion (future)
+
+Order: PropertyToken → Escrow → Governance → PhaseManager → Treasury.
+
+`deployment-addresses.json` in repo root is currently Hardhat local (chainId 31337) unless replaced after a Sepolia deploy.
 
 ## License
 MIT

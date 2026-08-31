@@ -825,8 +825,8 @@
       ]
     },
     "/home/runner/workspace/contracts/PropertyToken.sol": {
-      "lastModificationDate": 1772923965378,
-      "contentHash": "296e2b782bdfa061f3312bdb755f4154",
+      "lastModificationDate": 1788184149097,
+      "contentHash": "55182a70fbbce4114c710822b5858250",
       "sourceName": "contracts/PropertyToken.sol",
       "solcConfig": {
         "version": "0.8.24",

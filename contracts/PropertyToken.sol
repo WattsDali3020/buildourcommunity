@@ -12,7 +12,9 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 /**
  * @title RevitaHub Property Token
  * @notice ERC-1155 token for fractional real estate ownership
- * @dev Implements phase-based pricing, whitelist transfers, and per-property supply limits
+ * @dev Implements phase-based pricing, permanent permissioned transfers (hybrid model),
+ *      and per-property supply limits. Transfers remain gated for the life of the interest.
+ *      See docs/HYBRID_TOKEN_DESIGN_DECISION.md
  */
 contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl, Pausable, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -542,8 +544,53 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         );
     }
 
+    // ============ Hybrid Permissioned Transfer Gate ============
+
     /**
-     * @notice Override transfer to enforce whitelist, funding lock, and maintain phase tracking
+     * @notice Permanent transfer eligibility check (hybrid model)
+     * @dev Transfers remain gated for the life of the interest. Funding status is no longer a cliff.
+     *      Both parties must remain on the whitelist and have recorded KYC verification.
+     *      Additional permanent rules (lock-ups, community thresholds, offering-specific restrictions)
+     *      can be layered here without changing the public posture.
+     * @param propertyId Property being transferred
+     * @param from Sender
+     * @param to Recipient
+     * @return allowed Whether the transfer is permitted under current compliance rules
+     */
+    function isTransferAllowed(
+        uint256 propertyId,
+        address from,
+        address to,
+        uint256 /* amount */
+    ) public view returns (bool) {
+        // Minting and burning are not restricted by this gate
+        if (from == address(0) || to == address(0)) {
+            return true;
+        }
+
+        // Both parties must remain eligible
+        if (!whitelist[to] || !whitelist[from]) {
+            return false;
+        }
+
+        // Ongoing KYC status must be present (using existing storage)
+        if (kycVerificationIds[to] == bytes32(0) || kycVerificationIds[from] == bytes32(0)) {
+            return false;
+        }
+
+        // Property must still be active
+        if (!properties[propertyId].isActive) {
+            return false;
+        }
+
+        // Future permanent rules (lock-ups, community thresholds, etc.) go here
+        return true;
+    }
+
+    /**
+     * @notice Override transfer to enforce permanent permissioned rules and maintain phase tracking
+     * @dev Hybrid model: transfers stay gated for the life of the interest.
+     *      Removed the old funding-cliff require(properties[propertyId].isFunded).
      */
     function _update(
         address from,
@@ -551,16 +598,14 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         uint256[] memory ids,
         uint256[] memory values
     ) internal virtual override(ERC1155, ERC1155Supply) whenNotPaused {
-        // Allow minting (from == address(0)) and burning (to == address(0))
-        // For regular transfers, enforce whitelist AND funding completion
+        // Permanent permissioned gate for regular transfers
         if (from != address(0) && to != address(0)) {
-            // Check each property being transferred
             for (uint256 i = 0; i < ids.length; i++) {
-                uint256 propertyId = ids[i];
-                // Block transfers until property is fully funded (investor protection)
-                require(properties[propertyId].isFunded, "Transfers locked during funding");
+                require(
+                    isTransferAllowed(ids[i], from, to, values[i]),
+                    "Transfer not permitted under compliance rules"
+                );
             }
-            require(whitelist[to], "Recipient not whitelisted");
         }
         
         // Handle transfers and burns - update holdingsByPhase

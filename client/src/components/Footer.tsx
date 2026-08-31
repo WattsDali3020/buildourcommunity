@@ -40,8 +40,8 @@ export function Footer() {
             <p className="text-sm text-muted-foreground max-w-xs mb-4">
               A Build Our Community, LLC project. Transforming vacant properties into thriving community assets through blockchain-enabled fractional ownership.
             </p>
-            <a 
-              href="https://buildourcommunity.co" 
+            <a
+              href="https://buildourcommunity.co"
               className="text-sm text-primary hover:underline mb-4 inline-block"
               data-testid="link-footer-website"
             >
@@ -56,8 +56,10 @@ export function Footer() {
               <Button variant="ghost" size="icon" data-testid="link-social-discord">
                 <SiDiscord className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" data-testid="link-social-github">
-                <SiGithub className="h-5 w-5" />
+              <Button variant="ghost" size="icon" asChild data-testid="link-social-github">
+                <a href="https://github.com/WattsDali3020/buildourcommunity" target="_blank" rel="noopener noreferrer">
+                  <SiGithub className="h-5 w-5" />
+                </a>
               </Button>
             </div>
           </div>
@@ -132,7 +134,12 @@ export function Footer() {
             </div>
           </div>
           <p className="text-xs text-muted-foreground/70 text-center max-w-3xl mx-auto">
-            RevitaHub is a technology platform operated by Build Our Community, LLC (Georgia). Each property is held in a separate Special Purpose Vehicle (SPV). Tokens represent interests in property SPVs. All economics enforced by smart contracts — Treasury 1% founder cut is immutable and on-chain. This is not an offer to sell securities. Platform functionality is in development.
+            RevitaHub is a technology platform operated by Build Our Community, LLC (Georgia).
+            Each property is held in a separate Special Purpose Vehicle (SPV). Tokens represent interests in property SPVs.
+            Founder economics: Escrow pays 1% of gross at funding only if Governance impact score is 70 or higher, plus 1% of quarterly property income.
+            Treasury is a 2-of-3 multi-sig pass-through and does not skim that fee.
+            This is not an offer to sell securities. Cherokee County alpha — map pins are RevitaHub properties only, not every parcel.
+            On-chain addresses are not live on Base until published in deployment-addresses.json.
           </p>
         </div>
       </div>

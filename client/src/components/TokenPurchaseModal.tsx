@@ -41,7 +41,7 @@ export function TokenPurchaseModal({
   const [tokenCount, setTokenCount] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<"card" | "usdc">("card");
 
-  const pricePerToken = activePhase ? parseFloat(activePhase.pricePerToken) : 0;
+  const pricePerToken = activePhase ? parseFloat(activePhase.currentPrice) : 0;
   const totalAmount = tokenCount * pricePerToken;
   const maxTokens = activePhase?.maxTokensPerPerson || 100;
 

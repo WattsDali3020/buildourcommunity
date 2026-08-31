@@ -20,6 +20,7 @@ import {
   Cpu,
   CheckCircle2,
   Shield,
+  Lock,
 } from "lucide-react";
 import type { User as UserType } from "@shared/schema";
 
@@ -31,16 +32,22 @@ const riskCategories = [
       "Real estate markets are subject to cyclical fluctuations. Property values may decline due to economic downturns, changes in local market conditions, oversupply, reduced demand, or shifts in demographic patterns. Token values are directly tied to underlying property performance and may not reflect broader market trends.",
   },
   {
-    title: "Liquidity Risk",
+    title: "Liquidity Risk — Permanent Permissioned Transfers",
     icon: Droplets,
     description:
-      "Property-backed tokens may have limited secondary market liquidity. You may not be able to sell or transfer your tokens when desired, or may only be able to do so at a significant discount. Transfer restrictions apply during active funding phases, and there is no guarantee that a liquid market will develop for any token offering.",
+      "These tokens are designed for long-term community ownership and governance, not short-term trading. Transfers are permanently permissioned: both sender and recipient must remain eligible under ongoing KYC/AML and compliance rules. There is no free or unrestricted secondary market by default. You should be prepared to hold the tokens for an extended period. The ability to sell or transfer may be delayed, restricted, or unavailable depending on compliance status, lock-up periods, community or offering thresholds, and market conditions. Do not invest money you cannot afford to lock up. Funding completion does not create free transferability.",
+  },
+  {
+    title: "Ownership and Governance Model",
+    icon: Lock,
+    description:
+      "Tokens represent fractional membership interests (or beneficial rights) in a special-purpose vehicle that holds legal title to real property. They are securities. Primary activity on the platform is voting, nomination, and demand signaling — not secondary market volume. Phase-weighted and geographically weighted voting gives stronger voice to earlier and more local participants. Governance outcomes can affect real property use and community outcomes.",
   },
   {
     title: "Regulatory Risk",
     icon: Scale,
     description:
-      "The regulatory landscape for tokenized securities and blockchain-based real estate is evolving. Changes in federal, state, or local laws — including SEC regulations, state blue sky laws, and tax treatment — could adversely affect the platform, token values, or your ability to participate. Offerings may be restricted or prohibited in certain jurisdictions.",
+      "The regulatory landscape for tokenized securities and blockchain-based real estate is evolving. Changes in federal, state, or local laws — including SEC regulations, state blue sky laws, and tax treatment — could adversely affect the platform, token values, or your ability to participate. Offerings may be restricted or prohibited in certain jurisdictions. Tokenization does not change the economic substance analysis under U.S. securities law.",
   },
   {
     title: "Smart Contract Risk",
@@ -142,7 +149,8 @@ export default function RiskDisclosure() {
                 Investing in tokenized real estate through RevitaHub involves significant risks.
                 You should carefully consider the following risk factors before making any investment decision.
                 This is not an exhaustive list of all risks. You should consult with qualified financial,
-                legal, and tax advisors before investing.
+                legal, and tax advisors before investing. These interests are designed for long-term community
+                ownership and governance. Transfers remain permissioned for the life of the interest.
               </p>
             </CardContent>
           </Card>
@@ -197,7 +205,8 @@ export default function RiskDisclosure() {
                     <p className="font-medium mb-1">Investor Acknowledgment Required</p>
                     <p className="text-sm text-muted-foreground">
                       Before participating in any token offering, you must acknowledge that you have read
-                      and understood the risk factors described above.
+                      and understood the risk factors described above, including the permanent permissioned
+                      nature of transfers and the illiquidity of these interests.
                     </p>
                   </div>
                 </div>
@@ -210,7 +219,9 @@ export default function RiskDisclosure() {
                     data-testid="checkbox-acknowledge-risks"
                   />
                   <label htmlFor="acknowledge-risks" className="text-sm leading-relaxed cursor-pointer">
-                    I confirm that I have read and understood all risk factors described in this Risk Disclosure.
+                    I confirm that I have read and understood all risk factors described in this Risk Disclosure,
+                    including that transfers remain permanently permissioned, that liquidity is not guaranteed,
+                    and that these interests are designed for long-term community ownership and governance.
                     I understand that investing in tokenized real estate involves significant risks, including the
                     potential loss of my entire investment. I acknowledge that RevitaHub does not provide investment
                     advice and that I should consult with qualified professionals before investing.

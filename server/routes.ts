@@ -379,7 +379,7 @@ export async function registerRoutes(
       if (!submission) {
         return res.status(404).json({ error: "Submission not found" });
       }
-      if (submission.userId !== req.session.userId) {
+      if (submission.ownerId !== req.session.userId) {
         return res.status(403).json({ error: "You can only edit your own submissions" });
       }
       
@@ -396,7 +396,7 @@ export async function registerRoutes(
       if (!submission) {
         return res.status(404).json({ error: "Submission not found" });
       }
-      if (submission.userId !== req.session.userId) {
+      if (submission.ownerId !== req.session.userId) {
         return res.status(403).json({ error: "You can only submit your own submissions" });
       }
       
@@ -443,7 +443,7 @@ export async function registerRoutes(
       if (!submission) {
         return res.status(404).json({ error: "Submission not found" });
       }
-      if (submission.userId !== req.session.userId) {
+      if (submission.ownerId !== req.session.userId) {
         return res.status(403).json({ error: "You can only add documents to your own submissions" });
       }
       
@@ -478,7 +478,7 @@ export async function registerRoutes(
     if (!submission) {
       return res.status(404).json({ error: "Submission not found" });
     }
-    if (submission.userId !== req.session.userId) {
+    if (submission.ownerId !== req.session.userId) {
       return res.status(403).json({ error: "You can only delete documents from your own submissions" });
     }
     const deleted = await storage.deleteSubmissionDocument(req.params.docId);
@@ -1839,7 +1839,7 @@ export async function registerRoutes(
 
         // Idempotency check: verify this payment hasn't been processed already
         const existingPurchase = await storage.getPurchaseByPaymentIntentId(paymentIntent.id);
-        if (existingPurchase && existingPurchase.status === "completed") {
+        if (existingPurchase && existingPurchase.status === "confirmed") {
           console.log(`[Webhook] Payment ${paymentIntent.id} already completed - skipping`);
           return res.status(200).json({ received: true, processed: true, duplicate: true });
         }
@@ -1892,8 +1892,8 @@ export async function registerRoutes(
 
         // Update existing purchase status or create completed record
         if (existingPurchase && existingPurchase.status === "pending") {
-          // Update purchase status to completed (existing pending purchase from /api/purchase)
-          await storage.updatePurchaseStatus(existingPurchase.id, "completed");
+          // Confirm the existing pending purchase from /api/purchase.
+          await storage.updatePurchaseStatus(existingPurchase.id, "confirmed");
         } else if (!existingPurchase) {
           // Create new purchase record if none exists (shouldn't happen normally, but handle edge case)
           await storage.createPurchase({
@@ -1905,7 +1905,7 @@ export async function registerRoutes(
             totalAmount: String(amount),
             paymentMethod: "card",
             paymentIntentId: paymentIntent.id,
-            status: "completed",
+            status: "confirmed",
           });
         }
 

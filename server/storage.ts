@@ -283,6 +283,8 @@ export class MemStorage implements IStorage {
       country: userData.country ?? existing?.country ?? "USA",
       kycStatus: userData.kycStatus ?? existing?.kycStatus ?? "pending",
       kycVerifiedAt: userData.kycVerifiedAt ?? existing?.kycVerifiedAt ?? null,
+      riskDisclosureAcknowledgedAt: existing?.riskDisclosureAcknowledgedAt ?? null,
+      emailNotificationsEnabled: existing?.emailNotificationsEnabled ?? true,
       role: userData.role ?? existing?.role ?? "user",
       createdAt: existing?.createdAt ?? new Date(),
       updatedAt: new Date(),
@@ -384,6 +386,7 @@ export class MemStorage implements IStorage {
       offeringType: insertOffering.offeringType ?? "public",
       accessCode: insertOffering.accessCode ?? null,
       createdAt: new Date(),
+      deletedAt: null,
     };
     this.tokenOfferings.set(id, offering);
     return offering;
@@ -660,6 +663,7 @@ export class MemStorage implements IStorage {
       averagePurchasePrice: data.averagePurchasePrice,
       votingPower,
       updatedAt: new Date(),
+      deletedAt: null,
     };
     this.tokenHoldings.set(id, holding);
     return holding;
@@ -703,6 +707,7 @@ export class MemStorage implements IStorage {
       averagePurchasePrice: pricePerToken.toFixed(2),
       votingPower,
       updatedAt: new Date(),
+      deletedAt: null,
     };
     this.tokenHoldings.set(id, holding);
     return holding;
@@ -736,6 +741,7 @@ export class MemStorage implements IStorage {
       startsAt: insertProposal.startsAt ?? null,
       endsAt: insertProposal.endsAt ?? null,
       createdAt: new Date(),
+      deletedAt: null,
     };
     this.proposals.set(id, proposal);
     return proposal;

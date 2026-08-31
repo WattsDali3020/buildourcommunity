@@ -30,3 +30,7 @@ export const getAddresses = (network: Network = "baseSepolia") => CONTRACT_ADDRE
 
 export const ESCROW_ADDRESS = CONTRACT_ADDRESSES.baseSepolia.escrow as `0x${string}`;
 export const GOVERNANCE_ADDRESS = CONTRACT_ADDRESSES.baseSepolia.governance as `0x${string}`;
+
+export function isContractsDeployed(network: Network = "baseSepolia"): boolean {
+  return Object.values(CONTRACT_ADDRESSES[network]).every((address) => address !== ZERO_ADDRESS);
+}

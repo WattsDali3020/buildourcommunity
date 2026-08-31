@@ -763,7 +763,7 @@ export default function AdminPanel() {
                       const matches = offeringMatches[offering.id] || [];
                       const isExpanded = expandedOffering === offering.id;
                       const property = properties.find(p => p.id === offering.propertyId);
-                      const matchedRoles = [...new Set(matches.map(m => m.roleNeeded))];
+                      const matchedRoles = Array.from(new Set(matches.map(m => m.roleNeeded)));
                       const allRoles = ROLES.map(r => r.value);
                       const missingRoles = allRoles.filter(r => !matchedRoles.includes(r));
 
