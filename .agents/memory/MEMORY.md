@@ -1,0 +1,1 @@
+- [GitHub connector runtime](github-connector-runtime.md) — sandbox GitHub connections expose authenticated requests through proxyFetch on the listed connection.
