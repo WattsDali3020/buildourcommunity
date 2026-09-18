@@ -37,6 +37,7 @@ import ProfessionalApply from "@/pages/professional-apply";
 import ProfessionalDashboard from "@/pages/professional-dashboard";
 import RevitaScore from "@/pages/revitascore";
 import Litepaper from "@/pages/litepaper";
+import CherokeeCommandPage from "@/pages/cherokee-command";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -63,6 +64,7 @@ function Router() {
       <Route path="/business" component={BusinessLayer} />
       <Route path="/grants" component={Grants} />
       <Route path="/demand" component={DemandDashboard} />
+      <Route path="/command" component={CherokeeCommandPage} />
       <Route path="/founder" component={FounderDashboard} />
       <Route path="/treasury" component={Treasury} />
       <Route path="/transfers" component={Transfers} />
