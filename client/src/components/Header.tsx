@@ -13,6 +13,7 @@ const PROFESSIONAL_ROLES = ["contractor", "realtor", "attorney", "engineer", "ar
 const basePublicNavLinks = [
   { href: "/", label: "Home" },
   { href: "/explore", label: "Explore" },
+  { href: "/command", label: "Command" },
   { href: "/community", label: "Community" },
   { href: "/participate", label: "Participate" },
   { href: "/learn", label: "Learn" },
