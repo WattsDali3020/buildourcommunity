@@ -1,12 +1,16 @@
 # RevitaHub — AI-Nudged RevitalDAO
 
-**Community-owned real estate revitalization on Base (Coinbase L2)**
+**Status: Alpha / waitlist prototype. Smart contracts are in-repo. They are not live on Base mainnet.**
 
-RevitaHub is a blockchain-powered platform that enables communities to collectively invest in distressed properties and transform them into neighborhood assets. Built on Base with Chainlink oracles, it uses fractional tokenization to lower the barrier to real estate investment — starting at just $12.50 per token.
+`deployment-addresses.json` currently records a Hardhat local deploy (chainId 31337). Treat zero-addresses in `client/src/lib/contracts/addresses.ts` as not-live. Do not read this README as a live county GDP, escrow, or ownership claim.
+
+RevitaHub is a community demand + owner-consent layer for fractional real estate interests held in an SPV. County-phase tickets start at $12.50. Target chain is Base with Chainlink oracles when addresses are actually deployed.
 
 > Solo Founder: **Build Our Community, LLC**
 >
-> Status: **Alpha prototype**. Pins are RevitaHub properties only. Smart contracts are implemented in-repo; Base Sepolia/mainnet addresses are not live until `deployment-addresses.json` is updated off Hardhat.
+> Pins are RevitaHub records only. Escrow does not move until PhaseManager crosses 75% and an offering actually funds.
+
+See `docs/CONCISE_LOOP.md` for the five-stock public model.
 
 ---
 
@@ -17,11 +21,10 @@ RevitaHub is a blockchain-powered platform that enables communities to collectiv
 - **DAO Governance** — Token-weighted voting with gasless EIP-712 signatures
 - **2-of-3 Multi-Sig Treasury** — Pass-through treasury. Does **not** skim the founder fee
 - **Impact-gated founder economics** — Escrow Payment 1 = 1% of gross **only if** the offering funds **and** Governance impact score ≥ 70. Payment 2 = 1% of quarterly property income. No 24-month Treasury vest. No 5% platform cut
-- **KYC/AML Compliance** — Checks on every purchase; transfers locked until funded
+- **KYC/AML Compliance** — Checks on every purchase; transfers remain permissioned
 - **Investor Protection** — 3% APR refund if an offering misses its target
-- **Professional Marketplace** — Verified contractors, realtors, attorneys, and more
-- **Impact Simulator** — Georgia county-level GDP projections and adoption scenarios
-- **Community Wishlist** — Zip-code-driven nominations and needs
+- **Mix + threshold on every pin** — jobs / missing-middle / mixed-use / service vs parked housing-only; X KYC’d votes to form; ~$Y toward escrow if it forms
+- **Community nominations** — Non-owners nominate; owners consent before tokenize
 
 ---
 
@@ -93,11 +96,9 @@ npx hardhat run scripts/deploy.cjs --network hardhat
 ```
 
 **Deployment Order** (handled automatically by script):
-1. PropertyToken → 2. Escrow → 3. Governance → 4. PhaseManager → 5. Treasury
+1. PropertyToken → 2. Escrow → 3. Governance ↔ 4. PhaseManager → 5. Treasury
 
 Post-deployment role assignments are automated. Contract addresses are saved to `deployment-addresses.json`.
-
-`deployment-addresses.json` currently records a **Hardhat local** deploy (chainId 31337). Treat zero-addresses in `client/src/lib/contracts/addresses.ts` as not-live.
 
 ---
 
@@ -119,7 +120,7 @@ See `docs/MAPKIT_AND_PROPERTY_DATA.md`.
 ├── shared/              # Drizzle schema
 ├── contracts/           # Five Solidity contracts
 ├── scripts/             # deploy.cjs
-├── docs/                # MapKit + property-data notes
+├── docs/                # Concise loop + MapKit + regulatory notes
 └── hardhat.config.cjs
 ```
 

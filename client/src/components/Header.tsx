@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { WalletButton } from "./WalletButton";
-import { Building2, Menu, X, Brain, FileText, BarChart3, Briefcase } from "lucide-react";
+import { Building2, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount } from "wagmi";
@@ -10,12 +10,11 @@ import type { User } from "@shared/schema";
 
 const PROFESSIONAL_ROLES = ["contractor", "realtor", "attorney", "engineer", "architect", "lender", "inspector", "appraiser"];
 
+// Phase 0 public nav: map, nominate, learn, dashboard. Extra desks stay routed, not featured.
 const basePublicNavLinks = [
   { href: "/", label: "Home" },
   { href: "/explore", label: "Explore" },
-  { href: "/command", label: "Command" },
-  { href: "/community", label: "Community" },
-  { href: "/participate", label: "Participate" },
+  { href: "/nominate", label: "Nominate" },
   { href: "/learn", label: "Learn" },
 ];
 
@@ -23,10 +22,6 @@ const investNavLink = { href: "/invest", label: "Invest" };
 
 const authenticatedNavLinks = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/founder", label: "Founder" },
-  { href: "/treasury", label: "Treasury", icon: BarChart3 },
-  { href: "/ai-insights", label: "AI Insights", icon: Brain },
-  { href: "/business", label: "Business", icon: FileText },
 ];
 
 export function Header() {
@@ -57,7 +52,7 @@ export function Header() {
     ? [
         ...publicNavLinks,
         ...filteredAuthLinks,
-        ...(isProfessional ? [{ href: "/dashboard/professional", label: "Pro Dashboard", icon: Briefcase }] : []),
+        ...(isProfessional ? [{ href: "/dashboard/professional", label: "Pro Dashboard" }] : []),
       ]
     : publicNavLinks;
 
