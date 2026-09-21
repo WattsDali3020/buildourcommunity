@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { MapPin, Users, Share2 } from "lucide-react";
 import { Link } from "wouter";
 import { ShareModal } from "./ShareModal";
+import { LoopStatusCard } from "./LoopStatusCard";
+import { inferMixCategory, type MixCategory } from "@/lib/concise-loop";
 
 export type PropertyType = "vacant_land" | "historic_building" | "commercial" | "downtown";
 
@@ -26,6 +28,11 @@ export interface Property {
   phase?: string;
   engagementPercent?: number;
   isFunded?: boolean;
+  proposedUse?: string;
+  description?: string;
+  projectedJobs?: number;
+  projectedHousingUnits?: number;
+  mixCategory?: MixCategory;
 }
 
 const typeLabels: Record<PropertyType, string> = {
@@ -39,7 +46,7 @@ const phaseColors: Record<string, string> = {
   County: "bg-green-500/10 text-green-500 border-green-500/20",
   State: "bg-blue-500/10 text-blue-500 border-blue-500/20",
   National: "bg-purple-500/10 text-purple-500 border-purple-500/20",
-  International: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+  International: "bg-amber-500/10 text-amber-500/20",
   Funding: "bg-green-500/10 text-green-500 border-green-500/20",
   "Phase 2": "bg-blue-500/10 text-blue-500 border-blue-500/20",
   "Phase 3": "bg-purple-500/10 text-purple-500 border-purple-500/20",
@@ -95,10 +102,21 @@ function EngagementRing({ percent, size = 64, phase = "County" }: { percent: num
 }
 
 export function PropertyCard({ property }: { property: Property }) {
-  const fundingPercent = Math.round((property.fundingRaised / property.fundingGoal) * 100);
+  const fundingPercent = property.fundingGoal > 0
+    ? Math.round((property.fundingRaised / property.fundingGoal) * 100)
+    : 0;
   const engagementPercent = property.engagementPercent ?? fundingPercent;
   const isFunded = property.isFunded ?? fundingPercent >= 100;
   const phase = property.phase || "County";
+  const mix = inferMixCategory({
+    mixCategory: property.mixCategory,
+    propertyType: property.type,
+    proposedUse: property.proposedUse,
+    description: property.description,
+    communityBenefits: property.communityBenefits,
+    projectedJobs: property.projectedJobs,
+    projectedHousingUnits: property.projectedHousingUnits,
+  });
 
   return (
     <Card className="overflow-hidden hover-elevate active-elevate-2 cursor-pointer group">
@@ -129,7 +147,7 @@ export function PropertyCard({ property }: { property: Property }) {
         <div className="absolute top-2 right-2">
           <ShareModal
             title={property.name}
-            description={`Invest in ${property.name} - ${property.location.city}, ${property.location.state}. Token price: $${property.tokenPrice}. Projected ROI: ${property.projectedROI}%`}
+            description={`Support ${property.name} in ${property.location.city}, ${property.location.state}.`}
             url={`${typeof window !== "undefined" ? window.location.origin : ""}/properties/${property.id}`}
             image={property.image}
             type="property"
@@ -159,6 +177,15 @@ export function PropertyCard({ property }: { property: Property }) {
           </span>
         </div>
 
+        <div className="mb-3">
+          <LoopStatusCard
+            mix={mix}
+            engagementPercent={engagementPercent}
+            fundingGoal={property.fundingGoal}
+            compact
+          />
+        </div>
+
         <div className="grid grid-cols-3 gap-2 text-center mb-3">
           <div className="p-2 rounded-lg bg-muted/50">
             <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Token</div>
@@ -167,22 +194,26 @@ export function PropertyCard({ property }: { property: Property }) {
             </div>
           </div>
           <div className="p-2 rounded-lg bg-muted/50">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">ROI</div>
-            <div className="font-bold text-sm text-chart-3" data-testid={`text-roi-${property.id}`}>
-              {property.projectedROI}%
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Type</div>
+            <div className="font-bold text-sm" data-testid={`text-property-type-${property.id}`}>
+              {typeLabels[property.type] || property.type}
             </div>
           </div>
           <div className="p-2 rounded-lg bg-muted/50">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Raised</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Goal</div>
             <div className="font-bold text-sm" data-testid={`text-raised-${property.id}`}>
-              ${(property.fundingRaised / 1000000).toFixed(1)}M
+              {property.fundingGoal >= 1_000_000
+                ? `$${(property.fundingGoal / 1_000_000).toFixed(1)}M`
+                : property.fundingGoal > 0
+                  ? `$${Math.round(property.fundingGoal).toLocaleString("en-US")}`
+                  : "—"}
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
           <Users className="h-3.5 w-3.5 flex-shrink-0" />
-          <span className="line-clamp-1">{property.communityBenefits[0]}</span>
+          <span className="line-clamp-1">{property.communityBenefits[0] || "Community nomination"}</span>
         </div>
 
         <Link href={`/properties/${property.id}`}>
