@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RevitaHub Urban Dynamics – Rhode Island</title>
+<meta name="description" content="Forrester Urban Dynamics demand bars and feedback ring for all 39 Rhode Island municipalities, built from free public data.">
+<meta name="theme-color" content="#12372a">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="top">
+  <div class="brand"><strong>RevitaHub</strong> Urban Dynamics <span class="sub">Rhode Island</span></div>
+  <label class="pick"><span class="sr">Choose a municipality</span>
+    <select id="muniSelect" aria-label="Choose a municipality"><option value="">Select a municipality…</option></select>
+  </label>
+  <div id="counts" class="counts" aria-live="polite"></div>
+</header>
+<main>
+  <div id="map" role="application" aria-label="Map of Rhode Island municipalities"></div>
+  <aside id="panel" aria-live="polite" class="empty">
+    <button id="closeBtn" class="close" aria-label="Close panel">×</button>
+    <div id="panelBody">
+      <h2>Select a municipality</h2>
+      <p class="muted">Click a marker on the map or use the dropdown. Colors show how each municipality compares with the other 38 in Rhode Island: <b class="g">green</b> = growth, <b class="y">yellow</b> = stagnation, <b class="r">red</b> = decline.</p>
+      <p class="muted small">Statuses are <b>relative to RI peers</b>, not absolute judgements. Built only from free public data; every number links to its source.</p>
+    </div>
+  </aside>
+</main>
+<noscript><p style="padding:1rem">This app needs JavaScript (Leaflet map and Chart.js charts).</p></noscript>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous"></script>
+<script src="app.js"></script>
+</body>
+</html>

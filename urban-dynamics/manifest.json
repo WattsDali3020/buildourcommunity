@@ -1,0 +1,13 @@
+{
+  "name": "RevitaHub Urban Dynamics",
+  "short_name": "Urban Dynamics",
+  "description": "Forrester Urban Dynamics scores for Rhode Island municipalities, built from free public data.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f7f4",
+  "theme_color": "#12372a",
+  "icons": [
+    {"src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}
+  ]
+}
