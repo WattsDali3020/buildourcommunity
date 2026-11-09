@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PortfolioOverview } from "@/components/PortfolioOverview";
@@ -15,9 +15,6 @@ import { useAccount } from "wagmi";
 import { WalletButton } from "@/components/WalletButton";
 import { Link } from "wouter";
 import type { User, TokenHolding, TokenRefund } from "@shared/schema";
-import { calculateRefundWithInterest } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import { generateLeagueCities, getBuilderProfile, getRankBadge, type BuilderProfile as BuilderProfileType } from "@/lib/league-data";
 
 interface Achievement {
@@ -286,7 +283,7 @@ function BuilderLeagueCard({
             <div>
               <p className="text-sm font-medium text-muted-foreground">Season Bonus</p>
               <p className="text-xs text-muted-foreground">
-                Get your best city into the top 50 to earn +0.75% APR bonus
+                League standings are separate from token vote weight.
               </p>
             </div>
           </div>
@@ -297,32 +294,14 @@ function BuilderLeagueCard({
 }
 
 function RefundRequestSection({ holdings, user }: { holdings: TokenHolding[]; user: User | null | undefined }) {
-  const { toast } = useToast();
-
   const { data: refunds = [] } = useQuery<TokenRefund[]>({
     queryKey: ["/api/user/refunds"],
     enabled: !!user,
   });
 
-  const refundMutation = useMutation({
-    mutationFn: async (data: { offeringId: string; tokenCount: number }) => {
-      const res = await apiRequest("POST", "/api/refunds", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Refund request submitted", description: "Your refund request is being processed." });
-      queryClient.invalidateQueries({ queryKey: ["/api/user/refunds"] });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Refund request failed", description: error.message, variant: "destructive" });
-    },
-  });
-
   const eligibleHoldings = holdings.map((h) => {
     const originalAmount = h.tokenCount * parseFloat(h.averagePurchasePrice || "0");
-    const purchaseDate = h.updatedAt ? new Date(h.updatedAt) : new Date();
-    const { interest, total } = calculateRefundWithInterest(originalAmount, purchaseDate);
-    return { holding: h, originalAmount, interest, total };
+    return { holding: h, originalAmount };
   });
 
   if (eligibleHoldings.length === 0 && refunds.length === 0) return null;
@@ -336,7 +315,7 @@ function RefundRequestSection({ holdings, user }: { holdings: TokenHolding[]; us
             Refund Requests
           </CardTitle>
           <CardDescription>
-            Refund terms are not decided. The figure below is leftover escrow math, not a confirmed offer.
+            Refunds are not enabled.
           </CardDescription>
         </div>
         <Link href="/transfers">
@@ -350,7 +329,7 @@ function RefundRequestSection({ holdings, user }: { holdings: TokenHolding[]; us
         {eligibleHoldings.length > 0 && (
           <div className="space-y-3 mb-6">
             <p className="text-sm font-medium text-muted-foreground">Eligible Holdings</p>
-            {eligibleHoldings.map(({ holding, originalAmount, interest, total }, index) => (
+            {eligibleHoldings.map(({ holding, originalAmount }, index) => (
               <div
                 key={index}
                 className="flex items-center justify-between gap-4 p-4 rounded-md bg-muted/30 border"
@@ -361,27 +340,10 @@ function RefundRequestSection({ holdings, user }: { holdings: TokenHolding[]; us
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {holding.tokenCount} tokens @ ${parseFloat(holding.averagePurchasePrice || "0").toFixed(2)}/token
                   </p>
-                  <div className="flex items-center gap-3 mt-1 flex-wrap">
-                    <span className="text-xs text-muted-foreground">
-                      Original: ${originalAmount.toFixed(2)}
-                    </span>
-                    <span className="text-xs text-primary font-medium">
-                      +${interest.toFixed(2)} interest (3% APR)
-                    </span>
-                    <span className="text-sm font-semibold" data-testid={`text-refund-total-${index}`}>
-                      Total: ${total.toFixed(2)}
-                    </span>
-                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Recorded amount ${originalAmount.toFixed(2)}. No refund is offered.
+                  </p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => refundMutation.mutate({ offeringId: holding.offeringId, tokenCount: holding.tokenCount })}
-                  disabled={refundMutation.isPending}
-                  data-testid={`button-request-refund-${index}`}
-                >
-                  Request Refund
-                </Button>
               </div>
             ))}
           </div>

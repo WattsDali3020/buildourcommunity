@@ -35,7 +35,7 @@ import { db } from "./db";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import type { IStorage } from "./storage";
-import { evaluateStagedPurchase, residencyTierOf, weightedVotingPower } from "@shared/accessRules";
+import { elapsedDaysBetween, evaluateStagedPurchase, residencyTierOf, stageForElapsedDays, unsoldRemainder, weightedVotingPower, type AccessStage, type AdultCensus, type StageSupplySnapshot } from "@shared/accessRules";
 
 export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
@@ -139,6 +139,8 @@ export class DatabaseStorage implements IStorage {
       .insert(tokenOfferings)
       .values({
         ...offering,
+        adultCensus: offering.adultCensus as AdultCensus | null | undefined,
+        stageSupplySnapshot: offering.stageSupplySnapshot as StageSupplySnapshot | null | undefined,
         id: randomUUID(),
         createdAt: new Date(),
       })
@@ -172,7 +174,7 @@ export class DatabaseStorage implements IStorage {
     return newPhase;
   }
 
-  async updateOffering(id: string, data: Partial<{ tokensSold: number; totalFundingRaised: string; currentPhase: TokenOffering["currentPhase"]; perPersonAllowance: number | null; fundingClockStart: Date | null; fundingDeadline: Date | null }>): Promise<TokenOffering | undefined> {
+  async updateOffering(id: string, data: Partial<{ tokensSold: number; totalFundingRaised: string; currentPhase: TokenOffering["currentPhase"]; perPersonAllowance: number | null; fundingClockStart: Date | null; fundingDeadline: Date | null; adultCensus: AdultCensus | null; stageSupplySnapshot: StageSupplySnapshot | null }>): Promise<TokenOffering | undefined> {
     const [updated] = await db
       .update(tokenOfferings)
       .set(data)
@@ -369,17 +371,35 @@ export class DatabaseStorage implements IStorage {
       .filter((p) => p.status !== "failed")
       .reduce((sum, p) => sum + p.tokenCount, 0);
 
+    const sold = offering.tokensSold || 0;
+    const remainder = unsoldRemainder(offering.totalSupply, sold);
+    const clockStart = offering.fundingClockStart ? new Date(offering.fundingClockStart) : null;
+    const openStage = clockStart ? stageForElapsedDays(elapsedDaysBetween(clockStart, new Date())) : null;
+    const stageKey = phase.phase as AccessStage;
+    let stageSupply = offering.totalSupply;
+    if ((stageKey === "state" || stageKey === "national") && openStage === stageKey) {
+      const frozen = offering.stageSupplySnapshot?.[stageKey];
+      if (frozen == null) {
+        const nextSnapshot: StageSupplySnapshot = { ...(offering.stageSupplySnapshot ?? {}), [stageKey]: remainder };
+        await this.updateOffering(offering.id, { stageSupplySnapshot: nextSnapshot });
+        stageSupply = remainder;
+      } else {
+        stageSupply = frozen;
+      }
+    }
+
     const decision = evaluateStagedPurchase({
       now: new Date(),
-      clockStart: offering.fundingClockStart ? new Date(offering.fundingClockStart) : null,
+      clockStart,
       fundingDeadline: offering.fundingDeadline ? new Date(offering.fundingDeadline) : null,
       tier: residencyTierOf(user, property),
       requestedStage: phase.phase,
       tokenCount,
       alreadyPurchasedThisStage,
-      perPersonAllowance: offering.perPersonAllowance ?? null,
+      adultCount: offering.adultCensus?.[stageKey]?.count ?? null,
+      stageSupply,
       totalSupply: offering.totalSupply,
-      tokensSold: offering.tokensSold || 0,
+      tokensSold: sold,
     });
 
     return { allowed: decision.allowed, reason: decision.reason };

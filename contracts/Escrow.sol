@@ -28,6 +28,7 @@ interface IPropertyToken {
     function markFunded(uint256 propertyId) external;
     function burnFromOnFailure(uint256 propertyId, address holder, uint256 amount) external;
     function balanceOf(address account, uint256 id) external view returns (uint256);
+    function fundingDeadlineOf(uint256 propertyId) external view returns (uint256);
 }
 
 interface IGovernanceImpact {
@@ -36,8 +37,12 @@ interface IGovernanceImpact {
 
 /**
  * @title RevitaHub Escrow
- * @notice Handles token purchases, 100% funding requirement, 3% APR refunds,
- *         and founder sustainability fee (1% at funding + 1% of quarterly distributions)
+ * @notice Handles token purchases and the founder sustainability fee.
+ * @dev TODO(owner): Cash that is not released stays for a later off-chain arrangement.
+ *      Placeholder direction: an interest-bearing bank escrow, with any interest paid
+ *      pro rata off-chain. A crypto-based approach may replace that later.
+ *      Do not hard-wire a bank, a rate, or interest math in this contract.
+ *      The old 3% REFUND_APR path is hard-gated and must not run.
  * @dev Integrates with Chainlink Automation for deadline monitoring and quarterly payouts
  *
  * FOUNDER FEE MODEL:
@@ -55,7 +60,7 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
 
     // ============ Constants ============
 
-    uint256 public constant REFUND_APR = 300;               // 3% APR for failed funding refunds
+    /// @dev Retired. Not applied. Refunds are hard-gated below.
     uint256 public constant BASIS_POINTS = 10000;
     uint256 public constant SECONDS_PER_YEAR = 365 days;
     uint256 public constant AML_THRESHOLD = 80;
@@ -241,6 +246,9 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
     ) external onlyRole(OPERATOR_ROLE) {
         require(!isPropertyActive[propertyId], "Escrow already exists");
         require(projectBudget > 0, "Project budget required");
+        uint256 tokenDeadline = propertyToken.fundingDeadlineOf(propertyId);
+        require(tokenDeadline != 0, "Funding clock not started");
+        require(deadline == tokenDeadline, "Deadline must match funding clock");
 
         uint256 fundingTarget = (projectBudget * 10000) / 9900;
 
@@ -250,7 +258,7 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
             totalRaised: 0,
             fundingTarget: fundingTarget,
             projectBudget: projectBudget,
-            deadline: deadline,
+            deadline: tokenDeadline,
             isComplete: false,
             refundsProcessed: false,
             founderFeePaid: false,
@@ -267,6 +275,7 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
         PropertyEscrow storage escrow = propertyEscrows[propertyId];
         require(isPropertyActive[propertyId], "Property not active");
         require(!escrow.isComplete, "Funding complete");
+        require(propertyToken.fundingDeadlineOf(propertyId) == escrow.deadline, "Deadline must match funding clock");
         require(block.timestamp < escrow.deadline, "Funding deadline passed");
 
         if (address(amlOracle) != address(0)) {
@@ -456,20 +465,7 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
         override
         returns (bool upkeepNeeded, bytes memory performData)
     {
-        for (uint256 i = 0; i < activeProperties.length; i++) {
-            uint256 propertyId = activeProperties[i];
-            PropertyEscrow storage escrow = propertyEscrows[propertyId];
-
-            if (
-                isPropertyActive[propertyId] &&
-                !escrow.isComplete &&
-                !escrow.refundsProcessed &&
-                block.timestamp >= escrow.deadline
-            ) {
-                return (true, abi.encode(uint8(0), propertyId));
-            }
-        }
-
+        // Refund automation is hard-gated. checkUpkeep does not schedule processRefunds.
         for (uint256 i = 0; i < fundedProperties.length; i++) {
             uint256 propertyId = fundedProperties[i];
             QuarterlyState storage state = quarterlyStates[propertyId];
@@ -490,13 +486,8 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
         (uint8 action, uint256 propertyId) = abi.decode(performData, (uint8, uint256));
 
         if (action == 0) {
-            PropertyEscrow storage escrow = propertyEscrows[propertyId];
-            require(isPropertyActive[propertyId], "Property not active");
-            require(!escrow.isComplete, "Funding complete");
-            require(!escrow.refundsProcessed, "Refunds processed");
-            require(block.timestamp >= escrow.deadline, "Deadline not reached");
-            this.processRefunds(propertyId);
-
+            // TODO(owner): off-chain escrow interest, if any, is not calculated here.
+            revert("Refunds are not enabled");
         } else if (action == 1) {
             _executeQuarterlyDistribution(propertyId);
         }
@@ -504,45 +495,14 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable, AutomationCompatibl
 
     // ============ Refunds ============
 
-    function calculateRefund(uint256 principal, uint256 investmentTimestamp) public view returns (uint256) {
-        uint256 duration = block.timestamp - investmentTimestamp;
-        uint256 interest = (principal * REFUND_APR * duration) / (BASIS_POINTS * SECONDS_PER_YEAR);
-        return principal + interest;
+    /// @notice Hard-gated. The old 3% path must not price or pay a refund.
+    function calculateRefund(uint256, uint256) public pure returns (uint256) {
+        revert("Refunds are not enabled");
     }
 
-    function processRefunds(uint256 propertyId) external nonReentrant {
-        PropertyEscrow storage escrow = propertyEscrows[propertyId];
-        require(isPropertyActive[propertyId], "Property not active");
-        require(!escrow.isComplete, "Funding was successful");
-        require(block.timestamp >= escrow.deadline, "Deadline not reached");
-        require(!escrow.refundsProcessed, "Refunds already processed");
-
-        escrow.refundsProcessed = true;
-
-        emit FundingFailed(propertyId, escrow.totalRaised, escrow.fundingTarget);
-
-        Purchase[] storage purchases = propertyPurchases[propertyId];
-        for (uint256 i = 0; i < purchases.length; i++) {
-            Purchase storage p = purchases[i];
-            if (!p.refunded) {
-                uint256 refundAmount = calculateRefund(p.totalPaid, p.timestamp);
-                p.refunded = true;
-
-                uint256 tokenBalance = propertyToken.balanceOf(p.buyer, propertyId);
-                if (tokenBalance > 0) {
-                    propertyToken.burnFromOnFailure(propertyId, p.buyer, tokenBalance);
-                }
-
-                (bool success, ) = payable(p.buyer).call{value: refundAmount}("");
-                require(success, "Refund transfer failed");
-
-                emit RefundProcessed(propertyId, p.buyer, p.totalPaid, refundAmount - p.totalPaid, refundAmount);
-
-                emit RefundComplianceRecorded(propertyId, p.buyer, p.totalPaid, refundAmount - p.totalPaid, block.timestamp);
-            }
-        }
-
-        isPropertyActive[propertyId] = false;
+    /// @notice Hard-gated. No principal, interest, or founder-fee refund is paid here.
+    function processRefunds(uint256) external pure {
+        revert("Refunds are not enabled");
     }
 
     // ============ Fund Release ============

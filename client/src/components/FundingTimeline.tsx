@@ -53,16 +53,6 @@ export function FundingTimeline({
   const daysRemaining = Math.max(0, Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
   const isCritical = fundingProgress < thresholdProgress && daysRemaining < 60;
 
-  const calculateRefundWithInterest = () => {
-    if (!userHoldings) return { interest: 0, total: 0 };
-    const daysHeld = Math.floor((now.getTime() - userHoldings.purchaseDate.getTime()) / (1000 * 60 * 60 * 24));
-    const yearFraction = daysHeld / 365;
-    const interest = Number((userHoldings.investedAmount * (FUNDING_TIMELINE_CONFIG.refundInterestRate / 100) * yearFraction).toFixed(2));
-    return { interest, total: userHoldings.investedAmount + interest };
-  };
-
-  const refundDetails = calculateRefundWithInterest();
-
   const activeProjects: { id: string; name: string; fundingProgress: number }[] = [];
 
   return (
@@ -147,9 +137,7 @@ export function FundingTimeline({
                 <h4 className="font-medium text-destructive">Funding at Risk</h4>
                 <p className="text-sm text-muted-foreground mt-1">
                   This project has not reached the minimum funding threshold of {thresholdProgress}% 
-                  with only {daysRemaining} days remaining. If the threshold is not met, investors 
-                  will be offered a full refund plus {FUNDING_TIMELINE_CONFIG.refundInterestRate}% interest 
-                  or the option to transfer shares to another active project.
+                  with only {daysRemaining} days remaining. Refund terms are not decided.
                 </p>
               </div>
             </div>
@@ -173,16 +161,16 @@ export function FundingTimeline({
                   >
                     <RefreshCw className="h-5 w-5 text-chart-3" />
                     <div className="text-left">
-                      <p className="font-medium">Request Refund</p>
-                      <p className="text-xs text-muted-foreground">Get your investment back + interest</p>
+                      <p className="font-medium">Refund status</p>
+                      <p className="text-xs text-muted-foreground">Not enabled</p>
                     </div>
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Refund with Interest</DialogTitle>
+                    <DialogTitle>Refunds are not enabled</DialogTitle>
                     <DialogDescription>
-                      Refund terms are not decided. The interest line is older escrow math, not a confirmed offer.
+                      No rate is calculated. What happens to unreleased funds is not decided.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
@@ -191,14 +179,7 @@ export function FundingTimeline({
                         <span className="text-muted-foreground">Original Investment</span>
                         <span className="font-medium">${userHoldings.investedAmount.toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Interest Earned ({FUNDING_TIMELINE_CONFIG.refundInterestRate}% APR)</span>
-                        <span className="font-medium text-chart-3">+${refundDetails.interest.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between border-t pt-2">
-                        <span className="font-medium">Total Refund</span>
-                        <span className="font-semibold text-lg">${refundDetails.total.toLocaleString()}</span>
-                      </div>
+                      <p className="text-sm text-muted-foreground">No refund total is offered.</p>
                     </div>
                     <div className="flex items-start gap-2 text-sm text-muted-foreground">
                       <CheckCircle className="h-4 w-4 text-chart-3 shrink-0 mt-0.5" />
@@ -260,11 +241,7 @@ export function FundingTimeline({
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Transfer Value</span>
-                        <span className="font-medium">${refundDetails.total.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between text-chart-3">
-                        <span className="text-muted-foreground">Interest Bonus Included</span>
-                        <span className="font-medium">+${refundDetails.interest.toLocaleString()}</span>
+                        <span className="font-medium">${userHoldings.investedAmount.toLocaleString()}</span>
                       </div>
                     </div>
 

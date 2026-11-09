@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-const { ethers, network } = require("hardhat");
+const { ethers } = require("hardhat");
 
 describe("PropertyToken", function () {
   let propertyToken, escrow, owner, buyer1, buyer2;
@@ -24,7 +24,9 @@ describe("PropertyToken", function () {
 
   async function createOpenProperty(name, supply, target) {
     await propertyToken.createProperty(name, "", supply, target, "GA-LLC-1", owner.address);
-    await propertyToken.setPerPersonAllowance(0, supply);
+    await propertyToken.setAdultCensus(0, 0, 100, ethers.encodeBytes32String("CENSUS-PEP"), ethers.encodeBytes32String("2024"));
+    await propertyToken.recordKYCVerification(buyer1.address, ethers.id("buyer-1"));
+    await propertyToken.recordKYCVerification(buyer2.address, ethers.id("buyer-2"));
     await propertyToken.startFundingClock(0);
   }
 
@@ -32,8 +34,11 @@ describe("PropertyToken", function () {
     const target = ethers.parseEther("1000");
     await createOpenProperty("Test Property", 10000, target);
 
-    const block = await ethers.provider.getBlock("latest");
-    await escrow.initializeEscrow(0, target, block.timestamp + 86400, 0);
+    const deadline = await propertyToken.fundingDeadlineOf(0);
+    await expect(escrow.initializeEscrow(0, target, deadline + 1n, 0)).to.be.revertedWith(
+      "Deadline must match funding clock"
+    );
+    await escrow.initializeEscrow(0, target, deadline, 0);
 
     const price = await propertyToken.getCurrentPrice(0);
     await escrow.connect(buyer1).purchase(0, 100, { value: price * 100n });
@@ -41,31 +46,26 @@ describe("PropertyToken", function () {
     expect(await propertyToken.balanceOf(buyer1.address, 0)).to.equal(100);
   });
 
-  it("Should burn tokens on escrow failure", async function () {
+  it("hard-gates the old refund path", async function () {
     const target = ethers.parseEther("9999");
     await createOpenProperty("Fail Property", 10000, target);
-
-    const block = await ethers.provider.getBlock("latest");
-    const deadline = block.timestamp + 60;
+    const deadline = await propertyToken.fundingDeadlineOf(0);
     await escrow.initializeEscrow(0, target, deadline, 0);
 
     const price = await propertyToken.getCurrentPrice(0);
     await escrow.connect(buyer1).purchase(0, 50, { value: price * 50n });
     expect(await propertyToken.balanceOf(buyer1.address, 0)).to.equal(50);
 
-    await owner.sendTransaction({ to: await escrow.getAddress(), value: ethers.parseEther("1") });
-    await network.provider.send("evm_increaseTime", [120]);
-    await network.provider.send("evm_mine");
-
-    await escrow.processRefunds(0);
-    expect(await propertyToken.balanceOf(buyer1.address, 0)).to.equal(0);
+    await expect(escrow.processRefunds(0)).to.be.revertedWith("Refunds are not enabled");
+    await expect(escrow.calculateRefund(1, 1)).to.be.revertedWith("Refunds are not enabled");
+    await expect(escrow.performUpkeep(ethers.AbiCoder.defaultAbiCoder().encode(["uint8", "uint256"], [0, 0])))
+      .to.be.revertedWith("Refunds are not enabled");
+    expect(await propertyToken.balanceOf(buyer1.address, 0)).to.equal(50);
   });
 
   it("keeps shares locked through the common funding period", async function () {
     await createOpenProperty("Transfer Test", 10000, ethers.parseEther("100"));
-    await propertyToken.mintTokens(0, buyer1.address, 200);
-    await propertyToken.recordKYCVerification(buyer1.address, ethers.id("buyer-1"));
-    await propertyToken.recordKYCVerification(buyer2.address, ethers.id("buyer-2"));
+    await propertyToken.mintTokens(0, buyer1.address, 100);
 
     await expect(
       propertyToken.connect(buyer1).safeTransferFrom(buyer1.address, buyer2.address, 0, 100, "0x")

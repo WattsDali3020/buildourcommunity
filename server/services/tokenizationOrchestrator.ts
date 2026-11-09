@@ -18,7 +18,6 @@ import {
 import { 
   simulateDeployment, 
   calculatePhasePricing,
-  calculateRefundWithInterest,
   getExplorerUrl,
   TokenDeploymentConfig,
   DeploymentResult,
@@ -201,8 +200,8 @@ export async function initiateTokenization(
 }
 
 /**
- * Process refunds for failed funding (< 100% target reached after 1 year)
- * Implements 3% APR interest calculation for investor protection
+ * Hard-gated. The old 3% path is not a live rule.
+ * TODO(owner): any later cash return is off-chain and is not calculated here.
  */
 export async function processRefunds(offeringId: string): Promise<{
   success: boolean;
@@ -217,98 +216,13 @@ export async function processRefunds(offeringId: string): Promise<{
   }>;
   error?: string;
 }> {
-  console.log(`[Orchestrator] Processing refunds for offering: ${offeringId}`);
-  
-  const offering = await storage.getTokenOffering(offeringId);
-  if (!offering) {
-    return { success: false, refundsProcessed: 0, totalRefundAmount: 0, refundDetails: [], error: "Offering not found" };
-  }
-  
-  // Check if funding period has ended
-  if (offering.fundingDeadline && new Date() < new Date(offering.fundingDeadline)) {
-    return { success: false, refundsProcessed: 0, totalRefundAmount: 0, refundDetails: [], error: "Funding period has not ended yet" };
-  }
-  
-  // Check if 100% funding target was met
-  const raised = parseFloat(offering.totalFundingRaised || "0");
-  const threshold = parseFloat(offering.minimumFundingThreshold || "0");
-  
-  if (raised >= threshold) {
-    return { success: false, refundsProcessed: 0, totalRefundAmount: 0, refundDetails: [], error: "Funding was successful, no refunds needed" };
-  }
-  
-  const refundDate = new Date();
-  let totalRefundAmount = 0;
-  let refundsProcessed = 0;
-  const refundDetails: Array<{
-    purchaseId: string;
-    principal: number;
-    interest: number;
-    total: number;
-    daysHeld: number;
-  }> = [];
-  
-  console.log(`[Orchestrator] Funding failed (${raised} < ${threshold}). Processing refunds with 3% APR...`);
-  
-  // Get all confirmed purchases for this offering
-  const phases = await storage.getOfferingPhases(offeringId);
-  
-  for (const phase of phases) {
-    // For each investor's purchase, calculate refund with 3% APR interest
-    // In production, this would fetch actual purchases and process each:
-    
-    // Example calculation for each purchase:
-    // const purchases = await storage.getPurchasesByPhase(phase.id);
-    // for (const purchase of purchases) {
-    //   const refund = calculateRefundWithInterest(
-    //     parseFloat(purchase.totalAmount),
-    //     new Date(purchase.purchasedAt),
-    //     refundDate
-    //   );
-    //   
-    //   // Record refund
-    //   refundDetails.push({
-    //     purchaseId: purchase.id,
-    //     principal: refund.principal,
-    //     interest: refund.interest,
-    //     total: refund.total,
-    //     daysHeld: Math.floor((refundDate.getTime() - new Date(purchase.purchasedAt).getTime()) / (1000 * 60 * 60 * 24)),
-    //   });
-    //   
-    //   totalRefundAmount += refund.total;
-    //   refundsProcessed++;
-    // }
-  }
-  
-  // Simulate demo refund calculation
-  if (raised > 0) {
-    const avgDaysHeld = 180; // Assume 6 months average
-    const interestRate = 0.03; // 3% APR
-    const yearFraction = avgDaysHeld / 365;
-    const interest = raised * interestRate * yearFraction;
-    
-    totalRefundAmount = raised + interest;
-    refundsProcessed = Math.ceil(raised / 500); // Estimate ~$500 avg investment
-    
-    refundDetails.push({
-      purchaseId: "aggregate",
-      principal: raised,
-      interest: Math.round(interest * 100) / 100,
-      total: Math.round(totalRefundAmount * 100) / 100,
-      daysHeld: avgDaysHeld,
-    });
-    
-    console.log(`[Orchestrator] Calculated refunds: $${raised} principal + $${interest.toFixed(2)} interest (3% APR) = $${totalRefundAmount.toFixed(2)}`);
-  }
-  
-  // Update offering status to refunded
-  // In production: await storage.updateOfferingStatus(offeringId, 'refunded');
-  
+  console.log(`[Orchestrator] Refunds are not enabled for offering: ${offeringId}`);
   return {
-    success: true,
-    refundsProcessed,
-    totalRefundAmount: Math.round(totalRefundAmount * 100) / 100,
-    refundDetails,
+    success: false,
+    refundsProcessed: 0,
+    totalRefundAmount: 0,
+    refundDetails: [],
+    error: "Refunds are not enabled",
   };
 }
 

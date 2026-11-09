@@ -7,6 +7,7 @@ import {
   evaluateStagedPurchase,
   residencyTierOf,
   sharesLocked,
+  stageAllowance,
   stageForElapsedDays,
   unsoldRemainder,
   voteWeightForTier,
@@ -56,11 +57,11 @@ test("vote weights are 1.5 / 1.0 / 0.75 and unverified holders still vote", () =
   assert.equal(voteWeightForTier("county"), 1.5);
   assert.equal(voteWeightForTier("in_state"), 1);
   assert.equal(voteWeightForTier("other_us"), 0.75);
-  assert.equal(voteWeightForTier("unverified"), 0.75);
+  assert.equal(voteWeightForTier("unverified"), 0);
   assert.equal(weightedVotingPower(100, "county"), 150);
   assert.equal(weightedVotingPower(100, "in_state"), 100);
   assert.equal(weightedVotingPower(100, "other_us"), 75);
-  assert.equal(weightedVotingPower(100, "unverified"), 75);
+  assert.equal(weightedVotingPower(100, "unverified"), 0);
 });
 
 test("county stage rejects everyone except verified county residents", () => {
@@ -81,7 +82,11 @@ test("later stages stay open to earlier residents and sell only the remainder", 
   assert.equal(unsoldRemainder(1000, 250), 750);
 });
 
-test("allowance is unset until configured and is the same cap inside a stage", () => {
+test("allowance is floor(supply / adults) and stays closed until the count is set", () => {
+  assert.equal(stageAllowance(1000, null), null);
+  assert.equal(stageAllowance(1000, 10), 100);
+  assert.equal(stageAllowance(100, 30), 3);
+
   const base = {
     now: atDay(1),
     clockStart: clock,
@@ -90,21 +95,21 @@ test("allowance is unset until configured and is the same cap inside a stage", (
     requestedStage: "county",
     tokenCount: 10,
     alreadyPurchasedThisStage: 0,
+    stageSupply: 1000,
     totalSupply: 1000,
     tokensSold: 0,
   };
 
-  const unset = evaluateStagedPurchase({ ...base, perPersonAllowance: null });
+  const unset = evaluateStagedPurchase({ ...base, adultCount: null });
   assert.equal(unset.allowed, false);
-  assert.match(unset.reason || "", /not configured/);
+  assert.match(unset.reason || "", /Adult count/);
 
-  const first = evaluateStagedPurchase({ ...base, perPersonAllowance: 25, tokenCount: 25 });
+  const first = evaluateStagedPurchase({ ...base, adultCount: 40, tokenCount: 25 });
   assert.equal(first.allowed, true);
-  assert.equal(first.remainder, 1000);
 
   const over = evaluateStagedPurchase({
     ...base,
-    perPersonAllowance: 25,
+    adultCount: 40,
     alreadyPurchasedThisStage: 20,
     tokenCount: 10,
   });
@@ -121,7 +126,8 @@ test("an in-state buyer is blocked on day 1 and allowed on day 91 against the re
     requestedStage: "state",
     tokenCount: 10,
     alreadyPurchasedThisStage: 0,
-    perPersonAllowance: 40,
+    adultCount: 25,
+    stageSupply: 900,
     totalSupply: 1000,
     tokensSold: 100,
   });
@@ -133,9 +139,10 @@ test("an in-state buyer is blocked on day 1 and allowed on day 91 against the re
     fundingDeadline: commonFundingDeadline(clock),
     tier: "in_state",
     requestedStage: "state",
-    tokenCount: 40,
+    tokenCount: 36,
     alreadyPurchasedThisStage: 0,
-    perPersonAllowance: 40,
+    adultCount: 25,
+    stageSupply: 900,
     totalSupply: 1000,
     tokensSold: 100,
   });
@@ -148,11 +155,12 @@ test("an in-state buyer is blocked on day 1 and allowed on day 91 against the re
     fundingDeadline: commonFundingDeadline(clock),
     tier: "in_state",
     requestedStage: "state",
-    tokenCount: 901,
+    tokenCount: 801,
     alreadyPurchasedThisStage: 0,
-    perPersonAllowance: 1000,
+    adultCount: 1,
+    stageSupply: 900,
     totalSupply: 1000,
-    tokensSold: 100,
+    tokensSold: 200,
   });
   assert.equal(overRemainder.allowed, false);
   assert.match(overRemainder.reason || "", /remainder/);
@@ -166,7 +174,8 @@ test("other US buyers wait until day 180 and non-US buyers cannot purchase", () 
     requestedStage: "national",
     tokenCount: 1,
     alreadyPurchasedThisStage: 0,
-    perPersonAllowance: 10,
+    adultCount: 10,
+    stageSupply: 500,
     totalSupply: 500,
     tokensSold: 0,
   };
@@ -178,6 +187,38 @@ test("other US buyers wait until day 180 and non-US buyers cannot purchase", () 
 
   const abroad = evaluateStagedPurchase({ ...input, now: atDay(180), tier: "unverified" });
   assert.equal(abroad.allowed, false);
+});
+
+test("later-stage caps stack and do not consume an earlier stage's purchases", () => {
+  const stateBuy = evaluateStagedPurchase({
+    now: atDay(100),
+    clockStart: clock,
+    fundingDeadline: commonFundingDeadline(clock),
+    tier: "county",
+    requestedStage: "state",
+    tokenCount: 50,
+    alreadyPurchasedThisStage: 0,
+    adultCount: 10,
+    stageSupply: 500,
+    totalSupply: 1000,
+    tokensSold: 500,
+  });
+  assert.equal(stateBuy.allowed, true);
+
+  const nationalOnly = evaluateStagedPurchase({
+    now: atDay(100),
+    clockStart: clock,
+    fundingDeadline: commonFundingDeadline(clock),
+    tier: "other_us",
+    requestedStage: "state",
+    tokenCount: 1,
+    alreadyPurchasedThisStage: 0,
+    adultCount: 10,
+    stageSupply: 500,
+    totalSupply: 1000,
+    tokensSold: 500,
+  });
+  assert.equal(nationalOnly.allowed, false);
 });
 
 test("the funding clock is common and the lock does not open when it ends", () => {

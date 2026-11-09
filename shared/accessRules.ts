@@ -1,8 +1,8 @@
 /**
  * Confirmed access, vote-weight, and funding-clock rules (owner, Nov 5–9, 2026).
  *
- * Residency verification is a stub: callers pass kycStatus === "verified".
- * No KYC provider is integrated.
+ * Residency and KYC are a stub: callers pass kycStatus === "verified".
+ * No KYC provider is integrated. Without that status, vote weight is 0 and buying is refused.
  *
  * Early completion, transfer exceptions, refunds, and post-period liquidity
  * are not decided. sharesLocked stays closed on both sides of day 365.
@@ -104,7 +104,26 @@ export function residencyTierOf(user: ResidencyInput, property: PropertyPlace): 
 export function voteWeightForTier(tier: ResidencyTier): number {
   if (tier === "county") return VOTE_WEIGHTS.countyResident;
   if (tier === "in_state") return VOTE_WEIGHTS.inState;
-  return VOTE_WEIGHTS.otherUs;
+  if (tier === "other_us") return VOTE_WEIGHTS.otherUs;
+  return 0;
+}
+
+export type AdultCensusEntry = { count: number; source: string; vintage: string };
+export type AdultCensus = Partial<Record<AccessStage, AdultCensusEntry>>;
+export type StageSupplySnapshot = Partial<Record<"state" | "national", number>>;
+
+/**
+ * Equal share for one stage. Floor to a whole token.
+ * Tokens that do not divide evenly stay unsold for a later stage.
+ * A missing or non-positive adult count returns null (fail closed).
+ */
+export function stageAllowance(
+  availableTokens: number,
+  adultCount: number | null | undefined
+): number | null {
+  if (adultCount == null || !Number.isInteger(adultCount) || adultCount <= 0) return null;
+  if (!Number.isFinite(availableTokens) || availableTokens < 0) return null;
+  return Math.floor(availableTokens / adultCount);
 }
 
 export function weightedVotingPower(tokenCount: number, tier: ResidencyTier): number {
@@ -130,8 +149,10 @@ export interface StagedPurchaseInput {
   requestedStage: string;
   tokenCount: number;
   alreadyPurchasedThisStage: number;
-  /** Null or <= 0 means the owner has not chosen an allowance. */
-  perPersonAllowance: number | null;
+  /** Adults 18+ for the open stage. Null until an admin stores a sourced count. */
+  adultCount: number | null;
+  /** Full supply for county, or the frozen unsold remainder for later stages. */
+  stageSupply: number;
   totalSupply: number;
   tokensSold: number;
 }
@@ -170,15 +191,24 @@ export function evaluateStagedPurchase(input: StagedPurchaseInput): StagedPurcha
       stage,
     };
   }
-  if (input.perPersonAllowance == null || input.perPersonAllowance <= 0) {
+  const allowance = stageAllowance(input.stageSupply, input.adultCount);
+  if (allowance == null) {
     return {
       allowed: false,
-      reason: "Per-person purchase allowance is not configured",
+      reason: "Adult count not set for this stage",
       remainder,
       stage,
     };
   }
-  if (input.alreadyPurchasedThisStage + input.tokenCount > input.perPersonAllowance) {
+  if (allowance === 0) {
+    return {
+      allowed: false,
+      reason: "Stage allowance is zero",
+      remainder,
+      stage,
+    };
+  }
+  if (input.alreadyPurchasedThisStage + input.tokenCount > allowance) {
     return {
       allowed: false,
       reason: "Exceeds the per-person allowance for this stage",

@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
  * @notice Optional residency oracle. No KYC provider is integrated.
  *         When unset, WHITELIST_ADMIN attestation is the stub.
  *         0 = verified county resident, 1 = other in-state, 2 = other US,
- *         3 = unverified or non-US.
+ *         3 = not a verified US residency tier. KYC is still required separately.
  */
 interface IResidencyVerifier {
     function residencyTier(address account, uint256 propertyId) external view returns (uint8);
@@ -28,9 +28,10 @@ interface IResidencyVerifier {
  *      - Days 91–180: statewide (county residents remain eligible).
  *      - After day 180: nationwide. There is no international sale stage.
  *      - One per-person allowance, chosen by the admin. It is not hard-coded.
- *      Vote weight is residency of the holder, not purchase stage:
- *      1.5 county, 1.0 other in-state, 0.75 other US. Outside holders vote.
+ *      Vote weight is verified residency, not purchase stage:
+ *      1.5 county, 1.0 other in-state, 0.75 other US. No KYC means zero weight.
  *      There is no resident-majority guarantee and no outside-vote cap.
+ *      Each stage's per-person cap is floor(stage supply / adults 18+ in that area).
  *      One 365-day funding clock starts when residents' project choice is recorded.
  *      Shares stay locked through that clock. Early completion, transfer
  *      exceptions, refunds, and post-period liquidity are TODO hooks.
@@ -84,7 +85,20 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
 
     mapping(uint256 => mapping(Phase => uint256)) public soldInStage;
     mapping(uint256 => mapping(uint8 => mapping(address => uint256))) public purchasedInStage;
-    mapping(uint256 => uint256) public perPersonAllowance;
+
+    /// @notice Admin-set count of adults 18+ for a stage area. Zero means unset.
+    ///         Allowance = floor(stage supply / count). Source and vintage are recorded, not guessed.
+    /// @dev source and vintage are 32-byte labels (for example "CENSUS-PEP" and "2024").
+    ///      The full citation can live off-chain. They are stored, not hard-coded.
+    struct AdultCensus {
+        uint256 count;
+        bytes32 source;
+        bytes32 vintage;
+    }
+    mapping(uint256 => mapping(uint8 => AdultCensus)) public adultCensus;
+    /// @dev Frozen unsold supply for the state and national stages. County always uses totalSupply.
+    mapping(uint256 => mapping(uint8 => uint256)) public stageSupplyAtOpen;
+    mapping(uint256 => mapping(uint8 => bool)) public stageSupplyFrozen;
 
     mapping(address => bool) public whitelist;
     /// @dev Global attested tier used only when no IResidencyVerifier is set.
@@ -108,7 +122,7 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
 
     event PropertyCreated(uint256 indexed propertyId, string name, uint256 totalSupply, uint256 fundingTarget, string llcIdentifier, address custodian);
     event FundingClockStarted(uint256 indexed propertyId, uint256 start, uint256 deadline);
-    event PerPersonAllowanceSet(uint256 indexed propertyId, uint256 allowance);
+    event AdultCensusSet(uint256 indexed propertyId, uint8 indexed stage, uint256 count, bytes32 source, bytes32 vintage);
     event PropertyFunded(uint256 indexed propertyId, uint256 totalRaised);
     event LLCBackingUpdated(uint256 indexed propertyId, string llcIdentifier, address custodian);
     event TokensMinted(uint256 indexed propertyId, address indexed buyer, uint256 amount, Phase phase);
@@ -200,11 +214,37 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         emit FundingClockStarted(propertyId, prop.fundingClockStart, prop.fundingDeadline);
     }
 
-    function setPerPersonAllowance(uint256 propertyId, uint256 allowance) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    /**
+     * @notice Record the adult (18+) population for one stage.
+     * @dev count, source, and vintage are supplied by an admin from a named estimate
+     *      (for example a census vintage). Nothing here is hard-coded.
+     *      The per-person cap is floor(stage supply / count). Leftover tokens stay unsold.
+     */
+    function setAdultCensus(
+        uint256 propertyId,
+        uint8 stage,
+        uint256 count,
+        bytes32 source,
+        bytes32 vintage
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_allPropertyIds.contains(propertyId), "Property not found");
-        require(allowance > 0, "Allowance must be positive");
-        perPersonAllowance[propertyId] = allowance;
-        emit PerPersonAllowanceSet(propertyId, allowance);
+        require(stage <= uint8(Phase.National), "Unknown stage");
+        require(count > 0, "Adult count required");
+        require(source != bytes32(0), "Source required");
+        require(vintage != bytes32(0), "Vintage required");
+        adultCensus[propertyId][stage] = AdultCensus({ count: count, source: source, vintage: vintage });
+        emit AdultCensusSet(propertyId, stage, count, source, vintage);
+    }
+
+    function fundingDeadlineOf(uint256 propertyId) external view returns (uint256) {
+        return properties[propertyId].fundingDeadline;
+    }
+
+    /// @notice floor(stage supply / adults 18+). Returns 0 when the census for that stage is unset.
+    function stageAllowance(uint256 propertyId, Phase stage) public view returns (uint256) {
+        uint256 adults = adultCensus[propertyId][uint8(stage)].count;
+        if (adults == 0) return 0;
+        return _stageSupply(propertyId, stage) / adults;
     }
 
     /// @dev Flat parameter. Stages do not multiply the price.
@@ -238,10 +278,12 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
     function voteWeightBps(uint8 tier) public pure returns (uint256) {
         if (tier == TIER_COUNTY) return COUNTY_VOTE_WEIGHT_BPS;
         if (tier == TIER_IN_STATE) return IN_STATE_VOTE_WEIGHT_BPS;
-        return OTHER_US_VOTE_WEIGHT_BPS;
+        if (tier == TIER_OTHER_US) return OTHER_US_VOTE_WEIGHT_BPS;
+        return 0;
     }
 
     function getVotingPower(uint256 propertyId, address voter) external view returns (uint256) {
+        if (kycVerificationIds[voter] == bytes32(0)) return 0;
         return (balanceOf(voter, propertyId) * _weightBps(propertyId, voter)) / 10000;
     }
 
@@ -254,13 +296,19 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         address buyer,
         uint256 amount
     ) external onlyRole(MINTER_ROLE) nonReentrant whenNotPaused {
+        Property storage prop = properties[propertyId];
+        if (prop.fundingClockStart != 0 && block.timestamp < prop.fundingDeadline) {
+            Phase openStage = stageOf(propertyId);
+            if (openStage != Phase.County) {
+                _freezeStageSupply(propertyId, openStage);
+            }
+        }
         string memory reason = _purchaseBlockReason(propertyId, buyer, amount);
         require(bytes(reason).length == 0, reason);
 
         Phase stage = stageOf(propertyId);
         _mint(buyer, propertyId, amount, "");
 
-        Property storage prop = properties[propertyId];
         prop.mintedSupply += amount;
         prop.currentPhase = stage;
         soldInStage[propertyId][stage] += amount;
@@ -399,10 +447,10 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         address account,
         string calldata reason
     ) external onlyRole(WHITELIST_ADMIN_ROLE) {
+        _setResidency(account, residencyTier[account], false);
         delete kycVerificationIds[account];
         delete kycVerificationTimestamps[account];
         whitelist[account] = false;
-        _setResidency(account, residencyTier[account], false);
         emit KYCVerificationRevoked(account, block.timestamp, reason);
         emit AddressRemovedFromWhitelist(account);
     }
@@ -580,15 +628,20 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         if (prop.fundingClockStart == 0) return "Funding clock not started";
         if (block.timestamp >= prop.fundingDeadline) return "Funding period ended";
         if (amount == 0) return "Amount must be positive";
-        if (perPersonAllowance[propertyId] == 0) return "Per-person allowance not configured";
+        if (kycVerificationIds[buyer] == bytes32(0)) return "KYC required";
 
         Phase stage = stageOf(propertyId);
         if (!_eligible(residencyTierOf(propertyId, buyer), stage)) {
             return "Not eligible for current stage";
         }
 
+        uint256 adults = adultCensus[propertyId][uint8(stage)].count;
+        if (adults == 0) return "Adult count not set for this stage";
+        uint256 allowance = _stageSupply(propertyId, stage) / adults;
+        if (allowance == 0) return "Stage allowance is zero";
+
         uint256 already = purchasedInStage[propertyId][uint8(stage)][buyer];
-        if (already + amount > perPersonAllowance[propertyId]) {
+        if (already + amount > allowance) {
             return "Exceeds per-person allowance";
         }
         if (amount > prop.totalSupply - prop.mintedSupply) {
@@ -605,7 +658,21 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
     }
 
     function _weightBps(uint256 propertyId, address account) internal view returns (uint256) {
+        if (kycVerificationIds[account] == bytes32(0)) return 0;
         return voteWeightBps(residencyTierOf(propertyId, account));
+    }
+
+    /// @dev County uses the full supply. Later stages use the unsold remainder frozen at first use in that stage.
+    function _stageSupply(uint256 propertyId, Phase stage) internal view returns (uint256) {
+        if (stage == Phase.County) return properties[propertyId].totalSupply;
+        if (stageSupplyFrozen[propertyId][uint8(stage)]) return stageSupplyAtOpen[propertyId][uint8(stage)];
+        return properties[propertyId].totalSupply - properties[propertyId].mintedSupply;
+    }
+
+    function _freezeStageSupply(uint256 propertyId, Phase stage) internal {
+        if (stage == Phase.County || stageSupplyFrozen[propertyId][uint8(stage)]) return;
+        stageSupplyAtOpen[propertyId][uint8(stage)] = properties[propertyId].totalSupply - properties[propertyId].mintedSupply;
+        stageSupplyFrozen[propertyId][uint8(stage)] = true;
     }
 
     function _syncWeight(

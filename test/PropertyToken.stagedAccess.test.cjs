@@ -32,27 +32,39 @@ describe("PropertyToken staged access, votes, and common lock", function () {
     await token.addToWhitelist(outsider.address, 2);
   });
 
-  async function openSale(allowance) {
-    await token.setPerPersonAllowance(0, allowance);
+  async function verify(account, label) {
+    await token.recordKYCVerification(account, ethers.id(label));
+  }
+
+  async function openCounty(adults) {
+    await verify(countyBuyer.address, "county");
+    await verify(stateBuyer.address, "state");
+    await verify(nationalBuyer.address, "national");
+    await verify(outsider.address, "outsider");
+    await token.setAdultCensus(0, 0, adults, ethers.encodeBytes32String("CENSUS-PEP"), ethers.encodeBytes32String("2024"));
     await token.startFundingClock(0);
   }
 
-  it("refuses purchases until the clock and allowance are set", async function () {
+  it("stays closed until the clock, KYC, and the open stage's adult count are set", async function () {
     await expect(token.mintTokens(0, countyBuyer.address, 1)).to.be.revertedWith(
       "Funding clock not started"
     );
     await token.startFundingClock(0);
+    await expect(token.mintTokens(0, countyBuyer.address, 1)).to.be.revertedWith("KYC required");
+    await verify(countyBuyer.address, "county");
     await expect(token.mintTokens(0, countyBuyer.address, 1)).to.be.revertedWith(
-      "Per-person allowance not configured"
+      "Adult count not set for this stage"
     );
+    expect(await token.getVotingPower(0, countyBuyer.address)).to.equal(0);
   });
 
-  it("gives county residents the full supply and blocks other tiers on day 0", async function () {
-    await openSale(1000);
-    await token.mintTokens(0, countyBuyer.address, 1000);
-    expect(await token.balanceOf(countyBuyer.address, 0)).to.equal(1000);
-    expect(await token.unsoldRemainder(0)).to.equal(0);
-
+  it("floors the county share and blocks other tiers on day 0", async function () {
+    await openCounty(30);
+    expect(await token.stageAllowance(0, 0)).to.equal(33);
+    await token.mintTokens(0, countyBuyer.address, 33);
+    await expect(token.mintTokens(0, countyBuyer.address, 1)).to.be.revertedWith(
+      "Exceeds per-person allowance"
+    );
     await expect(token.mintTokens(0, stateBuyer.address, 1)).to.be.revertedWith(
       "Not eligible for current stage"
     );
@@ -61,56 +73,61 @@ describe("PropertyToken staged access, votes, and common lock", function () {
     );
   });
 
-  it("rolls only the unsold remainder into later stages", async function () {
-    await openSale(400);
+  it("lets earlier residents buy later allowances on top, from the unsold remainder", async function () {
+    await openCounty(10);
     await token.mintTokens(0, countyBuyer.address, 100);
     expect(await token.unsoldRemainder(0)).to.equal(900);
 
     await increaseDays(90);
+    await token.setAdultCensus(0, 1, 10, ethers.encodeBytes32String("CENSUS-PEP"), ethers.encodeBytes32String("2024"));
     expect(await token.stageOf(0)).to.equal(1);
     await expect(token.mintTokens(0, nationalBuyer.address, 1)).to.be.revertedWith(
       "Not eligible for current stage"
     );
 
-    await token.mintTokens(0, stateBuyer.address, 400);
-    await token.mintTokens(0, countyBuyer.address, 400);
-    expect(await token.unsoldRemainder(0)).to.equal(100);
-
+    await token.mintTokens(0, stateBuyer.address, 90);
+    await token.mintTokens(0, countyBuyer.address, 90);
+    expect(await token.purchasedInStage(0, 0, countyBuyer.address)).to.equal(100);
+    expect(await token.purchasedInStage(0, 1, countyBuyer.address)).to.equal(90);
     await expect(token.mintTokens(0, stateBuyer.address, 1)).to.be.revertedWith(
       "Exceeds per-person allowance"
     );
 
     await increaseDays(90);
+    await token.setAdultCensus(0, 2, 8, ethers.encodeBytes32String("CENSUS-PEP"), ethers.encodeBytes32String("2024"));
     expect(await token.stageOf(0)).to.equal(2);
-    await token.mintTokens(0, nationalBuyer.address, 100);
-    expect(await token.unsoldRemainder(0)).to.equal(0);
-    await expect(token.mintTokens(0, nationalBuyer.address, 1)).to.be.revertedWith(
-      "Exceeds unsold remainder"
-    );
+    expect(await token.unsoldRemainder(0)).to.equal(720);
+    await token.mintTokens(0, nationalBuyer.address, 90);
+    await token.mintTokens(0, stateBuyer.address, 90);
+    await token.mintTokens(0, countyBuyer.address, 90);
+    expect(await token.purchasedInStage(0, 2, nationalBuyer.address)).to.equal(90);
+    expect(await token.stageAllowance(0, 2)).to.equal(90);
   });
 
-  it("weights votes by residency and lets outside holders vote", async function () {
-    await openSale(100);
+  it("gives verified US holders their tier weight and zero weight without KYC", async function () {
+    await openCounty(10);
     await token.mintTokens(0, countyBuyer.address, 100);
     await increaseDays(90);
-    await token.mintTokens(0, stateBuyer.address, 100);
+    await token.setAdultCensus(0, 1, 10, ethers.encodeBytes32String("CENSUS-PEP"), ethers.encodeBytes32String("2024"));
+    await token.mintTokens(0, stateBuyer.address, 90);
     await increaseDays(90);
-    await token.mintTokens(0, nationalBuyer.address, 100);
-    await token.mintTokens(0, outsider.address, 100);
-    await token.setResidency(outsider.address, 3, false);
+    await token.setAdultCensus(0, 2, 10, ethers.encodeBytes32String("CENSUS-PEP"), ethers.encodeBytes32String("2024"));
+    await token.mintTokens(0, nationalBuyer.address, 81);
+    await token.mintTokens(0, outsider.address, 81);
 
     expect(await token.getVotingPower(0, countyBuyer.address)).to.equal(150);
-    expect(await token.getVotingPower(0, stateBuyer.address)).to.equal(100);
-    expect(await token.getVotingPower(0, nationalBuyer.address)).to.equal(75);
-    expect(await token.getVotingPower(0, outsider.address)).to.equal(75);
-    expect(await token.getTotalWeightedVotingPower(0)).to.equal(150 + 100 + 75 + 75);
+    expect(await token.getVotingPower(0, stateBuyer.address)).to.equal(90);
+    expect(await token.getVotingPower(0, nationalBuyer.address)).to.equal(60);
+    expect(await token.getVotingPower(0, outsider.address)).to.equal(60);
+
+    await token.revokeKYCVerification(outsider.address, "expired");
+    expect(await token.getVotingPower(0, outsider.address)).to.equal(0);
+    expect(await token.balanceOf(outsider.address, 0)).to.equal(81);
   });
 
   it("uses one 365-day lock and does not unlock on early completion or the TODO flags", async function () {
-    await openSale(100);
+    await openCounty(20);
     await token.mintTokens(0, countyBuyer.address, 50);
-    await token.recordKYCVerification(countyBuyer.address, ethers.id("county-kyc"));
-    await token.recordKYCVerification(stateBuyer.address, ethers.id("state-kyc"));
 
     const propertyBefore = await token.getProperty(0);
     const start = propertyBefore.fundingClockStart;

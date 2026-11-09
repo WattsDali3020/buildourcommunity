@@ -3,9 +3,16 @@ import { pgTable, text, varchar, integer, decimal, timestamp, boolean, pgEnum, s
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { users, sessions, type User, type UpsertUser } from "./models/auth";
-import { INITIAL_TOKEN_PRICE_USD, STAGE_BOUNDARIES, VOTE_WEIGHTS } from "./accessRules";
+import {
+  INITIAL_TOKEN_PRICE_USD,
+  STAGE_BOUNDARIES,
+  VOTE_WEIGHTS,
+  type AdultCensus,
+  type StageSupplySnapshot,
+} from "./accessRules";
 
 export { INITIAL_TOKEN_PRICE_USD, STAGE_BOUNDARIES, VOTE_WEIGHTS };
+export type { AdultCensus, StageSupplySnapshot };
 
 export { users, sessions, type User, type UpsertUser };
 
@@ -118,8 +125,10 @@ export const tokenOfferings = pgTable("token_offerings", {
   fundingDeadline: timestamp("funding_deadline"),
   // Common 365-day clock. Null until residents' project choice is recorded.
   fundingClockStart: timestamp("funding_clock_start"),
-  // Same allowance for every eligible person in a stage. Null until chosen.
+  // Retired flat cap. The live cap is floor(stage supply / adult census).
   perPersonAllowance: integer("per_person_allowance"),
+  adultCensus: jsonb("adult_census").$type<AdultCensus>(),
+  stageSupplySnapshot: jsonb("stage_supply_snapshot").$type<StageSupplySnapshot>(),
   totalFundingRaised: decimal("total_funding_raised", { precision: 15, scale: 2 }).default("0"),
   interestRateOnRefund: decimal("interest_rate_on_refund", { precision: 5, scale: 2 }).default("3.00"),
   offeringType: offeringTypeEnum("offering_type").default("public"),

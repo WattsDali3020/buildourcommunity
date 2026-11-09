@@ -3,14 +3,26 @@ require("dotenv").config();
 
 module.exports = {
   solidity: {
-    version: "0.8.24",
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200,
+    compilers: [
+      {
+        version: "0.8.24",
+        settings: {
+          optimizer: { enabled: true, runs: 200 },
+          evmVersion: "paris",
+          viaIR: true,
+        },
       },
-      evmVersion: "paris",
-      viaIR: true,
+    ],
+    overrides: {
+      "contracts/PropertyToken.sol": {
+        version: "0.8.24",
+        settings: {
+          // runs=1 keeps this contract under the 24KB deployment limit.
+          optimizer: { enabled: true, runs: 1 },
+          evmVersion: "paris",
+          viaIR: true,
+        },
+      },
     },
   },
   defaultNetwork: "hardhat",
