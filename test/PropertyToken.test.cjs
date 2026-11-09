@@ -2,30 +2,38 @@ const { expect } = require("chai");
 const { ethers, network } = require("hardhat");
 
 describe("PropertyToken", function () {
-  let PropertyToken, propertyToken, Escrow, escrow, owner, buyer1, buyer2, treasury;
+  let propertyToken, escrow, owner, buyer1, buyer2;
 
   beforeEach(async function () {
-    [owner, buyer1, buyer2, treasury] = await ethers.getSigners();
+    [owner, buyer1, buyer2] = await ethers.getSigners();
 
-    PropertyToken = await ethers.getContractFactory("PropertyToken");
+    const PropertyToken = await ethers.getContractFactory("PropertyToken");
     propertyToken = await PropertyToken.deploy("https://example.com/{id}.json");
     await propertyToken.waitForDeployment();
 
-    Escrow = await ethers.getContractFactory("Escrow");
-    escrow = await Escrow.deploy(await propertyToken.getAddress());
+    const Escrow = await ethers.getContractFactory("Escrow");
+    escrow = await Escrow.deploy(await propertyToken.getAddress(), owner.address);
     await escrow.waitForDeployment();
 
-    // Grant roles
     await propertyToken.grantRole(await propertyToken.MINTER_ROLE(), await escrow.getAddress());
     await propertyToken.grantRole(await propertyToken.BURNER_ROLE(), await escrow.getAddress());
-    await propertyToken.addToWhitelist(buyer1.address, 0); // County eligible
-    await propertyToken.addToWhitelist(buyer2.address, 1); // State eligible
+    await propertyToken.grantRole(await propertyToken.MINTER_ROLE(), owner.address);
+    await propertyToken.addToWhitelist(buyer1.address, 0);
+    await propertyToken.addToWhitelist(buyer2.address, 1);
   });
 
-  it("Should mint tokens correctly", async function () {
-    await propertyToken.createProperty("Test Property", "", 10000, ethers.parseEther("1000"), 30 * 24 * 3600);
+  async function createOpenProperty(name, supply, target) {
+    await propertyToken.createProperty(name, "", supply, target, "GA-LLC-1", owner.address);
+    await propertyToken.setPerPersonAllowance(0, supply);
+    await propertyToken.startFundingClock(0);
+  }
 
-    await escrow.initializeEscrow(0, ethers.parseEther("1000"), Math.floor(Date.now() / 1000) + 86400);
+  it("Should mint tokens correctly", async function () {
+    const target = ethers.parseEther("1000");
+    await createOpenProperty("Test Property", 10000, target);
+
+    const block = await ethers.provider.getBlock("latest");
+    await escrow.initializeEscrow(0, target, block.timestamp + 86400, 0);
 
     const price = await propertyToken.getCurrentPrice(0);
     await escrow.connect(buyer1).purchase(0, 100, { value: price * 100n });
@@ -34,79 +42,50 @@ describe("PropertyToken", function () {
   });
 
   it("Should burn tokens on escrow failure", async function () {
-    // Create property with short deadline (60 seconds) - enough time to purchase
-    await propertyToken.createProperty("Fail Property", "", 10000, ethers.parseEther("9999"), 60);
+    const target = ethers.parseEther("9999");
+    await createOpenProperty("Fail Property", 10000, target);
 
-    // Get current block timestamp
     const block = await ethers.provider.getBlock("latest");
     const deadline = block.timestamp + 60;
-
-    await escrow.initializeEscrow(0, ethers.parseEther("9999"), deadline);
+    await escrow.initializeEscrow(0, target, deadline, 0);
 
     const price = await propertyToken.getCurrentPrice(0);
-    const purchaseCost = price * 50n;
-    await escrow.connect(buyer1).purchase(0, 50, { value: purchaseCost });
-
-    // Verify tokens were minted
+    await escrow.connect(buyer1).purchase(0, 50, { value: price * 50n });
     expect(await propertyToken.balanceOf(buyer1.address, 0)).to.equal(50);
 
-    // Fund escrow with extra ETH for interest payments (3% APR)
     await owner.sendTransaction({ to: await escrow.getAddress(), value: ethers.parseEther("1") });
-
-    // Fast forward time past deadline
-    await network.provider.send("evm_increaseTime", [120]); // 2 minutes
+    await network.provider.send("evm_increaseTime", [120]);
     await network.provider.send("evm_mine");
 
-    // Process refund + burn
     await escrow.processRefunds(0);
-
-    // Verify tokens were burned
     expect(await propertyToken.balanceOf(buyer1.address, 0)).to.equal(0);
   });
 
-  it("Should block transfers during funding period", async function () {
-    await propertyToken.createProperty("Transfer Test", "", 10000, ethers.parseEther("100"), 86400);
-
-    await escrow.initializeEscrow(0, ethers.parseEther("100"), Math.floor(Date.now() / 1000) + 86400);
-    await propertyToken.grantRole(await propertyToken.MINTER_ROLE(), owner.address);
-
-    // Mint directly (simulate escrow purchase)
+  it("keeps shares locked through the common funding period", async function () {
+    await createOpenProperty("Transfer Test", 10000, ethers.parseEther("100"));
     await propertyToken.mintTokens(0, buyer1.address, 200);
+    await propertyToken.recordKYCVerification(buyer1.address, ethers.id("buyer-1"));
+    await propertyToken.recordKYCVerification(buyer2.address, ethers.id("buyer-2"));
 
-    // During funding: transfer should fail even to whitelisted addresses
     await expect(
       propertyToken.connect(buyer1).safeTransferFrom(buyer1.address, buyer2.address, 0, 100, "0x")
-    ).to.be.revertedWith("Transfers locked during funding");
+    ).to.be.revertedWith("Transfers locked through common funding period");
 
-    // Mark funded
     await propertyToken.markFunded(0);
-
-    // Now transfer should succeed (buyer2 is whitelisted)
-    await propertyToken.connect(buyer1).safeTransferFrom(buyer1.address, buyer2.address, 0, 100, "0x");
-    expect(await propertyToken.balanceOf(buyer2.address, 0)).to.equal(100);
+    await expect(
+      propertyToken.connect(buyer1).safeTransferFrom(buyer1.address, buyer2.address, 0, 100, "0x")
+    ).to.be.revertedWith("Transfers locked through common funding period");
   });
 
-  it("Should track holdings by phase correctly", async function () {
-    await propertyToken.createProperty("Phase Test", "", 10000, ethers.parseEther("100"), 86400);
-    await propertyToken.grantRole(await propertyToken.MINTER_ROLE(), owner.address);
-
-    // Mint in County phase
+  it("Should track holdings by the purchase stage", async function () {
+    await createOpenProperty("Phase Test", 10000, ethers.parseEther("100"));
     await propertyToken.mintTokens(0, buyer1.address, 100);
-
-    // Check holdings tracked by phase
-    const countyHoldings = await propertyToken.holdingsByPhase(0, buyer1.address, 0); // Phase 0 = County
-    expect(countyHoldings).to.equal(100);
+    expect(await propertyToken.holdingsByPhase(0, buyer1.address, 0)).to.equal(100);
   });
 
-  it("Should calculate voting power with phase multipliers", async function () {
-    await propertyToken.createProperty("Voting Test", "", 10000, ethers.parseEther("100"), 86400);
-    await propertyToken.grantRole(await propertyToken.MINTER_ROLE(), owner.address);
-
-    // Mint 100 tokens in County phase (1.5x multiplier)
+  it("Should calculate voting power from county residency", async function () {
+    await createOpenProperty("Voting Test", 10000, ethers.parseEther("100"));
     await propertyToken.mintTokens(0, buyer1.address, 100);
-
-    const votingPower = await propertyToken.getVotingPower(0, buyer1.address);
-    // 100 tokens * 15000 / 10000 = 150 voting power
-    expect(votingPower).to.equal(150);
+    expect(await propertyToken.getVotingPower(0, buyer1.address)).to.equal(150);
   });
 });

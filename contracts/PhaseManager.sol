@@ -9,8 +9,8 @@ interface IGeoOracle {
 }
 
 interface IPropertyToken {
-    enum Phase { County, State, National, International }
-    
+    enum Phase { County, State, National }
+
     function advancePhase(uint256 propertyId) external;
     function mintTokens(uint256 propertyId, address buyer, uint256 amount) external;
     function getProperty(uint256 propertyId) external view returns (
@@ -25,8 +25,6 @@ interface IPropertyToken {
         bool isActive,
         bool isFunded
     );
-    function phaseAllocations(uint256 propertyId, uint8 phase) external view returns (uint256);
-    function phaseMinted(uint256 propertyId, uint8 phase) external view returns (uint256);
     function whitelist(address account) external view returns (bool);
 }
 
@@ -55,8 +53,10 @@ interface IGovernance {
 
 /**
  * @title RevitaHub Phase Manager
- * @notice Dynamic phase advancement based on engagement analytics
- * @dev Advances phases when 75% engagement threshold OR full subscription is reached
+ * @notice Engagement analytics only.
+ * @dev Sale stages are time gates on PropertyToken (days 0–90 / 91–180 / after 180).
+ *      This contract must not open the next stage early. The 75% figure is not a
+ *      sale-stage trigger. Its loan-evaluation meaning is undefined and is not invented here.
  */
 contract PhaseManager is AccessControl, AutomationCompatibleInterface {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
@@ -204,11 +204,8 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
         uint256 engagementPercent = calculateEngagement(propertyId);
         emit EngagementUpdated(propertyId, activeVoters, engagement.totalEligibleVoters, engagementPercent);
 
-        // Check for nudge triggers
+        // Nudges only. Sale stages are not advanced from engagement.
         _checkNudges(propertyId, engagementPercent);
-
-        // Check for early phase advancement
-        _checkPhaseAdvancement(propertyId, engagementPercent);
     }
 
     /**
@@ -222,44 +219,6 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
         // Engagement = (active voters / eligible voters) * 100
         // Returns in basis points (e.g., 7500 = 75%)
         return (engagement.activeVoters * 10000) / engagement.totalEligibleVoters;
-    }
-
-    /**
-     * @notice Check if phase should advance based on engagement
-     * @param propertyId Property ID
-     * @param engagementPercent Current engagement in basis points
-     */
-    function _checkPhaseAdvancement(uint256 propertyId, uint256 engagementPercent) internal {
-        PropertyEngagement storage engagement = propertyEngagement[propertyId];
-        
-        // Check minimum engagement period
-        if (block.timestamp < engagement.phaseStartTime + MIN_ENGAGEMENT_PERIOD) {
-            return;
-        }
-
-        // Check engagement threshold
-        if (engagementPercent >= ENGAGEMENT_THRESHOLD) {
-            _advancePhaseByEngagement(propertyId, engagementPercent);
-        }
-    }
-
-    /**
-     * @notice Advance phase due to high engagement
-     * @param propertyId Property ID
-     * @param engagementPercent Engagement that triggered advancement
-     */
-    function _advancePhaseByEngagement(uint256 propertyId, uint256 engagementPercent) internal {
-        (,,,,,,,uint8 currentPhase,,) = propertyToken.getProperty(propertyId);
-        
-        if (currentPhase < 3) { // Not at International yet
-            propertyToken.advancePhase(propertyId);
-            
-            // Reset phase tracking
-            propertyEngagement[propertyId].phaseStartTime = block.timestamp;
-            propertyEngagement[propertyId].activeVoters = 0;
-            
-            emit PhaseAdvancedByEngagement(propertyId, currentPhase, currentPhase + 1, engagementPercent);
-        }
     }
 
     /**
@@ -292,29 +251,10 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
     }
 
     /**
-     * @notice Manually trigger phase check (for subscription-based advancement)
-     * @param propertyId Property ID
+     * @notice Reserved-bucket advancement was removed. Selling out does not open the next stage.
      */
-    function checkSubscriptionAdvancement(uint256 propertyId) external {
-        (,,,,,,,uint8 currentPhase,,) = propertyToken.getProperty(propertyId);
-
-        if (address(geoOracle) != address(0)) {
-            uint8 eligibility = geoOracle.getPhaseEligibility(msg.sender, propertyId);
-            emit GeoEligibilityChecked(propertyId, msg.sender, eligibility);
-        }
-        
-        uint256 phaseAllocation = propertyToken.phaseAllocations(propertyId, currentPhase);
-        uint256 phaseMinted = propertyToken.phaseMinted(propertyId, currentPhase);
-
-        if (phaseMinted >= phaseAllocation && currentPhase < 3) {
-            propertyToken.advancePhase(propertyId);
-            
-            // Reset tracking for new phase
-            propertyEngagement[propertyId].phaseStartTime = block.timestamp;
-            propertyEngagement[propertyId].activeVoters = 0;
-            
-            emit PhaseAdvancedBySubscription(propertyId, currentPhase, currentPhase + 1);
-        }
+    function checkSubscriptionAdvancement(uint256) external pure {
+        return;
     }
 
     // ============ Chainlink Automation ============
@@ -322,40 +262,13 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
     /**
      * @notice Chainlink Automation check
      */
-    function checkUpkeep(bytes calldata) external view override returns (bool upkeepNeeded, bytes memory performData) {
-        for (uint256 i = 0; i < trackedProperties.length; i++) {
-            uint256 propertyId = trackedProperties[i];
-            PropertyEngagement storage engagement = propertyEngagement[propertyId];
-            
-            if (!engagement.isTracking) continue;
-
-            // Check if minimum period passed
-            if (block.timestamp < engagement.phaseStartTime + MIN_ENGAGEMENT_PERIOD) continue;
-
-            uint256 engagementPercent = calculateEngagement(propertyId);
-            
-            if (engagementPercent >= ENGAGEMENT_THRESHOLD) {
-                return (true, abi.encode(propertyId, engagementPercent));
-            }
-        }
+    function checkUpkeep(bytes calldata) external pure override returns (bool upkeepNeeded, bytes memory performData) {
+        // Sale stages follow PropertyToken's funding clock, not engagement upkeep.
         return (false, "");
     }
 
-    /**
-     * @notice Chainlink Automation perform
-     */
-    function performUpkeep(bytes calldata performData) external override {
-        (uint256 propertyId, ) = abi.decode(performData, (uint256, uint256));
-        
-        PropertyEngagement storage engagement = propertyEngagement[propertyId];
-        require(engagement.isTracking, "Not tracking");
-        require(block.timestamp >= engagement.phaseStartTime + MIN_ENGAGEMENT_PERIOD, "Too early");
-        
-        // Re-verify engagement
-        uint256 currentEngagement = calculateEngagement(propertyId);
-        require(currentEngagement >= ENGAGEMENT_THRESHOLD, "Threshold not met");
-
-        _advancePhaseByEngagement(propertyId, currentEngagement);
+    function performUpkeep(bytes calldata) external pure override {
+        revert("Access stages follow the common funding clock");
     }
 
     /**
@@ -397,37 +310,12 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
     }
 
     /**
-     * @notice Claim engagement bonus when threshold is met (vote-to-earn)
-     * @dev Mints bonus tokens to active participants when 75% engagement is reached
-     * @param propertyId Property ID
+     * @notice TODO(owner): engagement token bonuses are outside the confirmed sale rules.
      */
-    function claimEngagementBonus(uint256 propertyId) external {
-        require(propertyToken.whitelist(msg.sender), "Not whitelisted");
-        require(!hasClaimed[propertyId][msg.sender], "Already claimed");
-        
-        PropertyEngagement storage engagement = propertyEngagement[propertyId];
-        require(engagement.isTracking, "Not tracking");
-        require(calculateEngagement(propertyId) >= ENGAGEMENT_THRESHOLD, "Threshold not met");
-        require(block.timestamp >= engagement.phaseStartTime + MIN_ENGAGEMENT_PERIOD, "Too early");
-
-        // Mark as claimed before minting (reentrancy protection)
-        hasClaimed[propertyId][msg.sender] = true;
-
-        uint256 bonusAmount = BONUS_TOKENS;
-
-        // County locals get 1.5x bonus via geo-verification oracle
-        if (address(geoOracle) != address(0)) {
-            uint8 eligibility = geoOracle.getPhaseEligibility(msg.sender, propertyId);
-            emit GeoEligibilityChecked(propertyId, msg.sender, eligibility);
-            if (eligibility == 0) { // Phase.County = 0
-                bonusAmount = (BONUS_TOKENS * 3) / 2; // 1.5x
-            }
-        }
-
-        // Mint bonus tokens (requires MINTER_ROLE granted to PhaseManager)
-        propertyToken.mintTokens(propertyId, msg.sender, bonusAmount);
-
-        emit BonusClaimed(propertyId, msg.sender, bonusAmount);
+    function claimEngagementBonus(uint256) external pure {
+        // TODO(owner): token bonuses are outside the confirmed sale rules.
+        // Do not mint extra supply, and do not treat 1.5x as a bonus multiplier.
+        revert("Engagement token bonuses are not part of confirmed sale rules");
     }
 
     /**
@@ -507,35 +395,16 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
         emit EngagementUpdated(propertyId, adjustedActiveVoters, engagement.totalEligibleVoters, engagementPercent);
         emit PollBonusApplied(propertyId, pollParticipants, pollBonus);
 
-        // Check for nudge triggers
+        // Nudges only. Sale stages are not advanced from engagement.
         _checkNudges(propertyId, engagementPercent);
-
-        // Check for early phase advancement
-        _checkPhaseAdvancement(propertyId, engagementPercent);
     }
 
     /**
-     * @notice Claim poll-boosted engagement bonus
-     * @dev Extra bonus tokens for poll participants when threshold met
-     * @param propertyId Property ID
+     * @notice TODO(owner): poll token bonuses are outside the confirmed sale rules.
      */
-    function claimPollBoostBonus(uint256 propertyId) external {
-        require(propertyToken.whitelist(msg.sender), "Not whitelisted");
-        require(pollParticipated[propertyId][msg.sender], "Did not participate in polls");
-        require(!hasClaimed[propertyId][msg.sender], "Already claimed");
-        
-        PropertyEngagement storage engagement = propertyEngagement[propertyId];
-        require(engagement.isTracking, "Not tracking");
-        require(calculateEngagement(propertyId) >= ENGAGEMENT_THRESHOLD, "Threshold not met");
-        require(block.timestamp >= engagement.phaseStartTime + MIN_ENGAGEMENT_PERIOD, "Too early");
-
-        hasClaimed[propertyId][msg.sender] = true;
-
-        // Poll participants get 2x bonus
-        uint256 bonusAmount = BONUS_TOKENS * 2;
-        propertyToken.mintTokens(propertyId, msg.sender, bonusAmount);
-
-        emit BonusClaimed(propertyId, msg.sender, bonusAmount);
+    function claimPollBoostBonus(uint256) external pure {
+        // TODO(owner): token bonuses are outside the confirmed sale rules.
+        revert("Engagement token bonuses are not part of confirmed sale rules");
     }
 
     /**
@@ -550,9 +419,7 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
     // ============ Demand-Driven Engagement (SimCity Integration) ============
 
     /**
-     * @notice Update engagement based on governance demand signals
-     * @dev Reads demand bars from Governance contract, triggers phase advancement
-     *      if PropertyDevelopment demand exceeds threshold. Like SimCity's advisor system.
+     * @notice Record a demand reading. This does not advance a sale stage.
      * @param propertyId Property ID to evaluate
      */
     function updateDemandEngagement(uint256 propertyId) external onlyRole(OPERATOR_ROLE) {
@@ -567,10 +434,8 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
         // Emit advisor-style nudge for UI
         emit DemandNudge(propertyId, 0, propDemandBps);
         
-        // Check if PropertyDevelopment demand meets engagement threshold
-        if (propDemandBps >= ENGAGEMENT_THRESHOLD && 
-            block.timestamp >= engagement.phaseStartTime + MIN_ENGAGEMENT_PERIOD) {
-            _advancePhaseByEngagement(propertyId, propDemandBps);
+        // Demand does not open the next sale stage. The 75% comparison is not a trigger.
+        if (propDemandBps >= ENGAGEMENT_THRESHOLD) {
             emit DemandDrivenAdvancement(propertyId, propDemandBps);
         }
     }
@@ -600,11 +465,8 @@ contract PhaseManager is AccessControl, AutomationCompatibleInterface {
         baseEngagement = calculateEngagement(propertyId);
         demandBars = governance.getDemandBars();
         healthScore = governance.getCommunityHealthScore();
-        
-        PropertyEngagement storage engagement = propertyEngagement[propertyId];
-        isReadyForAdvancement = engagement.isTracking && 
-            demandBars[0] >= ENGAGEMENT_THRESHOLD &&
-            block.timestamp >= engagement.phaseStartTime + MIN_ENGAGEMENT_PERIOD;
+        // Sale stages are not engagement-ready. Always false.
+        isReadyForAdvancement = false;
     }
 
     // ============ Post-Execution Impact Recording ============

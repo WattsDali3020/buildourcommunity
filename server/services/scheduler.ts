@@ -1,13 +1,5 @@
 import { storage } from "../storage";
-
-const VOTING_MULTIPLIERS: Record<string, number> = {
-  county: 1.5,
-  state: 1.25,
-  national: 1.0,
-  international: 0.75,
-};
-
-const PHASE_ORDER = ["county", "state", "national", "international"];
+import { syncAccessStage } from "./tokenizationOrchestrator";
 
 export async function checkFundingDeadlines(): Promise<void> {
   console.log("[Scheduler] Checking funding deadlines...");
@@ -35,33 +27,19 @@ export async function checkFundingDeadlines(): Promise<void> {
 }
 
 export async function checkPhaseAdvancement(): Promise<void> {
-  console.log("[Scheduler] Checking phase advancement...");
+  console.log("[Scheduler] Syncing access stages to the common funding clock...");
   
   const properties = await storage.getProperties();
   
   for (const property of properties) {
-    if (property.status !== "live") continue;
+    if (property.status !== "live" && property.status !== "funded") continue;
     
     const offering = await storage.getOfferingByPropertyId(property.id);
-    if (!offering || offering.status !== "active") continue;
-    
-    const phases = await storage.getOfferingPhases(offering.id);
-    const activePhase = phases.find(p => p.isActive);
-    
-    if (!activePhase) continue;
-    
-    const tokensSold = activePhase.tokensSold || 0;
-    const allocation = activePhase.tokenAllocation;
-    
-    if (tokensSold >= allocation) {
-      const currentPhaseIndex = PHASE_ORDER.indexOf(activePhase.phase);
-      const nextPhaseIndex = currentPhaseIndex + 1;
-      
-      if (nextPhaseIndex < PHASE_ORDER.length) {
-        console.log(`[Scheduler] Phase ${activePhase.phase} sold out - advancing to ${PHASE_ORDER[nextPhaseIndex]}`);
-      } else {
-        console.log(`[Scheduler] All phases completed for offering ${offering.id}`);
-      }
+    if (!offering || !offering.fundingClockStart) continue;
+
+    const result = await syncAccessStage(offering.id);
+    if (result.success) {
+      console.log(`[Scheduler] Offering ${offering.id} stage is ${result.newPhase}`);
     }
   }
 }

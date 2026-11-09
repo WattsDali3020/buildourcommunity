@@ -8,7 +8,7 @@ const doors = [
     id: "investor",
     title: "Investor",
     subtitle: "Build wealth through community ownership",
-    description: "Invest in tokenized properties starting at $12.50. Earn dividends, vote on development plans, and grow your portfolio as communities revitalize.",
+    description: "Take part in a local project. Verified county residents have the first 90 days, and vote weight follows residency.",
     icon: TrendingUp,
     cta: "Browse Properties",
     href: "/properties",

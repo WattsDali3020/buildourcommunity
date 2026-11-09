@@ -10,9 +10,9 @@ const steps = [
   },
   {
     icon: Coins,
-    title: "Own Real Estate for $12.50",
+    title: "County residents go first",
     benefit: "Designed for all income levels",
-    description: "Skip the traditional barriers to real estate. Buy tokens that represent real ownership, with prices starting at $12.50 for local investors.",
+    description: "Verified county residents can buy from the full supply for 90 days. The price is a parameter, and later stages sell only what is still unsold.",
   },
   {
     icon: Vote,

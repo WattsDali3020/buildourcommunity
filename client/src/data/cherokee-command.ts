@@ -67,7 +67,7 @@ export const seedPriorities: SeedPriority[] = [
     summary: "Units the county workforce can actually occupy. Relieves ResCap without adding another I-575 rooftop-only subdivision.",
     tags: ["helps-r-cap"],
     phaseProgress: 18,
-    buyInHint: "From $12.50 after KYC",
+    buyInHint: "After residency verification",
   },
   {
     id: "trades-bluffs",
@@ -76,7 +76,7 @@ export const seedPriorities: SeedPriority[] = [
     summary: "Raises the industrial valve. Local workplaces for people who already live here.",
     tags: ["helps-i"],
     phaseProgress: 12,
-    buyInHint: "From $12.50 after KYC",
+    buyInHint: "After residency verification",
   },
   {
     id: "downtown-mixed-use",
@@ -85,7 +85,7 @@ export const seedPriorities: SeedPriority[] = [
     summary: "Internal-market commercial plus upper-story housing. Helps C without stretching the commute.",
     tags: ["helps-c", "helps-r-cap"],
     phaseProgress: 9,
-    buyInHint: "From $12.50 after KYC",
+    buyInHint: "After residency verification",
   },
   {
     id: "service-node",
@@ -94,7 +94,7 @@ export const seedPriorities: SeedPriority[] = [
     summary: "Clinic, childcare, or food where heat shows demand. Shortens trips.",
     tags: ["helps-c"],
     phaseProgress: 6,
-    buyInHint: "From $12.50 after KYC",
+    buyInHint: "After residency verification",
   },
   {
     id: "distressed-residential",
@@ -103,7 +103,7 @@ export const seedPriorities: SeedPriority[] = [
     summary: "Classic vacant-house pin. Allowed after job and workforce pins — house-only heat worsens R vs C/I.",
     tags: ["helps-r-cap", "adds-drag"],
     phaseProgress: 4,
-    buyInHint: "From $12.50 after KYC",
+    buyInHint: "After residency verification",
   },
 ];
 

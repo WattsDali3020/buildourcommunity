@@ -27,7 +27,7 @@ export function HeroSection() {
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
             Revitalize Your Community:
             <br />
-            <span className="text-primary">Vote, Build, and Own Real Estate from $12.50</span>
+            <span className="text-primary">Nominate, vote, and fund local projects</span>
           </h1>
 
           <p className="text-lg md:text-xl text-white/90 mb-4 leading-relaxed">
@@ -38,7 +38,7 @@ export function HeroSection() {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-8 text-white/70 text-sm">
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="h-4 w-4 text-chart-3" />
-              <span>$12.50 tokens for local investors</span>
+              <span>County residents first for 90 days</span>
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="h-4 w-4 text-chart-3" />

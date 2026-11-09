@@ -122,8 +122,8 @@ export function TokenizePropertyCTA() {
                 <p className="text-sm">
                   <span className="font-medium">Community First:</span>{" "}
                   <span className="text-muted-foreground">
-                    County residents invest at $12.50/token before state ($18.75), 
-                    national ($28.13), and international ($37.50) phases.
+                    Verified county residents have the first 90 days of the full supply.
+                    Later stages sell only what is still unsold. The price is a parameter.
                   </span>
                 </p>
               </div>

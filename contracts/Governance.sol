@@ -15,10 +15,11 @@ interface IPropertyToken {
 
 /**
  * @title RevitaHub Governance
- * @notice On-chain governance with phase-weighted voting, impact requirements, and demand signaling.
+ * @notice On-chain governance with residency-weighted voting, impact requirements, and demand signaling.
  * @dev 
  * Key design principles for regulatory resilience and real utility:
- * - Local priority (1.5x County) and phase-weighted voting create genuine geographic relevance.
+ * - Vote weight is the holder's verified residency: 1.5 county, 1.0 other in-state, 0.75 other US.
+ *   Outside holders vote. There is no resident-majority guarantee and no outside-vote cap.
  * - Impact scoring + reporting required for PropertyDevelopment proposals (and recommended for TreasuryAllocation).
  * - Voting directly influences real outcomes: development decisions, treasury allocation, and parameter changes.
  * - Demand meters and poll-to-proposal pipeline reflect authentic community priorities.

@@ -112,18 +112,17 @@ function BuyTokensSection() {
           <h4 className="font-semibold mb-3 flex items-center gap-2"><Coins className="h-5 w-5 text-primary" />How Token Purchasing Works</h4>
           <ul className="space-y-3 text-sm text-muted-foreground">
             <li className="flex items-start gap-2"><span className="font-bold text-primary">1.</span>Browse available properties and select one to invest in</li>
-            <li className="flex items-start gap-2"><span className="font-bold text-primary">2.</span>Choose the number of tokens (starting at $12.50 each)</li>
+            <li className="flex items-start gap-2"><span className="font-bold text-primary">2.</span>Choose a number of tokens. The price is the configured initial price, not a later-stage markup.</li>
             <li className="flex items-start gap-2"><span className="font-bold text-primary">3.</span>Complete purchase with your connected wallet</li>
             <li className="flex items-start gap-2"><span className="font-bold text-primary">4.</span>Receive voting power and dividend eligibility</li>
           </ul>
         </Card>
         <Card className="p-6">
-          <h4 className="font-semibold mb-3 flex items-center gap-2"><DollarSign className="h-5 w-5 text-chart-3" />4-Phase Pricing</h4>
+          <h4 className="font-semibold mb-3 flex items-center gap-2"><DollarSign className="h-5 w-5 text-chart-3" />Access stages</h4>
           <div className="space-y-3">
-            <div className="flex justify-between text-sm"><span>County Phase</span><span className="font-semibold">$12.50</span></div>
-            <div className="flex justify-between text-sm"><span>State Phase</span><span className="font-semibold">$18.75</span></div>
-            <div className="flex justify-between text-sm"><span>National Phase</span><span className="font-semibold">$28.13</span></div>
-            <div className="flex justify-between text-sm"><span>International Phase</span><span className="font-semibold">$37.50</span></div>
+            <div className="flex justify-between text-sm"><span>Days 0–90</span><span className="font-semibold">Verified county</span></div>
+            <div className="flex justify-between text-sm"><span>Days 91–180</span><span className="font-semibold">Statewide</span></div>
+            <div className="flex justify-between text-sm"><span>After day 180</span><span className="font-semibold">Nationwide remainder</span></div>
           </div>
         </Card>
       </div>

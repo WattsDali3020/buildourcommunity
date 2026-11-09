@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { MapPin, Flag, Users, Globe, CheckCircle, Clock, Lock } from "lucide-react";
-import { PHASE_CONFIG } from "@shared/schema";
+import { getPhaseConfig } from "@shared/schema";
 
 interface PhaseStatus {
   phase: "county" | "state" | "national" | "international";
@@ -30,9 +30,9 @@ export function TokenOfferingTimeline({ phases, propertyCounty, propertyState }:
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">5-Phase Community-First Offering</CardTitle>
+        <CardTitle className="text-lg">Staged access to the full supply</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Local community members invest first at the lowest prices
+          County residents first, then the rest of the state, then the rest of the US. Each later stage sells only what is still unsold.
         </p>
       </CardHeader>
       <CardContent>
@@ -40,8 +40,8 @@ export function TokenOfferingTimeline({ phases, propertyCounty, propertyState }:
           <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-border" />
           
           <div className="space-y-6">
-            {phases.map((phaseStatus, index) => {
-              const config = PHASE_CONFIG[phaseStatus.phase];
+            {phases.map((phaseStatus) => {
+              const config = getPhaseConfig(phaseStatus.phase);
               const Icon = phaseIcons[phaseStatus.phase];
               const percent = phaseStatus.tokenAllocation > 0 
                 ? Math.round((phaseStatus.tokensSold / phaseStatus.tokenAllocation) * 100)
@@ -67,7 +67,7 @@ export function TokenOfferingTimeline({ phases, propertyCounty, propertyState }:
                   
                   <div className="flex-1 pb-2">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h4 className="font-medium">{config.name} Phase</h4>
+                      <h4 className="font-medium">{config?.name ?? phaseStatus.phase} stage</h4>
                       {phaseStatus.isActive && (
                         <Badge className="bg-primary text-primary-foreground text-xs">Active</Badge>
                       )}
@@ -77,10 +77,10 @@ export function TokenOfferingTimeline({ phases, propertyCounty, propertyState }:
                     </div>
                     
                     <p className="text-sm text-muted-foreground mb-2">
-                      {phaseStatus.phase === "county" && `${propertyCounty} County residents only`}
-                      {phaseStatus.phase === "state" && `${propertyState} residents`}
-                      {phaseStatus.phase === "national" && "All US residents"}
-                      {phaseStatus.phase === "international" && "Global investors"}
+                      {phaseStatus.phase === "county" && `Verified ${propertyCounty} County residents`}
+                      {phaseStatus.phase === "state" && `Verified ${propertyState} residents, including the county`}
+                      {phaseStatus.phase === "national" && "Other verified US residents"}
+                      {phaseStatus.phase === "international" && "Not a sale stage"}
                     </p>
                     
                     <div className="grid grid-cols-3 gap-2 text-xs mb-2">
@@ -90,11 +90,11 @@ export function TokenOfferingTimeline({ phases, propertyCounty, propertyState }:
                       </div>
                       <div>
                         <span className="text-muted-foreground">Max:</span>
-                        <span className="font-medium ml-1">{config.maxTokensPerPerson} tokens</span>
+                        <span className="font-medium ml-1">Same allowance, not set</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Multiplier:</span>
-                        <span className="font-medium ml-1">{config.priceMultiplier}x</span>
+                        <span className="text-muted-foreground">Vote:</span>
+                        <span className="font-medium ml-1">{config ? `${config.voteWeight}x` : "—"}</span>
                       </div>
                     </div>
                     
@@ -114,12 +114,12 @@ export function TokenOfferingTimeline({ phases, propertyCounty, propertyState }:
         </div>
         
         <div className="mt-6 p-4 rounded-md bg-muted/30 border">
-          <h5 className="font-medium text-sm mb-2">Why Community-First Pricing?</h5>
+          <h5 className="font-medium text-sm mb-2">How access works</h5>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            This 5-phase system ensures local community members who will be most affected by development 
-            can invest first at the lowest price ($12.50/token). As phases open to broader audiences, 
-            prices increase algorithmically. This prevents wealthy outside investors from monopolizing 
-            community assets and ensures local voices have governance power before external capital enters.
+            Days 0–90 are limited to verified county residents. Days 91–180 open statewide.
+            After day 180 the unsold remainder is open nationwide. The initial price is a
+            parameter, not a ladder. Vote weight follows residency: 1.5, 1.0, then 0.75.
+            Outside holders still vote. There is no cap on outside votes.
           </p>
         </div>
       </CardContent>

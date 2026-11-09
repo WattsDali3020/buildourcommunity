@@ -26,7 +26,7 @@ export interface DeploymentResult {
 }
 
 export interface TokenPhaseConfig {
-  phase: "county" | "state" | "national" | "international";
+  phase: "county" | "state" | "national";
   priceMultiplier: number;
   maxTokensPerPerson: number;
   startDate: Date;
@@ -78,13 +78,14 @@ contract PropertyToken is ERC20, ERC20Burnable, Ownable, Pausable {
     uint256 public fundingDeadline;
     uint256 public totalFundsRaised;
     
-    // Offering phases
-    enum Phase { County, State, National, International }
+    // Access stages. No reserved buckets and no price ramp.
+    enum Phase { County, State, National }
     Phase public currentPhase;
-    
-    // Phase pricing (in USDC cents, e.g., 1250 = $12.50)
-    mapping(Phase => uint256) public phasePrices;
-    mapping(Phase => uint256) public phaseMaxPerPerson;
+
+    // Single price parameter in USDC cents. Not a marketing constant.
+    uint256 public basePriceCents;
+    // Same per-person allowance for every eligible person. 0 = not chosen.
+    uint256 public perPersonAllowance;
     
     // Investor tracking
     mapping(address => uint256) public investorContributions;
@@ -115,27 +116,27 @@ contract PropertyToken is ERC20, ERC20Burnable, Ownable, Pausable {
         fundingGoal = _fundingGoal;
         fundingDeadline = _fundingDeadline;
         
-        // Set phase pricing (in cents)
-        phasePrices[Phase.County] = 1250;        // $12.50
-        phasePrices[Phase.State] = 1875;          // $18.75
-        phasePrices[Phase.National] = 2813;       // $28.13
-        phasePrices[Phase.International] = 3750;  // $37.50
-        
-        // Set max tokens per person per phase
-        phaseMaxPerPerson[Phase.County] = 1000;       // $12,500 max at county
-        phaseMaxPerPerson[Phase.State] = 500;          // $9,375 max at state
-        phaseMaxPerPerson[Phase.National] = 250;       // $7,032 max at national
-        phaseMaxPerPerson[Phase.International] = 100;  // $3,750 max at international
-        
+        basePriceCents = 0; // Set with setBasePrice. Do not hard-code a public quote.
+        perPersonAllowance = 0;
+
         // Mint total supply to contract for distribution
         _mint(address(this), _totalSupply * 10**decimals());
         
         currentPhase = Phase.County;
     }
+
+    function setBasePrice(uint256 cents) external onlyOwner {
+        require(cents > 0, "Price required");
+        basePriceCents = cents;
+    }
+
+    function setPerPersonAllowance(uint256 allowance) external onlyOwner {
+        require(allowance > 0, "Allowance required");
+        perPersonAllowance = allowance;
+    }
     
-    function advancePhase() external onlyOwner {
-        require(currentPhase != Phase.International, "Already at final phase");
-        currentPhase = Phase(uint(currentPhase) + 1);
+    function advancePhase() external pure {
+        revert("Access stages follow the common funding clock");
     }
     
     function pause() external onlyOwner {
@@ -161,11 +162,11 @@ contract PropertyToken is ERC20, ERC20Burnable, Ownable, Pausable {
     }
     
     function getCurrentPrice() public view returns (uint256) {
-        return phasePrices[currentPhase];
+        return basePriceCents;
     }
     
     function getMaxTokensForPhase() public view returns (uint256) {
-        return phaseMaxPerPerson[currentPhase];
+        return perPersonAllowance;
     }
 }
 `;
@@ -228,42 +229,35 @@ export async function simulateDeployment(config: TokenDeploymentConfig): Promise
 }
 
 /**
- * Calculate phase pricing based on 5-phase community-first model
+ * Three access stages over the common 365-day clock.
+ * Price is the supplied parameter (multiplier 1). Allowance is unset (0).
  */
-export function calculatePhasePricing(basePrice: number): TokenPhaseConfig[] {
-  const now = new Date();
-  const phases: TokenPhaseConfig[] = [
+export function calculatePhasePricing(basePrice: number, clockStart: Date = new Date()): TokenPhaseConfig[] {
+  const day = 24 * 60 * 60 * 1000;
+  void basePrice;
+  return [
     {
       phase: "county",
-      priceMultiplier: 1.0, // $12.50 base
-      maxTokensPerPerson: 1000,
-      startDate: now,
-      endDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      priceMultiplier: 1,
+      maxTokensPerPerson: 0,
+      startDate: clockStart,
+      endDate: new Date(clockStart.getTime() + 90 * day),
     },
     {
-      phase: "state", 
-      priceMultiplier: 1.5, // $18.75
-      maxTokensPerPerson: 500,
-      startDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
-      endDate: new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000), // 90 days
+      phase: "state",
+      priceMultiplier: 1,
+      maxTokensPerPerson: 0,
+      startDate: new Date(clockStart.getTime() + 90 * day),
+      endDate: new Date(clockStart.getTime() + 180 * day),
     },
     {
       phase: "national",
-      priceMultiplier: 2.25, // $28.13
-      maxTokensPerPerson: 250,
-      startDate: new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000),
-      endDate: new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000), // 180 days
-    },
-    {
-      phase: "international",
-      priceMultiplier: 3.0, // $37.50
-      maxTokensPerPerson: 100,
-      startDate: new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000),
-      endDate: new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000), // 365 days
+      priceMultiplier: 1,
+      maxTokensPerPerson: 0,
+      startDate: new Date(clockStart.getTime() + 180 * day),
+      endDate: new Date(clockStart.getTime() + 365 * day),
     },
   ];
-  
-  return phases;
 }
 
 /**

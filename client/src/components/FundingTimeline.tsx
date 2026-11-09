@@ -74,7 +74,7 @@ export function FundingTimeline({
               <Clock className="h-5 w-5" />
               Funding Timeline
             </CardTitle>
-            <CardDescription>1-year distribution with community-first phases</CardDescription>
+            <CardDescription>One 365-day clock from the day residents choose the project</CardDescription>
           </div>
           <Badge variant={status === "funded" ? "default" : status === "failed" ? "destructive" : "outline"}>
             {status === "funded" && <CheckCircle className="h-3 w-3 mr-1" />}
@@ -118,20 +118,20 @@ export function FundingTimeline({
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-2 p-3 rounded-md bg-muted/50">
-          {(["county", "state", "national", "international"] as const).map((phase) => {
-            const config = FUNDING_TIMELINE_CONFIG.phaseDurations[phase];
+        <div className="grid grid-cols-3 gap-2 p-3 rounded-md bg-muted/50">
+          {(Object.keys(FUNDING_TIMELINE_CONFIG.stages) as Array<keyof typeof FUNDING_TIMELINE_CONFIG.stages>).map((phase) => {
+            const config = FUNDING_TIMELINE_CONFIG.stages[phase];
+            const order = ["county", "state", "national"];
             const isActive = currentPhase === phase;
-            const isPast = ["county", "state", "national", "international"].indexOf(currentPhase) > 
-                           ["county", "state", "national", "international"].indexOf(phase);
+            const isPast = order.indexOf(currentPhase) > order.indexOf(phase);
             
             return (
               <div 
                 key={phase} 
                 className={`text-center p-2 rounded ${isActive ? "bg-primary/10 border border-primary" : isPast ? "opacity-50" : ""}`}
               >
-                <p className="text-xs font-medium capitalize">{phase}</p>
-                <p className="text-xs text-muted-foreground">{config.daysMin}-{config.daysMax}d</p>
+                <p className="text-xs font-medium">{config.label}</p>
+                <p className="text-xs text-muted-foreground">Days {config.startDay}–{config.endDay}</p>
                 {isActive && <Badge variant="default" className="mt-1 text-xs">Current</Badge>}
                 {isPast && <CheckCircle className="h-4 w-4 mx-auto mt-1 text-chart-3" />}
               </div>
@@ -182,7 +182,7 @@ export function FundingTimeline({
                   <DialogHeader>
                     <DialogTitle>Refund with Interest</DialogTitle>
                     <DialogDescription>
-                      Your investment is protected. Receive your full amount plus earned interest.
+                      Refund terms are not decided. The interest line is older escrow math, not a confirmed offer.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">

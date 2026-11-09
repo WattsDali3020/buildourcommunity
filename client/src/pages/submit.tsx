@@ -384,9 +384,9 @@ export default function Submit() {
                       <div>
                         <p className="text-sm font-medium">Why County Matters</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          The county you specify determines who can invest first. In Phase 1, only residents 
-                          of {formData.county || "this"} County will be able to purchase tokens at the base 
-                          price of $12.50 each (max 100 tokens per person).
+                          The county you specify is the residency boundary for the first 90 days.
+                          Only verified residents of {formData.county || "this"} County can buy during that stage.
+                          The price and the per-person allowance are parameters. The allowance is not chosen yet.
                         </p>
                       </div>
                     </div>
@@ -577,26 +577,21 @@ export default function Submit() {
                         Based on your funding goal, here's how tokens will be distributed:
                       </p>
                       {formData.fundingGoal && (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                           <div className="p-3 rounded-md bg-background">
-                            <p className="text-xs text-muted-foreground">Phase 1: County</p>
-                            <p className="font-semibold">$12.50/token</p>
-                            <p className="text-xs">Max 100/person</p>
+                            <p className="text-xs text-muted-foreground">Days 0–90</p>
+                            <p className="font-semibold">Verified county residents</p>
+                            <p className="text-xs">Full supply</p>
                           </div>
                           <div className="p-3 rounded-md bg-background">
-                            <p className="text-xs text-muted-foreground">Phase 2: State</p>
-                            <p className="font-semibold">$18.75/token</p>
-                            <p className="text-xs">Max 250/person</p>
+                            <p className="text-xs text-muted-foreground">Days 91–180</p>
+                            <p className="font-semibold">Statewide</p>
+                            <p className="text-xs">Unsold remainder</p>
                           </div>
                           <div className="p-3 rounded-md bg-background">
-                            <p className="text-xs text-muted-foreground">Phase 3: National</p>
-                            <p className="font-semibold">$28.13/token</p>
-                            <p className="text-xs">Max 500/person</p>
-                          </div>
-                          <div className="p-3 rounded-md bg-background">
-                            <p className="text-xs text-muted-foreground">Phase 4: International</p>
-                            <p className="font-semibold">$37.50/token</p>
-                            <p className="text-xs">Max 1000/person</p>
+                            <p className="text-xs text-muted-foreground">After day 180</p>
+                            <p className="font-semibold">Nationwide</p>
+                            <p className="text-xs">Unsold remainder</p>
                           </div>
                         </div>
                       )}
@@ -777,11 +772,10 @@ export default function Submit() {
                     </div>
 
                     <div className="p-4 rounded-md bg-primary/5 border border-primary/20">
-                      <h4 className="font-medium mb-2">5-Phase Community-First Offering</h4>
+                      <h4 className="font-medium mb-2">Staged access</h4>
                       <p className="text-sm text-muted-foreground">
-                        Upon approval, your property will go through our 5-phase token offering, 
-                        starting with {formData.county || "your"} County residents at $12.50/token 
-                        before opening to broader audiences at higher prices.
+                        If residents choose this project, verified {formData.county || "county"} residents
+                        have the first 90 days. The price is a parameter. Later stages sell only what is still unsold.
                       </p>
                     </div>
                   </div>

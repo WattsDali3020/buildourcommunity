@@ -192,7 +192,7 @@ function PlatformFlowDiagram() {
               <FlowNode
                 icon={<Wallet className="h-5 w-5 text-white" />}
                 label="Escrow"
-                sublabel=".sol — Funding + 3% APR"
+                sublabel=".sol — Funding clock"
                 color="bg-chart-3"
                 testId="flow-node-escrow"
               />
@@ -336,8 +336,8 @@ export default function TokenizationProcess() {
       details: [
         "Create property-holding LLC or trust structure",
         "Define token parameters: total supply based on property value",
-        "Set phase pricing: $12.50 (County) to $37.50 (International)",
-        "Configure per-person token limits per phase (100 tokens in Phase 1)",
+        "Set the initial price as a parameter. Do not hard-code a public ladder.",
+        "Set one per-person allowance. The number is not chosen yet.",
         "Establish 1-year funding deadline and 100% funding requirement",
       ],
     },
@@ -351,22 +351,21 @@ export default function TokenizationProcess() {
         "Deploy ERC-1155 multi-token contract with ERC-1400 security extensions",
         "Implement transfer restrictions for KYC/AML compliance",
         "Configure dividend distribution mechanisms",
-        "Set up governance voting power multipliers by phase",
+        "Set residency vote weights: 1.5 county, 1.0 in-state, 0.75 other US",
         "Smart contract security audit by third-party firm",
       ],
     },
     {
       number: 4,
       title: "Launch",
-      description: "4-phase community-first token offering",
+      description: "Staged access to the full token supply",
       icon: <Rocket className="h-6 w-6 text-white" />,
       color: "bg-primary",
       details: [
-        "Phase 1 (County): Local residents at $12.50/token, 100 tokens/person limit",
-        "Phase 2 (State): State residents at $18.75/token, 250 tokens/person limit",
-        "Phase 3 (National): US investors at $28.13/token, 500 tokens/person limit",
-        "Phase 4 (International): Global at $37.50/token, 1000 tokens/person limit",
-        "Voting power multipliers: County 1.5x, State 1.25x, National 1.0x, International 0.75x",
+        "Days 0–90: verified residents of the project's county",
+        "Days 91–180: statewide, selling only the unsold remainder",
+        "After day 180: nationwide, still only the unsold remainder",
+        "Vote weights: 1.5 verified county, 1.0 other in-state, 0.75 other US",
       ],
     },
     {
@@ -392,7 +391,7 @@ export default function TokenizationProcess() {
       details: [
         "USDC payments collected via Stripe and crypto wallets",
         "Funds held in smart contract escrow with multi-sig security",
-        "3% APR accrues on all deposits from day one",
+        "Refund terms are not decided. Do not treat a rate as confirmed.",
         "Real-time funding progress displayed on property page",
         "Chainlink Automation monitors funding milestones",
       ],
@@ -551,15 +550,15 @@ export default function TokenizationProcess() {
             <Card>
               <CardContent className="p-4 text-center">
                 <DollarSign className="h-8 w-8 text-primary mx-auto mb-2" />
-                <p className="text-2xl font-bold">$12.50</p>
-                <p className="text-sm text-muted-foreground">Minimum Investment</p>
+                <p className="text-2xl font-bold">Parameter</p>
+                <p className="text-sm text-muted-foreground">Initial token price</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4 text-center">
                 <Shield className="h-8 w-8 text-primary mx-auto mb-2" />
-                <p className="text-2xl font-bold">3% APR</p>
-                <p className="text-sm text-muted-foreground">Protected Returns</p>
+                <p className="text-2xl font-bold">Open</p>
+                <p className="text-sm text-muted-foreground">Refund policy</p>
               </CardContent>
             </Card>
           </div>
@@ -632,7 +631,7 @@ export default function TokenizationProcess() {
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span><strong>Guaranteed Returns:</strong> If funding fails, investors receive full refund plus 3% APR interest</span>
+                  <span><strong>Refunds:</strong> Not decided. Early completion and post-period liquidity are also open.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />

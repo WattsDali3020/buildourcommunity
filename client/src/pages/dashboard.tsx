@@ -336,7 +336,7 @@ function RefundRequestSection({ holdings, user }: { holdings: TokenHolding[]; us
             Refund Requests
           </CardTitle>
           <CardDescription>
-            Request a refund for unfunded properties. Refunds include 3% APR compensation.
+            Refund terms are not decided. The figure below is leftover escrow math, not a confirmed offer.
           </CardDescription>
         </div>
         <Link href="/transfers">
@@ -566,13 +566,13 @@ export default function Dashboard() {
                   <div className="flex items-start gap-2">
                     <Badge variant="outline" className="mt-0.5">100%</Badge>
                     <p className="text-muted-foreground">
-                      Full funding required for loan issuance. If not met within 1 year, you receive a full refund plus 3% APR.
+                      One 365-day clock. Refund terms if the project is not completed are not decided.
                     </p>
                   </div>
                   <div className="flex items-start gap-2">
-                    <Badge variant="outline" className="mt-0.5">3% APR</Badge>
+                    <Badge variant="outline" className="mt-0.5">Open</Badge>
                     <p className="text-muted-foreground">
-                      Compensation on refunds if the property fails to meet its funding goal.
+                      No refund rate is confirmed.
                     </p>
                   </div>
                   <div className="flex items-start gap-2">
@@ -592,20 +592,12 @@ export default function Dashboard() {
                 <Wallet className="h-5 w-5 text-primary" />
                 My Holdings
               </CardTitle>
-              <CardDescription>Per-property token breakdown with phase multipliers</CardDescription>
+              <CardDescription>Vote weight follows verified residency, not the purchase stage</CardDescription>
             </CardHeader>
             <CardContent>
               {holdings.length > 0 ? (
                 <div className="space-y-3">
                   {holdings.map((h, index) => {
-                    const phase = (h as any).purchasePhase || "county";
-                    const multiplierMap: Record<string, { label: string; value: number; color: string }> = {
-                      county: { label: "County", value: 1.5, color: "text-green-500" },
-                      state: { label: "State", value: 1.25, color: "text-blue-500" },
-                      national: { label: "National", value: 1.0, color: "text-purple-500" },
-                      international: { label: "International", value: 0.75, color: "text-amber-500" },
-                    };
-                    const phaseInfo = multiplierMap[phase] || multiplierMap.county;
                     const tokenValue = h.tokenCount * parseFloat(h.averagePurchasePrice || "0");
 
                     return (
@@ -620,14 +612,9 @@ export default function Dashboard() {
                           </div>
                           <div className="min-w-0">
                             <p className="font-medium text-sm truncate">Property #{(h as any).propertyId || h.offeringId.slice(0, 8)}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <Badge variant="outline" className="text-xs">
-                                {phaseInfo.label}
-                              </Badge>
-                              <span className={`text-xs font-semibold ${phaseInfo.color}`}>
-                                {phaseInfo.value}x voting
-                              </span>
-                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Weight is 1.5, 1.0, or 0.75 from verified residency
+                            </p>
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0">
@@ -636,7 +623,7 @@ export default function Dashboard() {
                             ${tokenValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
                           <p className="text-xs text-primary">
-                            {Math.round(h.tokenCount * phaseInfo.value)} voting power
+                            Outside holders still vote
                           </p>
                         </div>
                       </div>

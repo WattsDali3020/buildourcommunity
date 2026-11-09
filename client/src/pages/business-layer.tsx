@@ -214,7 +214,7 @@ GET /api/holdings`}
                     GovernanceDAO.sol
                   </CardTitle>
                   <CardDescription>
-                    Token-weighted voting with phase multipliers
+                    Token-weighted voting by verified residency
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -228,11 +228,11 @@ import "@openzeppelin/contracts/governance/Governor.sol";
 contract GovernanceDAO is Governor {
     mapping(address => uint256) public phaseMultipliers;
     
-    // Phase multipliers: County=150, State=125, National=100, International=75
+    // Residency weights in basis points: county 15000, in-state 10000, other US 7500.
     function getVotingPower(address voter) public view returns (uint256) {
         uint256 tokens = balanceOf(voter);
         uint256 multiplier = phaseMultipliers[voter];
-        return (tokens * multiplier) / 100;
+        return (tokens * multiplier) / 10000;
     }
     
     function castVote(uint256 proposalId, bool support) external {
@@ -267,7 +267,7 @@ contract GovernanceDAO is Governor {
                     FundingEscrow.sol
                   </CardTitle>
                   <CardDescription>
-                    USDC escrow with 3% APR refund protection
+                    Escrow. Refund terms are not decided.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

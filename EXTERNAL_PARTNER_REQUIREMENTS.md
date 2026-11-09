@@ -10,10 +10,10 @@ This document outlines the remaining integrations and features that require exte
 - **ERC-20 Token Contract with ERC-1400 Extensions**: Deploy security token contracts with transfer restrictions for KYC/AML compliance
 - **Escrow Smart Contract**: USDC escrow with multi-sig security for holding funds during the 1-year funding period
 - **Governance Contract**: On-chain DAO voting with token-weighted voting power multipliers
-  - County: 1.5x
-  - State: 1.25x
-  - National: 1.0x
-  - International: 0.75x
+  - Verified county resident: 1.5x
+  - Other in-state holder: 1.0x
+  - Other US holder: 0.75x
+  - Outside holders vote. No outside-vote cap. No international sale stage.
 - **Dividend Distribution Contract**: Automated USDC dividend payouts to token holders
 - **Refund Contract**: Automatic refunds with 3% APR calculation when funding fails
 

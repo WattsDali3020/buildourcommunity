@@ -583,7 +583,7 @@ export default function Tokenize() {
                       <Info className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                       <p className="text-sm text-muted-foreground">
                         The county location determines which community gets first access to invest.
-                        County residents invest at $12.50/token before state, national, and international phases.
+                        Verified county residents have the first 90 days. Later stages sell only the unsold remainder.
                       </p>
                     </div>
                   </>
@@ -674,7 +674,7 @@ export default function Tokenize() {
                       <ul className="text-sm text-muted-foreground mt-2 space-y-1">
                         <li className="flex items-center gap-2">
                           <CheckCircle2 className="h-4 w-4 text-chart-3" />
-                          Receive full refund plus 3% APR interest
+                          Refund terms are not decided
                         </li>
                         <li className="flex items-center gap-2">
                           <CheckCircle2 className="h-4 w-4 text-chart-3" />

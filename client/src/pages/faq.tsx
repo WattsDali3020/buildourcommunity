@@ -43,7 +43,7 @@ const faqCategories: FAQCategory[] = [
     items: [
       {
         question: "What is RevitaHub?",
-        answer: "RevitaHub is a community-owned real estate revitalization platform that enables fractional ownership of properties through blockchain tokenization. We transform vacant lots, historic buildings, and underutilized properties into thriving community assets by allowing anyone to invest starting at just $12.50 per token.",
+        answer: "RevitaHub is a community-owned real estate revitalization platform. Residents nominate local projects, and verified residents of the project's county get the first 90 days of access to the full token supply. The initial token price is a configurable parameter.",
       },
       {
         question: "How do I get started as an investor?",
@@ -65,15 +65,15 @@ const faqCategories: FAQCategory[] = [
     items: [
       {
         question: "What is the minimum investment?",
-        answer: "The minimum investment is $12.50, which is the price of one token during Phase 1 (County). This intentionally low entry point is designed to enable participation from lower-income investors who are typically excluded from real estate opportunities.",
+        answer: "There is one initial price for every access stage. It is a parameter, not a county-only discount and not a later-stage markup. The per-person allowance is also a parameter and has not been chosen yet.",
       },
       {
-        question: "How does the 5-phase pricing work?",
-        answer: "Token prices increase across phases to reward early local investors: Phase 1 (County): $12.50/token, 100 tokens/person limit. Phase 2 (State): $18.75/token, 150 tokens/person limit. Phase 3 (National): $28.13/token, 200 tokens/person limit. Phase 4 (International): $37.50/token, 250 tokens/person limit. Phase 5 (Private): Direct offerings for property owners.",
+        question: "How does staged access work?",
+        answer: "There are no reserved supply buckets and no price ladder. Days 0–90 are open to verified residents of the project's county. Days 91–180 open to the rest of that state. After day 180, remaining unsold tokens are open nationwide. Each later stage sells only what is still unsold. The initial price is a configurable parameter.",
       },
       {
-        question: "Why are token limits per person?",
-        answer: "Per-person token limits prevent wealthy investors from buying up all available tokens, ensuring broader community participation. Limits increase in later phases to help reach 100% funding targets while still prioritizing local community members in early phases.",
+        question: "Why is there a per-person allowance?",
+        answer: "Within a stage, every eligible person gets the same purchase allowance. The number has not been chosen yet, so it stays a configurable parameter rather than a fixed cap that grows by stage.",
       },
       {
         question: "How are returns generated?",
@@ -91,7 +91,7 @@ const faqCategories: FAQCategory[] = [
     items: [
       {
         question: "How does voting work?",
-        answer: "Token holders vote on property decisions through our DAO governance system. Each token gives you voting power, but the power is weighted by when you purchased: County Phase buyers get 1.5x voting power, State Phase 1.25x, National 1.0x, and International 0.75x. This ensures local community voices are prioritized.",
+        answer: "Vote weight follows verified residency, not the stage you bought in. Verified county residents have 1.5 per token, other in-state holders have 1.0, and other US holders have 0.75. Holders outside the county still vote. There is no cap on outside votes and no guaranteed resident majority.",
       },
       {
         question: "What decisions can I vote on?",
@@ -116,16 +116,16 @@ const faqCategories: FAQCategory[] = [
     icon: <Shield className="h-5 w-5" />,
     items: [
       {
-        question: "What if a property doesn't reach its funding goal?",
-        answer: "If a property doesn't reach 100% funding within the 1-year deadline, all investors receive a full refund PLUS 3% APR interest on their investment. Funds are held in USDC escrow throughout the funding period, so your money is always protected.",
+        question: "What if a project is not completed in the funding period?",
+        answer: "That is not decided. The common clock is 365 days and shares stay locked through it. Refunds, early completion, and what happens after day 365 are open questions for the owner.",
       },
       {
-        question: "How does the 3% APR refund work?",
-        answer: "From the moment you invest, your funds begin accruing 3% annual interest in the escrow. If funding fails, you receive: Original Investment + (Original Investment x 3% x Days Held / 365). For example, $100 invested for 180 days would return $101.48.",
+        question: "Is there a refund rate?",
+        answer: "No rate is confirmed. Older escrow code still contains a calculation, but it is not a promise and this release does not turn it into policy.",
       },
       {
         question: "Can I exit my investment early?",
-        answer: "Yes, through share transfer. Even if funding isn't complete, you can transfer your tokens to another verified investor at 60%+ of your purchase price. Once trading is enabled after successful funding, you can sell on secondary markets at market price.",
+        answer: "Not under a decided rule. Shares stay locked through the common 365-day funding period. Transfer exceptions and post-period liquidity are not decided.",
       },
       {
         question: "What happens if the platform shuts down?",
@@ -133,7 +133,7 @@ const faqCategories: FAQCategory[] = [
       },
       {
         question: "Are my funds insured?",
-        answer: "While not FDIC insured (as with traditional banks), funds are protected through: smart contract escrow with multi-signature security, Chainlink oracle verification of property values, legal property-holding LLC structures, and the 3% APR guaranteed return on failed funding.",
+        answer: "There is no confirmed refund or return. Legal structure, escrow treatment, and what happens if a project is not completed are still open.",
       },
     ],
   },
@@ -158,8 +158,8 @@ const faqCategories: FAQCategory[] = [
         answer: "You'll receive: 1099-DIV forms for dividend distributions, K-1 forms for property income pass-through, and transaction records for any token sales. We recommend consulting a tax professional for your specific situation.",
       },
       {
-        question: "Can international investors participate?",
-        answer: "Yes, international investors can participate in Phase 4 (International) of each offering. You must complete KYC verification and comply with your local securities regulations. Some countries may have restrictions - check with a local advisor.",
+        question: "Can people outside the United States buy tokens?",
+        answer: "Sale stages stop at nationwide access after day 180. There is no international sale stage. Someone who already holds tokens and is outside the county still votes; residency for the 1.5 weight has to be verified.",
       },
     ],
   },

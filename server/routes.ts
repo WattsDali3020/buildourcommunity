@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertPropertySchema, insertPropertySubmissionSchema, insertPropertyNominationSchema, insertPropertyGrantSchema, insertWishSchema, insertServiceBidSchema } from "@shared/schema";
+import { residencyTierOf, weightedVotingPower } from "@shared/accessRules";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { setupAuth, isAuthenticated, isAdmin, requireKYCApproved } from "./replit_integrations/auth";
@@ -1009,6 +1010,27 @@ export async function registerRoutes(
   });
 
   // Admin KYC verification endpoints
+  app.post("/api/admin/offerings/:id/allowance", isAdmin, async (req: Request, res: Response) => {
+    const allowance = Number(req.body?.perPersonAllowance);
+    if (!Number.isInteger(allowance) || allowance <= 0) {
+      return res.status(400).json({
+        error: "perPersonAllowance must be a positive integer. No default has been chosen.",
+      });
+    }
+
+    const offering = await storage.updateOffering(req.params.id, { perPersonAllowance: allowance });
+    if (!offering) {
+      return res.status(404).json({ error: "Offering not found" });
+    }
+
+    const phases = await storage.getOfferingPhases(offering.id);
+    for (const phase of phases) {
+      await storage.updateOfferingPhase(phase.id, { maxTokensPerPerson: allowance });
+    }
+
+    res.json({ perPersonAllowance: offering.perPersonAllowance });
+  });
+
   app.get("/api/admin/kyc-pending", isAdmin, async (req: Request, res: Response) => {
     const users = await storage.getUsersByKYCStatus("submitted");
     res.json(users);
@@ -1305,15 +1327,12 @@ export async function registerRoutes(
       return res.status(400).json({ error: "Price mismatch. Please refresh and try again." });
     }
 
-    const VOTING_MULTIPLIERS: Record<string, number> = {
-      county: 1.5,
-      state: 1.25,
-      national: 1.0,
-      international: 0.75,
-    };
-
+    const propertyForVote = await storage.getProperty(propertyId);
     const pricePerToken = amount / tokenCount;
-    const votingPower = Math.round(tokenCount * (VOTING_MULTIPLIERS[phase] || 1));
+    const votingPower = weightedVotingPower(
+      tokenCount,
+      residencyTierOf(user, propertyForVote ?? { county: "", state: "" })
+    );
 
     if (paymentMethod === "card") {
       const paymentIntent = await createPaymentIntent(amount, {
@@ -1493,15 +1512,13 @@ export async function registerRoutes(
       });
     }
 
-    const VOTING_MULTIPLIERS: Record<string, number> = {
-      county: 1.5,
-      state: 1.25,
-      national: 1.0,
-      international: 0.75,
-    };
-
+    const buyer = await storage.getUser(userId);
+    const propertyRecord = await storage.getProperty(propertyId);
     const pricePerToken = amount / tokenCount;
-    const votingPower = Math.round(tokenCount * (VOTING_MULTIPLIERS[phase] || 1));
+    const votingPower = weightedVotingPower(
+      tokenCount,
+      residencyTierOf(buyer ?? {}, propertyRecord ?? { county: "", state: "" })
+    );
 
     try {
       await storage.updateOrCreateHolding(userId, offering.id, tokenCount, pricePerToken, votingPower);
@@ -1858,13 +1875,11 @@ export async function registerRoutes(
 
         const parsedTokenCount = parseInt(tokenCount, 10);
         const amount = paymentIntent.amount / 100;
-        
-        // Apply voting power multipliers
-        const multiplier = phase === "county" ? 1.5 
-          : phase === "state" ? 1.25 
-          : phase === "national" ? 1.0 
-          : 0.75;
-        const addedVotingPower = Math.floor(parsedTokenCount * multiplier);
+        const buyer = await storage.getUser(userId);
+        const addedVotingPower = weightedVotingPower(
+          parsedTokenCount,
+          residencyTierOf(buyer ?? {}, property)
+        );
 
         // Update holdings with proper voting power
         await storage.updateOrCreateHolding(

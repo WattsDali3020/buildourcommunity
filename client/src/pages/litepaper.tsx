@@ -237,9 +237,9 @@ export default function Litepaper() {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto print:hidden">
-              <StatCard value="$12.50" label="Minimum Investment" icon={Coins} />
-              <StatCard value="3% APR" label="Refund Protection" icon={Shield} />
-              <StatCard value="4-Phase" label="Community-First Pricing" icon={Users} />
+              <StatCard value="Parameter" label="Initial token price" icon={Coins} />
+              <StatCard value="Open" label="Refund policy not decided" icon={Shield} />
+              <StatCard value="3 stages" label="County, state, then US" icon={Users} />
               <StatCard value="1%" label="Founder Sustainability Fee" icon={Percent} />
             </div>
           </div>
@@ -252,15 +252,15 @@ export default function Litepaper() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span className="text-sm">4-phase pricing ramp prioritizing local investors at $12.50</span>
+                  <span className="text-sm">Staged access to the full supply: county, then statewide, then nationwide</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span className="text-sm">1.5x voting power for county residents</span>
+                  <span className="text-sm">Vote weights 1.5 / 1.0 / 0.75 by verified residency. Outside holders vote.</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span className="text-sm">75% engagement threshold triggers automatic phase advancement</span>
+                  <span className="text-sm">One 365-day funding clock. Engagement does not skip a sale stage.</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -331,14 +331,11 @@ export default function Litepaper() {
                   RevitaHub is an AI-nudged, blockchain-powered platform for community-owned real estate revitalization. 
                   Built on Base (Coinbase L2) and integrated with Chainlink oracles, RevitaHub enables communities to 
                   collectively acquire, govern, and develop vacant and distressed properties through fractional 
-                  ERC-1155 tokenization starting at <strong className="text-foreground">$12.50 per token</strong>.
+                  ERC-1155 tokens. The initial price is a configurable parameter.
                 </p>
 
                 <p className="leading-relaxed mb-8 text-muted-foreground">
-                  The platform introduces a novel 4-phase community-first offering model that rewards local investors 
-                  with lower prices and amplified voting power. A 75% engagement threshold triggers automatic 
-                  phase advancement via Chainlink Automation, creating a gamified "SimCity-like" experience where 
-                  community participation directly drives progress. The RevitaLeague competition layer turns 
+                  Access to the full token supply is staged: verified county residents for 90 days, then the rest of the state through day 180, then the unsold remainder nationwide. Vote weight follows residency, not purchase stage. A 75% figure does not open the next stage. The RevitaLeague competition layer turns 
                   every property into a competing virtual city across four live leagues, while the Georgia Impact 
                   Simulator models GDP growth across 159 counties. A service provider marketplace and community 
                   wishlist create a full pipeline from neighborhood need to funded project. All treasury operations 
@@ -358,7 +355,7 @@ export default function Litepaper() {
                       </div>
                       <div>
                         <p className="font-medium text-sm">Distribution Is the Real Unlock</p>
-                        <p className="text-sm text-muted-foreground">4-phase system ensures local communities invest first at the lowest price</p>
+                        <p className="text-sm text-muted-foreground">County residents have the first 90 days. Later stages sell only the unsold remainder.</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
@@ -385,7 +382,7 @@ export default function Litepaper() {
                       </div>
                       <div>
                         <p className="font-medium text-sm">Investor-First Protections</p>
-                        <p className="text-sm text-muted-foreground">3% APR refunds on unfunded properties, transfer locks during funding</p>
+                        <p className="text-sm text-muted-foreground">Shares stay locked for the common 365-day clock. Refund terms are not decided.</p>
                       </div>
                     </div>
                   </div>
@@ -406,7 +403,7 @@ export default function Litepaper() {
                   <h4 className="font-semibold mb-4">Mission Statement</h4>
                   <p className="text-muted-foreground leading-relaxed italic">
                     "To democratize real estate investment by giving communities the tools to collectively acquire, 
-                    govern, and revitalize the properties in their own neighborhoods — starting at $12.50 per token, 
+                    govern, and revitalize the properties in their own neighborhoods. The initial price is a parameter, 
                     with the people who live there getting first access and the loudest voice."
                   </p>
                 </div>
@@ -530,7 +527,7 @@ export default function Litepaper() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-4 rounded-xl border">
                       <h5 className="font-semibold text-sm mb-2">Community-First Distribution</h5>
-                      <p className="text-xs text-muted-foreground">4-phase pricing rewards locals who invest early with lower entry and higher voting power. This creates natural alignment between investors and outcomes.</p>
+                      <p className="text-xs text-muted-foreground">Verified county residents vote at 1.5 per token. Other in-state holders vote at 1.0. Other US holders vote at 0.75. There is no outside-vote cap.</p>
                     </div>
                     <div className="p-4 rounded-xl border">
                       <h5 className="font-semibold text-sm mb-2">AI-Nudged Governance</h5>
@@ -561,7 +558,7 @@ export default function Litepaper() {
                   <FeatureCard 
                     icon={Coins}
                     title="Fractional Ownership"
-                    description="ERC-1155 tokens starting at $12.50 minimum. Full ownership rights, quarterly dividends, and phase-weighted voting power."
+                    description="ERC-1155 tokens at one configurable price. Vote weight follows verified residency: 1.5, 1.0, or 0.75."
                   />
                   <FeatureCard 
                     icon={Link2}
@@ -576,7 +573,7 @@ export default function Litepaper() {
                   <FeatureCard 
                     icon={Shield}
                     title="Investor Protection"
-                    description="Failed funding triggers automatic 3% APR refunds from USDC escrow. Tokens are burned on refund. Transfers locked during funding."
+                    description="Shares stay locked through one 365-day funding clock. Refund terms and post-period liquidity are not decided."
                   />
                 </div>
 
@@ -584,7 +581,7 @@ export default function Litepaper() {
                   <div className="space-y-6">
                     {[
                       { step: 1, title: "Nominate & Verify", desc: "Community members nominate distressed properties via the wishlist. Chainlink oracles verify ownership from county registries." },
-                      { step: 2, title: "Tokenize & Offer", desc: "ERC-1155 tokens are created with a 4-phase offering — county residents get first access at $12.50 per token with 1.5x voting power." },
+                      { step: 2, title: "Tokenize & Offer", desc: "ERC-1155 tokens open first to verified county residents. The price is a parameter. County residency carries 1.5 vote weight." },
                       { step: 3, title: "Govern & Vote", desc: "Token holders vote on development plans via AI-moderated DAO governance. Gasless voting via EIP-712 ensures everyone can participate." },
                       { step: 4, title: "Develop & Earn", desc: "Properties are developed per community votes. Quarterly dividends are distributed automatically. The community builds real wealth." },
                     ].map((item) => (
@@ -675,12 +672,12 @@ export default function Litepaper() {
                     <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 text-center">
                       <Coins className="h-8 w-8 mx-auto mb-2 text-primary" />
                       <h5 className="font-semibold text-sm">PropertyToken.sol</h5>
-                      <p className="text-xs text-muted-foreground">ERC-1155 with phase tracking, voting multipliers, transfer locks, and burner role</p>
+                      <p className="text-xs text-muted-foreground">ERC-1155. Staged access, residency vote weights, common 365-day lock.</p>
                     </div>
                     <div className="p-4 rounded-xl bg-chart-3/10 border border-chart-3/20 text-center">
                       <Lock className="h-8 w-8 mx-auto mb-2 text-chart-3" />
                       <h5 className="font-semibold text-sm">Escrow.sol</h5>
-                      <p className="text-xs text-muted-foreground">Token purchases, 3% APR refunds, 1% founder fee (impact-gated at funding + quarterly via Chainlink)</p>
+                      <p className="text-xs text-muted-foreground">Legacy escrow. Refund terms are not decided. Founder fee logic was not redesigned.</p>
                     </div>
                     <div className="p-4 rounded-xl bg-chart-1/10 border border-chart-1/20 text-center">
                       <Vote className="h-8 w-8 mx-auto mb-2 text-chart-1" />
@@ -725,9 +722,9 @@ export default function Litepaper() {
                     <thead>
                       <tr className="bg-muted/50">
                         <th className="text-left p-4 font-semibold">Phase</th>
-                        <th className="text-left p-4 font-semibold">Token Price</th>
-                        <th className="text-left p-4 font-semibold">Voting Multiplier</th>
-                        <th className="text-left p-4 font-semibold">Eligibility</th>
+                        <th className="text-left p-4 font-semibold">Window</th>
+                        <th className="text-left p-4 font-semibold">Vote weight</th>
+                        <th className="text-left p-4 font-semibold">Who can buy</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -735,33 +732,25 @@ export default function Litepaper() {
                         <td className="p-4 font-medium">
                           <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/30">County</Badge>
                         </td>
-                        <td className="p-4 text-primary font-semibold">$12.50</td>
+                        <td className="p-4 text-primary font-semibold">Days 0–90</td>
                         <td className="p-4 font-semibold">1.5x</td>
-                        <td className="p-4 text-muted-foreground">Property's county residents</td>
+                        <td className="p-4 text-muted-foreground">Verified county residents</td>
                       </tr>
                       <tr className="border-t">
                         <td className="p-4 font-medium">
-                          <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/30">State</Badge>
+                          <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/30">Statewide</Badge>
                         </td>
-                        <td className="p-4">$18.75 (+50%)</td>
-                        <td className="p-4">1.25x</td>
-                        <td className="p-4 text-muted-foreground">State residents</td>
-                      </tr>
-                      <tr className="border-t">
-                        <td className="p-4 font-medium">
-                          <Badge variant="outline" className="bg-purple-500/10 text-purple-500 border-purple-500/30">National</Badge>
-                        </td>
-                        <td className="p-4">$28.13 (+50%)</td>
+                        <td className="p-4">Days 91–180</td>
                         <td className="p-4">1.0x</td>
-                        <td className="p-4 text-muted-foreground">US residents (KYC verified)</td>
+                        <td className="p-4 text-muted-foreground">Other in-state holders</td>
                       </tr>
                       <tr className="border-t">
                         <td className="p-4 font-medium">
-                          <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/30">International</Badge>
+                          <Badge variant="outline" className="bg-purple-500/10 text-purple-500 border-purple-500/30">Nationwide</Badge>
                         </td>
-                        <td className="p-4">$37.50 (+33%)</td>
+                        <td className="p-4">After day 180</td>
                         <td className="p-4">0.75x</td>
-                        <td className="p-4 text-muted-foreground">Global investors (KYC/AML verified)</td>
+                        <td className="p-4 text-muted-foreground">Other US holders. They still vote.</td>
                       </tr>
                     </tbody>
                   </table>
@@ -769,26 +758,17 @@ export default function Litepaper() {
 
                 <CodeBlock 
                   title="PropertyToken.sol - Voting Power Calculation"
-                  code={`// Phase multipliers: County 1.5x, State 1.25x, National 1.0x, Intl 0.75x
-uint256[4] public phaseMultipliers = [15000, 12500, 10000, 7500];
-
-function getVotingPower(uint256 propertyId, address voter) 
-    public view returns (uint256) 
-{
-    uint256 totalPower = 0;
-    for (uint256 phase = 0; phase < 4; phase++) {
-        uint256 holdings = holdingsByPhase[propertyId][voter][phase];
-        totalPower += (holdings * phaseMultipliers[phase]) / 10000;
-    }
-    return totalPower;
+                  code={`// Residency weights, basis points. Not purchase-stage weights.
+// 15000 county, 10000 other in-state, 7500 other US.
+function getVotingPower(uint256 propertyId, address voter) public view returns (uint256) {
+    return (balanceOf(voter, propertyId) * _weightBps(propertyId, voter)) / 10000;
 }`}
                 />
 
                 <div className="p-4 rounded-xl bg-muted/30 border">
                   <p className="text-sm">
-                    <strong>Example:</strong> Alice (county resident) with 100 tokens at $12.50 = $1,250 invested, 
-                    150 voting power. Bob (international) with 100 tokens at $37.50 = $3,750 invested, 75 voting power. 
-                    Alice invested less but has 2x the governance influence because she lives in the community.
+                    <strong>Example:</strong> A verified county resident with 100 tokens has 150 voting power.
+                    Another US holder with 100 tokens has 75. Both votes count. The price is the same parameter for every stage.
                   </p>
                 </div>
               </Section>
@@ -797,17 +777,14 @@ function getVotingPower(uint256 propertyId, address voter)
 
               <Section id="offering" title="Community-First Offering" icon={Users}>
                 <p className="leading-relaxed mb-8 text-muted-foreground">
-                  The 4-phase offering model ensures communities closest to a property get priority access 
-                  at the lowest price. Phase advancement is triggered either by full subscription or by 
-                  reaching the 75% engagement threshold — whichever comes first.
+                  There are no reserved supply buckets. The full supply is available to whoever is eligible in the current stage, and each later stage sells only the unsold remainder. Stages change on the common clock, not when a bucket fills and not at a 75% engagement mark.
                 </p>
 
                 <div className="space-y-4 mb-8">
                   {[
-                    { phase: "Phase 1: County", duration: "30 days minimum", price: "$12.50", multiplier: "1.5x", desc: "Property's county residents get exclusive first access at the lowest price" },
-                    { phase: "Phase 2: State", duration: "30 days minimum", price: "$18.75 (+50%)", multiplier: "1.25x", desc: "Opens to state-wide investors, early state supporters rewarded" },
-                    { phase: "Phase 3: National", duration: "30 days minimum", price: "$28.13 (+50%)", multiplier: "1.0x", desc: "Available to all US investors with standard voting weight" },
-                    { phase: "Phase 4: International", duration: "Until funded or deadline", price: "$37.50 (+33%)", multiplier: "0.75x", desc: "Global access — defers governance weight to local investors" },
+                    { phase: "County", duration: "Days 0–90", price: "Price parameter", multiplier: "1.5x", desc: "Verified residents of the project's county. The full supply is open." },
+                    { phase: "Statewide", duration: "Days 91–180", price: "Same parameter", multiplier: "1.0x", desc: "Other in-state residents, plus county residents, buy only what is still unsold." },
+                    { phase: "Nationwide", duration: "After day 180", price: "Same parameter", multiplier: "0.75x", desc: "Other US residents can buy the remainder. They vote. There is no outside-vote cap." },
                   ].map((item, i) => (
                     <div key={i} className="flex items-center gap-4 p-4 rounded-xl border border-glow">
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -832,9 +809,8 @@ function getVotingPower(uint256 propertyId, address voter)
                     Funding Deadline
                   </h4>
                   <p className="text-sm text-muted-foreground">
-                    Each property has a <strong className="text-foreground">1-year maximum funding deadline</strong>. 
-                    If 100% of tokens are not sold within this period, the offering fails and all investors 
-                    receive automatic refunds with 3% APR interest from the USDC escrow contract.
+                    One common 365-day clock starts when residents choose the project. It is not a rolling year per purchase.
+                    Refunds, early completion, and post-period liquidity are not decided.
                   </p>
                 </div>
               </Section>
@@ -1154,7 +1130,7 @@ function updateLeagueScore(uint256 propertyId, uint256 newScore)
                     Each property detail page displays an Economic Impact Analysis card showing the 
                     county's ARC distress classification, three radial score gauges (economic, social, 
                     risk-adjusted), GDP multiplier, leverage rank, and a Chainlink oracle proof placeholder. 
-                    A companion "What Your $12.50 Does" card visualizes the ripple-effect chain from 
+                    A companion card visualizes the ripple-effect chain from 
                     token purchase through property share, jobs supported, and 5-year GDP impact.
                   </p>
 
@@ -1170,7 +1146,7 @@ function updateLeagueScore(uint256 propertyId, uint256 newScore)
                       </ul>
                     </div>
                     <div className="p-4 rounded-xl border">
-                      <h5 className="font-semibold text-sm mb-2">What Your $12.50 Does</h5>
+                      <h5 className="font-semibold text-sm mb-2">What a token does locally</h5>
                       <ul className="space-y-1 text-xs text-muted-foreground">
                         <li>• Token Price → Property Share → Jobs → GDP Impact</li>
                         <li>• Projected Year 1 Dividends</li>
@@ -1637,10 +1613,9 @@ function verifyAndRecordReserves(uint256 propertyId) external returns (uint256) 
               <Section id="governance" title="DAO Governance" icon={Vote} alternate>
                 <Subsection title="Phase-Weighted Voting">
                   <p className="leading-relaxed mb-6 text-muted-foreground">
-                    Voting power is weighted by purchase phase, amplifying local community voices. 
-                    A county resident with 100 tokens has 150 voting power, while an international investor 
-                    with 100 tokens has 75 voting power — ensuring the people most affected by development 
-                    decisions have the strongest say.
+                    Voting power follows verified residency. A county resident with 100 tokens has 150 voting power.
+                    Another US holder with 100 tokens has 75 and still votes. County weight requires verified residency.
+                    It does not guarantee a resident majority.
                   </p>
 
                   <CodeBlock 
@@ -2126,18 +2101,18 @@ function _executeQuarterlyDistribution(uint256 propertyId) internal {
               <div className="divider-gradient" />
 
               <Section id="protection" title="Investor Protections" icon={Shield} alternate>
-                <Subsection title="3% APR Refund Guarantee">
+                <Subsection title="Refunds are not decided">
                   <p className="leading-relaxed mb-4 text-muted-foreground">
-                    If a property fails to reach 100% funding within its 1-year deadline:
+                    Refunds are not a confirmed rule. The snippet below is older escrow code, not a promise:
                   </p>
                   <ul className="space-y-2 mb-6">
                     <li className="flex items-center gap-3">
                       <CheckCircle2 className="h-5 w-5 text-primary" />
-                      <span>Automatic refunds processed with 3% APR interest from USDC escrow</span>
+                      <span>No refund rate, early exit, or post-period market is decided</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <CheckCircle2 className="h-5 w-5 text-primary" />
-                      <span>All property tokens burned on refund (prevents orphaned tokens)</span>
+                      <span>Shares stay locked through the common 365-day clock</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <CheckCircle2 className="h-5 w-5 text-primary" />
@@ -2146,7 +2121,7 @@ function _executeQuarterlyDistribution(uint256 propertyId) internal {
                   </ul>
 
                   <CodeBlock 
-                    title="Escrow.sol - Refund with 3% APR & Token Burning"
+                    title="Escrow.sol - legacy refund math, not a confirmed policy"
                     code={`function processRefunds(uint256 propertyId) external nonReentrant {
     require(block.timestamp > escrows[propertyId].deadline);
     require(!escrows[propertyId].funded); // Must have failed funding
@@ -2611,8 +2586,8 @@ function _executeQuarterlyDistribution(uint256 propertyId) internal {
                     { quarter: "2027", status: "upcoming", items: [
                       "State-level expansion across Georgia",
                       "National phase rollout",
-                      "Secondary market for funded property tokens",
-                      "International phase planning"
+                      "Post-period liquidity is not decided",
+                      "No international sale stage"
                     ]},
                   ].map((phase, i) => (
                     <div key={i} className="flex gap-4">

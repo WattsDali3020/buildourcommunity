@@ -334,14 +334,6 @@ export default function ProfessionalDashboard() {
               {holdings.length > 0 ? (
                 <div className="space-y-3">
                   {holdings.map((h, index) => {
-                    const phase = (h as any).purchasePhase || "county";
-                    const multiplierMap: Record<string, { label: string; value: number; color: string }> = {
-                      county: { label: "County", value: 1.5, color: "text-green-500" },
-                      state: { label: "State", value: 1.25, color: "text-blue-500" },
-                      national: { label: "National", value: 1.0, color: "text-purple-500" },
-                      international: { label: "International", value: 0.75, color: "text-amber-500" },
-                    };
-                    const phaseInfo = multiplierMap[phase] || multiplierMap.county;
                     const tokenValue = h.tokenCount * parseFloat(h.averagePurchasePrice || "0");
 
                     return (
@@ -356,10 +348,7 @@ export default function ProfessionalDashboard() {
                           </div>
                           <div className="min-w-0">
                             <p className="font-medium text-sm truncate">Property #{(h as any).propertyId || h.offeringId.slice(0, 8)}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <Badge variant="outline" className="text-xs">{phaseInfo.label}</Badge>
-                              <span className={`text-xs font-semibold ${phaseInfo.color}`}>{phaseInfo.value}x voting</span>
-                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">Residency-weighted votes</p>
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0">

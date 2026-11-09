@@ -56,10 +56,10 @@ export function SimplePurchaseModal({
   const maxTokens = Math.max(1, remainingTokens);
 
   const phaseNames: Record<string, string> = {
-    county: "County Phase",
-    state: "State Phase",
-    national: "National Phase",
-    international: "International Phase",
+    county: "County stage",
+    state: "Statewide stage",
+    national: "Nationwide stage",
+    international: "Not a sale stage",
   };
 
   const purchaseMutation = useMutation({

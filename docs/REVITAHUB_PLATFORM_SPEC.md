@@ -24,7 +24,7 @@ We are not just another fractional real-estate issuer. We ship **dynamic communi
 ## 2. What is buildourcommunity.co (Official Summation)
 
 - **Exact tagline from site:** "RevitaHub – Community-Owned Revitalization Platform"
-- **Mission (homepage):** "Transforming vacant/distressed properties into thriving community assets through blockchain-enabled fractional ownership. Starting at $12.50 per token."
+- **Mission:** Community-owned revitalization. The initial token price is a parameter and is not a marketing constant.
 - **Core Offering:** AI-powered community investment platform. Holders get voting rights on development + treasury spend.
 - **Entity:** A Build Our Community, LLC project.
 - **Current State (as of Feb 2026):** Beta prototype landing with waitlist. Platform functionality in active development.
@@ -36,9 +36,9 @@ This Replit build turns the landing page into a **fully functional dApp** that r
 
 **RevitaHub = dynamic, phase-driven, community-owned revitalization vaults** with:
 
-- 4-phase pricing & voting multipliers (County 1.5× → International 0.75×)
-- 100% funding or 3% APR refund (Escrow)
-- 75% engagement auto-advance (PhaseManager)
+- Staged access to the full supply (county 90 days, statewide through day 180, then nationwide). No reserved buckets.
+- One 365-day funding clock. Refund terms are not decided. Escrow's older refund path is unchanged legacy code.
+- Engagement does not skip a sale stage. The 75% loan-evaluation metric is undefined.
 - DAO-controlled treasury with **founder sustainability built in**
 
 ## 4. Core Smart Contracts – Focus for Frontend Integration
@@ -48,15 +48,15 @@ All contracts are already written, audited-ready, and deployed on Base (or testn
 ### PropertyToken.sol (ERC-1155 per-property)
 
 - Fractional ownership (id = propertyId)
-- Phase allocations: 40/30/20/10%
-- Price ramps automatically via currentPhase
+- No reserved allocations. Each stage sells the unsold remainder of the full supply.
+- One price parameter. Stages do not multiply it.
 - Whitelist + KYC (autoWhitelist with Chainlink proof)
-- Transfers locked until funded
+- Transfers stay locked through the common 365-day clock. Marking the raise funded does not unlock them.
 - `getVotingPower()`, `getTotalWeightedVotingPower()`, `mintTokens()` (called by Escrow)
 
 ### Escrow.sol (Purchase & Refund Engine)
 
-- 100% funding target or auto-refund with 3% APR (Chainlink Automation)
+- Existing escrow code still has a 3% APR refund path. Refund policy is not a confirmed owner decision and was not redesigned here.
 - `purchase(propertyId, amount)` – payable, mints tokens
 - `processRefunds()` on failure
 - `releaseFunds()` only after markFunded (to property wallet → Treasury)
@@ -65,14 +65,14 @@ All contracts are already written, audited-ready, and deployed on Base (or testn
 ### Governance.sol (Phase-weighted DAO)
 
 - Proposal types with different quorums (20% property dev, 30% treasury, etc.)
-- County 1.5×, State 1.25×, National 1.0×, International 0.75× voting power
+- Vote weight by residency: county 1.5×, other in-state 1.0×, other US 0.75×. Outside holders vote. No outside-vote cap.
 - Gasless voting via signatures (RELAYER_ROLE)
 - Vote-to-earn bonus tracking
 - `castVote()`, `finalizeProposal()`, `executeProposal()` (calls Treasury)
 
 ### PhaseManager.sol (Engagement-Driven Advancement)
 
-- 75% engagement threshold OR full phase subscription → auto-advance
+- Does not advance sale stages. 75% is not a sale-stage trigger.
 - Behavioral nudges (events for frontend)
 - `startTracking()`, `updateEngagement()`, `claimEngagementBonus()`
 - Chainlink Automation checkUpkeep

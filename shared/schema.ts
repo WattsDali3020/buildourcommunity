@@ -3,6 +3,9 @@ import { pgTable, text, varchar, integer, decimal, timestamp, boolean, pgEnum, s
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { users, sessions, type User, type UpsertUser } from "./models/auth";
+import { INITIAL_TOKEN_PRICE_USD, STAGE_BOUNDARIES, VOTE_WEIGHTS } from "./accessRules";
+
+export { INITIAL_TOKEN_PRICE_USD, STAGE_BOUNDARIES, VOTE_WEIGHTS };
 
 export { users, sessions, type User, type UpsertUser };
 
@@ -113,6 +116,10 @@ export const tokenOfferings = pgTable("token_offerings", {
   fundingOutcome: fundingOutcomeEnum("funding_outcome").default("in_progress"),
   minimumFundingThreshold: decimal("minimum_funding_threshold", { precision: 15, scale: 2 }),
   fundingDeadline: timestamp("funding_deadline"),
+  // Common 365-day clock. Null until residents' project choice is recorded.
+  fundingClockStart: timestamp("funding_clock_start"),
+  // Same allowance for every eligible person in a stage. Null until chosen.
+  perPersonAllowance: integer("per_person_allowance"),
   totalFundingRaised: decimal("total_funding_raised", { precision: 15, scale: 2 }).default("0"),
   interestRateOnRefund: decimal("interest_rate_on_refund", { precision: 5, scale: 2 }).default("3.00"),
   offeringType: offeringTypeEnum("offering_type").default("public"),
@@ -280,36 +287,23 @@ export const shareTransfers = pgTable("share_transfers", {
 
 export type ShareTransfer = typeof shareTransfers.$inferSelect;
 
-// Funding timeline configuration - 1 year distribution algo
-// CRITICAL: 100% funding is required for loan issuance
-// If funding target is not met within 1 year, investors receive refunds with 3% APR
+// One common funding clock. Stages sell the unsold remainder; they do not
+// reserve a percent of supply. Refund interest below is legacy escrow math.
+// TODO(owner): refund policy is not decided. Do not treat the rate as confirmed.
 export const FUNDING_TIMELINE_CONFIG = {
-  totalDurationDays: 365,
-  phaseDurations: {
-    county: { daysMin: 30, daysMax: 90, targetPercent: 25 },
-    state: { daysMin: 45, daysMax: 120, targetPercent: 50 },
-    national: { daysMin: 60, daysMax: 120, targetPercent: 75 },
-    international: { daysMin: 30, daysMax: 35, targetPercent: 100 },
+  totalDurationDays: STAGE_BOUNDARIES.fundingPeriodDays,
+  stages: {
+    county: { startDay: 0, endDay: STAGE_BOUNDARIES.countyEndDay, label: "County" },
+    state: { startDay: STAGE_BOUNDARIES.countyEndDay, endDay: STAGE_BOUNDARIES.stateEndDay, label: "Statewide" },
+    national: { startDay: STAGE_BOUNDARIES.stateEndDay, endDay: STAGE_BOUNDARIES.fundingPeriodDays, label: "Nationwide" },
   },
-  // 100% funding required - no partial funding allowed per investor protection model
   minimumFundingPercent: 100,
-  gracePeriodDays: 30,
   refundInterestRate: 3.0,
 } as const;
 
-export function calculatePhaseDuration(
-  phase: keyof typeof FUNDING_TIMELINE_CONFIG.phaseDurations,
-  currentFundingPercent: number,
-  targetPercent: number
-): number {
-  const config = FUNDING_TIMELINE_CONFIG.phaseDurations[phase];
-  const progressRatio = currentFundingPercent / targetPercent;
-  if (progressRatio >= 0.8) {
-    return config.daysMin;
-  } else if (progressRatio >= 0.5) {
-    return Math.floor((config.daysMin + config.daysMax) / 2);
-  }
-  return config.daysMax;
+export function stageLengthDays(stage: keyof typeof FUNDING_TIMELINE_CONFIG.stages): number {
+  const config = FUNDING_TIMELINE_CONFIG.stages[stage];
+  return config.endDay - config.startDay;
 }
 
 export function calculateRefundWithInterest(
@@ -379,8 +373,9 @@ export function canVote(tokenBalance: number): boolean {
   return tokenBalance > 0;
 }
 
-export function calculateVotingPower(tokenBalance: number): number {
-  return tokenBalance;
+/** Weight is residency, not raw balance. Pass voteWeightForTier from accessRules. */
+export function calculateVotingPower(tokenBalance: number, voteWeight: number): number {
+  return Math.floor(tokenBalance * voteWeight);
 }
 
 // Community Property Election System
@@ -872,40 +867,35 @@ export const PHASE_CONFIG = {
   county: {
     order: 1,
     name: "County",
-    description: "Local community members only",
-    maxTokensPerPerson: 100,
-    basePrice: 12.50,
-    priceMultiplier: 1.0,
-    allocationPercent: 25,
+    description: "Verified residents of the project's county",
+    voteWeight: VOTE_WEIGHTS.countyResident,
+    opensOnDay: 0,
+    priceMultiplier: 1,
   },
   state: {
     order: 2,
-    name: "State",
-    description: "State residents",
-    maxTokensPerPerson: 250,
-    basePrice: 12.50,
-    priceMultiplier: 1.5,
-    allocationPercent: 25,
+    name: "Statewide",
+    description: "Verified residents of the project's state",
+    voteWeight: VOTE_WEIGHTS.inState,
+    opensOnDay: STAGE_BOUNDARIES.countyEndDay,
+    priceMultiplier: 1,
   },
   national: {
     order: 3,
-    name: "National",
-    description: "All US residents",
-    maxTokensPerPerson: 500,
-    basePrice: 12.50,
-    priceMultiplier: 2.25,
-    allocationPercent: 25,
-  },
-  international: {
-    order: 4,
-    name: "International",
-    description: "Global investors",
-    maxTokensPerPerson: 1000,
-    basePrice: 12.50,
-    priceMultiplier: 3.0,
-    allocationPercent: 25,
+    name: "Nationwide",
+    description: "Other verified US residents",
+    voteWeight: VOTE_WEIGHTS.otherUs,
+    opensOnDay: STAGE_BOUNDARIES.stateEndDay,
+    priceMultiplier: 1,
   },
 } as const;
+
+export function getPhaseConfig(phase: string) {
+  if (phase === "county" || phase === "state" || phase === "national") {
+    return PHASE_CONFIG[phase];
+  }
+  return undefined;
+}
 
 export const wishes = pgTable("wishes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -956,12 +946,14 @@ export const insertServiceBidSchema = createInsertSchema(serviceBids).omit({
 export type InsertServiceBid = z.infer<typeof insertServiceBidSchema>;
 export type ServiceBid = typeof serviceBids.$inferSelect;
 
-export function calculatePhasePrice(basePrice: number, phase: keyof typeof PHASE_CONFIG): number {
-  return Number((basePrice * PHASE_CONFIG[phase].priceMultiplier).toFixed(2));
+/** Stages share one price parameter. They do not multiply it. */
+export function calculatePhasePrice(basePrice: number, _phase?: string): number {
+  return Number(basePrice.toFixed(2));
 }
 
-export function getPhaseAllocation(totalSupply: number, phase: keyof typeof PHASE_CONFIG): number {
-  return Math.floor(totalSupply * (PHASE_CONFIG[phase].allocationPercent / 100));
+/** No reserved bucket. Returns the unsold remainder of the full supply. */
+export function getPhaseAllocation(totalSupply: number, _phase?: string, tokensSold = 0): number {
+  return Math.max(0, Math.floor(totalSupply - tokensSold));
 }
 
 export const auditLog = pgTable("audit_log", {

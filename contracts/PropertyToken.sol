@@ -10,11 +10,30 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 /**
+ * @notice Optional residency oracle. No KYC provider is integrated.
+ *         When unset, WHITELIST_ADMIN attestation is the stub.
+ *         0 = verified county resident, 1 = other in-state, 2 = other US,
+ *         3 = unverified or non-US.
+ */
+interface IResidencyVerifier {
+    function residencyTier(address account, uint256 propertyId) external view returns (uint8);
+}
+
+/**
  * @title RevitaHub Property Token
- * @notice ERC-1155 token for fractional real estate ownership
- * @dev Implements phase-based pricing, permanent permissioned transfers (hybrid model),
- *      and per-property supply limits. Transfers remain gated for the life of the interest.
- *      See docs/HYBRID_TOKEN_DESIGN_DECISION.md
+ * @notice ERC-1155 token for a community project.
+ * @dev Sale stages (owner, Nov 5–9, 2026):
+ *      - No reserved supply buckets. Each stage sells only the unsold remainder.
+ *      - Days 0–90: verified residents of the project's county.
+ *      - Days 91–180: statewide (county residents remain eligible).
+ *      - After day 180: nationwide. There is no international sale stage.
+ *      - One per-person allowance, chosen by the admin. It is not hard-coded.
+ *      Vote weight is residency of the holder, not purchase stage:
+ *      1.5 county, 1.0 other in-state, 0.75 other US. Outside holders vote.
+ *      There is no resident-majority guarantee and no outside-vote cap.
+ *      One 365-day funding clock starts when residents' project choice is recorded.
+ *      Shares stay locked through that clock. Early completion, transfer
+ *      exceptions, refunds, and post-period liquidity are TODO hooks.
  */
 contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl, Pausable, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -25,10 +44,21 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
     bytes32 public constant PHASE_ADVANCER_ROLE = keccak256("PHASE_ADVANCER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
 
-    // Property phases
-    enum Phase { County, State, National, International }
+    enum Phase { County, State, National }
 
-    // Property structure
+    uint8 public constant TIER_COUNTY = 0;
+    uint8 public constant TIER_IN_STATE = 1;
+    uint8 public constant TIER_OTHER_US = 2;
+    uint8 public constant TIER_UNVERIFIED = 3;
+
+    uint256 public constant COUNTY_STAGE_SECONDS = 90 days;
+    uint256 public constant STATE_STAGE_SECONDS = 180 days;
+    uint256 public constant FUNDING_PERIOD = 365 days;
+
+    uint256 public constant COUNTY_VOTE_WEIGHT_BPS = 15000;
+    uint256 public constant IN_STATE_VOTE_WEIGHT_BPS = 10000;
+    uint256 public constant OTHER_US_VOTE_WEIGHT_BPS = 7500;
+
     struct Property {
         uint256 id;
         string name;
@@ -42,61 +72,54 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         bool isFunded;
         string llcIdentifier;
         address custodian;
+        uint256 fundingClockStart;
     }
 
-    // Phase allocation percentages (basis points, 10000 = 100%)
-    uint256 public constant COUNTY_ALLOCATION = 4000;    // 40%
-    uint256 public constant STATE_ALLOCATION = 3000;     // 30%
-    uint256 public constant NATIONAL_ALLOCATION = 2000;  // 20%
-    uint256 public constant INTERNATIONAL_ALLOCATION = 1000; // 10%
+    /// @dev Initial price is an admin parameter. The owner's stated intent is
+    ///      12.50 USD; this wei placeholder is not a user-facing quote.
+    uint256 public basePrice = 12.5 ether / 1000;
 
-    // Base price in wei ($12.50 equivalent, set by oracle)
-    uint256 public basePrice = 12.5 ether / 1000; // Placeholder, updated by Chainlink
-
-    // Phase price multipliers (basis points)
-    uint256 public constant COUNTY_MULTIPLIER = 10000;      // 1.0x ($12.50)
-    uint256 public constant STATE_MULTIPLIER = 15000;       // 1.5x ($18.75)
-    uint256 public constant NATIONAL_MULTIPLIER = 22500;    // 2.25x ($28.13)
-    uint256 public constant INTERNATIONAL_MULTIPLIER = 30000; // 3.0x ($37.50)
-
-    // Voting power multipliers (basis points)
-    uint256 public constant COUNTY_VOTING_MULTIPLIER = 15000;      // 1.5x
-    uint256 public constant STATE_VOTING_MULTIPLIER = 12500;       // 1.25x
-    uint256 public constant NATIONAL_VOTING_MULTIPLIER = 10000;    // 1.0x
-    uint256 public constant INTERNATIONAL_VOTING_MULTIPLIER = 7500; // 0.75x
-
-    // Property storage
     mapping(uint256 => Property) public properties;
     uint256 public propertyCount;
 
-    // Phase allocations per property
-    mapping(uint256 => mapping(Phase => uint256)) public phaseAllocations;
-    mapping(uint256 => mapping(Phase => uint256)) public phaseMinted;
+    mapping(uint256 => mapping(Phase => uint256)) public soldInStage;
+    mapping(uint256 => mapping(uint8 => mapping(address => uint256))) public purchasedInStage;
+    mapping(uint256 => uint256) public perPersonAllowance;
 
-    // Whitelist for KYC-verified addresses
     mapping(address => bool) public whitelist;
-    
-    // Phase eligibility per address (based on location verification)
-    mapping(address => Phase) public addressPhaseEligibility;
+    /// @dev Global attested tier used only when no IResidencyVerifier is set.
+    mapping(address => uint8) public residencyTier;
+    mapping(address => bool) public residencyVerified;
 
-    // Token holdings with phase information
+    IResidencyVerifier public residencyVerifier;
+
     mapping(uint256 => mapping(address => mapping(Phase => uint256))) public holdingsByPhase;
+    mapping(uint256 => uint256) public totalWeightedVotingPower;
+    mapping(address => EnumerableSet.UintSet) private _holderProperties;
 
-    // Track all property IDs for enumeration
     EnumerableSet.UintSet private _allPropertyIds;
 
-    // Events
+    /// @notice TODO(owner): transfer exceptions are undecided. Default off.
+    ///         Enabling the flag does not unlock transfers.
+    bool public transferExceptionsEnabled;
+    /// @notice TODO(owner): post-period liquidity is undecided. Default off.
+    ///         Enabling the flag does not unlock transfers.
+    bool public postPeriodTransfersEnabled;
+
     event PropertyCreated(uint256 indexed propertyId, string name, uint256 totalSupply, uint256 fundingTarget, string llcIdentifier, address custodian);
+    event FundingClockStarted(uint256 indexed propertyId, uint256 start, uint256 deadline);
+    event PerPersonAllowanceSet(uint256 indexed propertyId, uint256 allowance);
     event PropertyFunded(uint256 indexed propertyId, uint256 totalRaised);
     event LLCBackingUpdated(uint256 indexed propertyId, string llcIdentifier, address custodian);
-    event PhaseAdvanced(uint256 indexed propertyId, Phase newPhase);
     event TokensMinted(uint256 indexed propertyId, address indexed buyer, uint256 amount, Phase phase);
-    event AddressWhitelisted(address indexed account, Phase eligibility);
+    event AddressWhitelisted(address indexed account, uint8 tier);
     event AddressRemovedFromWhitelist(address indexed account);
+    event ResidencyUpdated(address indexed account, uint8 tier, bool verified);
+    event ResidencyVerifierUpdated(address indexed verifier);
     event BasePriceUpdated(uint256 newPrice);
     event TokensBurned(uint256 indexed propertyId, address indexed from, uint256 amount, Phase phase);
-    
-    // Regulatory Compliance Events
+    event TransferPolicyHookSet(string hook, bool enabled);
+
     event KYCVerificationCompleted(address indexed account, uint256 timestamp, bytes32 verificationId);
     event KYCVerificationRevoked(address indexed account, uint256 timestamp, string reason);
     event AMLCheckPassed(address indexed account, uint256 timestamp, bytes32 checkId);
@@ -104,8 +127,7 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
     event ComplianceCheckpoint(uint256 indexed propertyId, uint256 timestamp, uint256 totalHolders, uint256 totalSupplyMinted);
     event TransferRestricted(uint256 indexed propertyId, address indexed from, address indexed to, string reason);
     event RegulatorAuditRequested(uint256 indexed propertyId, address indexed requestor, uint256 timestamp);
-    
-    // KYC/AML verification tracking
+
     mapping(address => bytes32) public kycVerificationIds;
     mapping(address => uint256) public kycVerificationTimestamps;
     mapping(address => bytes32) public amlCheckIds;
@@ -119,12 +141,6 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         _grantRole(BURNER_ROLE, msg.sender);
     }
 
-    /**
-     * @notice Burn tokens on failed funding (Escrow only)
-     * @param propertyId Property ID
-     * @param holder Address holding tokens to burn
-     * @param amount Amount to burn
-     */
     function burnFromOnFailure(
         uint256 propertyId,
         address holder,
@@ -132,33 +148,27 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
     ) external onlyRole(BURNER_ROLE) {
         require(amount > 0, "Amount must be positive");
         require(balanceOf(holder, propertyId) >= amount, "Insufficient balance");
-        
-        // Burn bypasses normal transfer restrictions
         _burn(holder, propertyId, amount);
     }
 
     /**
-     * @notice Create a new property token offering
-     * @param name Property name
-     * @param propertyUri Metadata URI
-     * @param totalSupply Total tokens to mint
-     * @param fundingTarget Amount in wei required for full funding
-     * @param fundingDuration Duration in seconds for funding period
+     * @notice Create a property. The 365-day clock does not start here.
+     *         Call startFundingClock when residents decide which project is built.
      */
     function createProperty(
         string memory name,
         string memory propertyUri,
         uint256 totalSupply,
         uint256 fundingTarget,
-        uint256 fundingDuration,
         string memory llcId,
         address custodian
     ) external onlyRole(DEFAULT_ADMIN_ROLE) returns (uint256) {
         require(custodian != address(0), "Custodian required for LLC backing");
         require(bytes(llcId).length > 0, "LLC identifier required");
+        require(totalSupply > 0, "Supply required");
 
         uint256 propertyId = propertyCount++;
-        
+
         properties[propertyId] = Property({
             id: propertyId,
             name: name,
@@ -166,224 +176,179 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
             totalSupply: totalSupply,
             mintedSupply: 0,
             fundingTarget: fundingTarget,
-            fundingDeadline: block.timestamp + fundingDuration,
+            fundingDeadline: 0,
             currentPhase: Phase.County,
             isActive: true,
             isFunded: false,
             llcIdentifier: llcId,
-            custodian: custodian
+            custodian: custodian,
+            fundingClockStart: 0
         });
 
-        // Set phase allocations
-        phaseAllocations[propertyId][Phase.County] = (totalSupply * COUNTY_ALLOCATION) / 10000;
-        phaseAllocations[propertyId][Phase.State] = (totalSupply * STATE_ALLOCATION) / 10000;
-        phaseAllocations[propertyId][Phase.National] = (totalSupply * NATIONAL_ALLOCATION) / 10000;
-        phaseAllocations[propertyId][Phase.International] = (totalSupply * INTERNATIONAL_ALLOCATION) / 10000;
-
-        // Track property for enumeration
         _allPropertyIds.add(propertyId);
-
         emit PropertyCreated(propertyId, name, totalSupply, fundingTarget, llcId, custodian);
         return propertyId;
     }
 
-    /**
-     * @notice Get the current price for a property based on phase
-     * @param propertyId Property ID
-     */
-    function getCurrentPrice(uint256 propertyId) public view returns (uint256) {
+    function startFundingClock(uint256 propertyId) external onlyRole(DEFAULT_ADMIN_ROLE) {
         Property storage prop = properties[propertyId];
         require(prop.isActive, "Property not active");
+        require(prop.fundingClockStart == 0, "Funding clock already started");
+        prop.fundingClockStart = block.timestamp;
+        prop.fundingDeadline = block.timestamp + FUNDING_PERIOD;
+        prop.currentPhase = Phase.County;
+        emit FundingClockStarted(propertyId, prop.fundingClockStart, prop.fundingDeadline);
+    }
 
-        uint256 multiplier;
-        if (prop.currentPhase == Phase.County) {
-            multiplier = COUNTY_MULTIPLIER;
-        } else if (prop.currentPhase == Phase.State) {
-            multiplier = STATE_MULTIPLIER;
-        } else if (prop.currentPhase == Phase.National) {
-            multiplier = NATIONAL_MULTIPLIER;
-        } else {
-            multiplier = INTERNATIONAL_MULTIPLIER;
+    function setPerPersonAllowance(uint256 propertyId, uint256 allowance) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_allPropertyIds.contains(propertyId), "Property not found");
+        require(allowance > 0, "Allowance must be positive");
+        perPersonAllowance[propertyId] = allowance;
+        emit PerPersonAllowanceSet(propertyId, allowance);
+    }
+
+    /// @dev Flat parameter. Stages do not multiply the price.
+    function getCurrentPrice(uint256 propertyId) public view returns (uint256) {
+        require(properties[propertyId].isActive, "Property not active");
+        return basePrice;
+    }
+
+    function stageOf(uint256 propertyId) public view returns (Phase) {
+        Property storage prop = properties[propertyId];
+        require(prop.fundingClockStart != 0, "Funding clock not started");
+        uint256 elapsed = block.timestamp - prop.fundingClockStart;
+        if (elapsed < COUNTY_STAGE_SECONDS) return Phase.County;
+        if (elapsed < STATE_STAGE_SECONDS) return Phase.State;
+        return Phase.National;
+    }
+
+    function unsoldRemainder(uint256 propertyId) public view returns (uint256) {
+        Property storage prop = properties[propertyId];
+        return prop.totalSupply - prop.mintedSupply;
+    }
+
+    function residencyTierOf(uint256 propertyId, address account) public view returns (uint8) {
+        if (address(residencyVerifier) != address(0)) {
+            return residencyVerifier.residencyTier(account, propertyId);
         }
-
-        return (basePrice * multiplier) / 10000;
+        if (!residencyVerified[account]) return TIER_UNVERIFIED;
+        return residencyTier[account];
     }
 
-    /**
-     * @notice Get voting power multiplier for a phase
-     * @param phase The phase to check
-     */
-    function getVotingMultiplier(Phase phase) public pure returns (uint256) {
-        if (phase == Phase.County) return COUNTY_VOTING_MULTIPLIER;
-        if (phase == Phase.State) return STATE_VOTING_MULTIPLIER;
-        if (phase == Phase.National) return NATIONAL_VOTING_MULTIPLIER;
-        return INTERNATIONAL_VOTING_MULTIPLIER;
+    function voteWeightBps(uint8 tier) public pure returns (uint256) {
+        if (tier == TIER_COUNTY) return COUNTY_VOTE_WEIGHT_BPS;
+        if (tier == TIER_IN_STATE) return IN_STATE_VOTE_WEIGHT_BPS;
+        return OTHER_US_VOTE_WEIGHT_BPS;
     }
 
-    /**
-     * @notice Calculate voting power for an address on a property
-     * @param propertyId Property ID
-     * @param voter Address to check
-     */
     function getVotingPower(uint256 propertyId, address voter) external view returns (uint256) {
-        uint256 totalPower = 0;
-        
-        for (uint8 i = 0; i <= uint8(Phase.International); i++) {
-            Phase phase = Phase(i);
-            uint256 holdings = holdingsByPhase[propertyId][voter][phase];
-            uint256 multiplier = getVotingMultiplier(phase);
-            totalPower += (holdings * multiplier) / 10000;
-        }
-        
-        return totalPower;
+        return (balanceOf(voter, propertyId) * _weightBps(propertyId, voter)) / 10000;
     }
 
-    /**
-     * @notice Calculate total weighted voting power for a property
-     * @dev Sums all minted tokens by phase, weighted by voting multipliers
-     * @param propertyId Property ID
-     */
     function getTotalWeightedVotingPower(uint256 propertyId) external view returns (uint256) {
-        uint256 totalPower = 0;
-        
-        for (uint8 i = 0; i <= uint8(Phase.International); i++) {
-            Phase phase = Phase(i);
-            uint256 minted = phaseMinted[propertyId][phase];
-            uint256 multiplier = getVotingMultiplier(phase);
-            totalPower += (minted * multiplier) / 10000;
-        }
-        
-        return totalPower;
+        return totalWeightedVotingPower[propertyId];
     }
 
-    /**
-     * @notice Mint tokens for a buyer (called by Escrow contract)
-     * @param propertyId Property ID
-     * @param buyer Buyer address
-     * @param amount Number of tokens
-     */
     function mintTokens(
         uint256 propertyId,
         address buyer,
         uint256 amount
     ) external onlyRole(MINTER_ROLE) nonReentrant whenNotPaused {
-        require(whitelist[buyer], "Buyer not whitelisted");
-        
-        Property storage prop = properties[propertyId];
-        require(prop.isActive, "Property not active");
-        require(prop.custodian != address(0), "No LLC backing");
-        require(!prop.isFunded || block.timestamp <= prop.fundingDeadline, "Funding closed");
-        
-        Phase buyerPhase = addressPhaseEligibility[buyer];
-        require(uint8(buyerPhase) >= uint8(prop.currentPhase), "Not eligible for current phase");
+        string memory reason = _purchaseBlockReason(propertyId, buyer, amount);
+        require(bytes(reason).length == 0, reason);
 
-        // Check phase allocation
-        uint256 phaseRemaining = phaseAllocations[propertyId][prop.currentPhase] - 
-                                 phaseMinted[propertyId][prop.currentPhase];
-        require(amount <= phaseRemaining, "Exceeds phase allocation");
-
-        // Mint tokens
+        Phase stage = stageOf(propertyId);
         _mint(buyer, propertyId, amount, "");
-        
-        // Update state
-        prop.mintedSupply += amount;
-        phaseMinted[propertyId][prop.currentPhase] += amount;
-        holdingsByPhase[propertyId][buyer][prop.currentPhase] += amount;
 
-        emit TokensMinted(propertyId, buyer, amount, prop.currentPhase);
-
-        // Check if phase is complete
-        if (phaseMinted[propertyId][prop.currentPhase] >= phaseAllocations[propertyId][prop.currentPhase]) {
-            _advancePhase(propertyId);
-        }
-    }
-
-    /**
-     * @notice Advance to next phase (can be called by PhaseManager)
-     * @param propertyId Property ID
-     */
-    function advancePhase(uint256 propertyId) external onlyRole(PHASE_ADVANCER_ROLE) {
-        _advancePhase(propertyId);
-    }
-
-    function _advancePhase(uint256 propertyId) internal {
         Property storage prop = properties[propertyId];
-        require(prop.isActive, "Property not active");
-        require(uint8(prop.currentPhase) < uint8(Phase.International), "Already at final phase");
+        prop.mintedSupply += amount;
+        prop.currentPhase = stage;
+        soldInStage[propertyId][stage] += amount;
+        purchasedInStage[propertyId][uint8(stage)][buyer] += amount;
+        holdingsByPhase[propertyId][buyer][stage] += amount;
 
-        prop.currentPhase = Phase(uint8(prop.currentPhase) + 1);
-        emit PhaseAdvanced(propertyId, prop.currentPhase);
+        emit TokensMinted(propertyId, buyer, amount, stage);
     }
 
     /**
-     * @notice Mark property as fully funded
-     * @param propertyId Property ID
+     * @notice Stages follow the funding clock. They cannot be skipped by a bucket
+     *         filling or by an engagement threshold.
      */
+    function advancePhase(uint256) external pure {
+        revert("Access stages follow the common funding clock");
+    }
+
+    /// @notice Marks the raise complete. TODO(owner): early completion does not unlock transfers.
     function markFunded(uint256 propertyId) external onlyRole(MINTER_ROLE) {
         Property storage prop = properties[propertyId];
         require(prop.isActive, "Property not active");
         require(!prop.isFunded, "Already funded");
-        
         prop.isFunded = true;
         emit PropertyFunded(propertyId, prop.mintedSupply * getCurrentPrice(propertyId));
     }
 
-    /**
-     * @notice Add address to whitelist with phase eligibility
-     * @param account Address to whitelist
-     * @param eligibility Phase eligibility based on KYC/location
-     */
-    function addToWhitelist(address account, Phase eligibility) external onlyRole(WHITELIST_ADMIN_ROLE) {
+    function addToWhitelist(address account, uint8 tier) external onlyRole(WHITELIST_ADMIN_ROLE) {
+        require(tier <= TIER_OTHER_US, "Unknown residency tier");
         whitelist[account] = true;
-        addressPhaseEligibility[account] = eligibility;
-        emit AddressWhitelisted(account, eligibility);
+        _setResidency(account, tier, true);
+        emit AddressWhitelisted(account, tier);
     }
 
-    /**
-     * @notice Auto-whitelist with Chainlink Functions verification
-     * @dev In production, verificationData contains Chainlink Functions proof (e.g., GA residency for County phase)
-     * @param account Address to whitelist
-     * @param eligibility Phase eligibility based on verified location
-     * @param verificationData Chainlink Functions proof or location hash
-     */
     function autoWhitelist(
         address account,
-        Phase eligibility,
+        uint8 tier,
         bytes calldata verificationData
     ) external onlyRole(WHITELIST_ADMIN_ROLE) {
-        // Placeholder: In production, call Chainlink Functions to verify (e.g., GA residency for County)
-        // For now: Simple require or mock
         require(verificationData.length > 0, "No verification data");
-
+        require(tier <= TIER_OTHER_US, "Unknown residency tier");
         whitelist[account] = true;
-        addressPhaseEligibility[account] = eligibility;
-        emit AddressWhitelisted(account, eligibility);
+        _setResidency(account, tier, true);
+        emit AddressWhitelisted(account, tier);
     }
 
-    /**
-     * @notice Remove address from whitelist
-     * @param account Address to remove
-     */
+    function setResidency(address account, uint8 tier, bool verified) external onlyRole(WHITELIST_ADMIN_ROLE) {
+        require(tier <= TIER_UNVERIFIED, "Unknown residency tier");
+        if (tier == TIER_UNVERIFIED) {
+            _setResidency(account, residencyTier[account], false);
+        } else {
+            _setResidency(account, tier, verified);
+        }
+        emit ResidencyUpdated(account, residencyTier[account], residencyVerified[account]);
+    }
+
+    function setResidencyVerifier(address verifier) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        residencyVerifier = IResidencyVerifier(verifier);
+        emit ResidencyVerifierUpdated(verifier);
+    }
+
     function removeFromWhitelist(address account) external onlyRole(WHITELIST_ADMIN_ROLE) {
         whitelist[account] = false;
+        _setResidency(account, residencyTier[account], false);
         emit AddressRemovedFromWhitelist(account);
     }
 
-    /**
-     * @notice Update base price (called by Chainlink oracle)
-     * @param newPrice New base price in wei
-     */
     function updateBasePrice(uint256 newPrice) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newPrice > 0, "Price required");
         basePrice = newPrice;
         emit BasePriceUpdated(newPrice);
     }
 
-    /**
-     * @notice Update LLC backing for a property
-     * @param propertyId Property ID
-     * @param llcId LLC identifier (e.g., "GA-LLC-456")
-     * @param custodian Custody wallet address
-     */
+    function setTransferExceptionsEnabled(bool enabled) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        transferExceptionsEnabled = enabled;
+        emit TransferPolicyHookSet("transferExceptions", enabled);
+    }
+
+    function setPostPeriodTransfersEnabled(bool enabled) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        postPeriodTransfersEnabled = enabled;
+        emit TransferPolicyHookSet("postPeriodLiquidity", enabled);
+    }
+
+    /// @notice TODO(owner): no transfer exception is defined. The flag does not open a transfer.
+    function transferExceptionApplies(uint256, address, address, uint256) public view returns (bool) {
+        if (!transferExceptionsEnabled) return false;
+        return false;
+    }
+
     function updateLLCBacking(
         uint256 propertyId,
         string calldata llcId,
@@ -392,63 +357,35 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         require(properties[propertyId].isActive, "Property not active");
         require(custodian != address(0), "Custodian required");
         require(bytes(llcId).length > 0, "LLC identifier required");
-
         properties[propertyId].llcIdentifier = llcId;
         properties[propertyId].custodian = custodian;
-
         emit LLCBackingUpdated(propertyId, llcId, custodian);
     }
 
-    /**
-     * @notice Pause all token transfers
-     */
     function pause() external onlyRole(PAUSER_ROLE) {
         _pause();
     }
 
-    /**
-     * @notice Unpause token transfers
-     */
     function unpause() external onlyRole(PAUSER_ROLE) {
         _unpause();
     }
 
-    /**
-     * @notice Get property details
-     * @param propertyId Property ID
-     */
     function getProperty(uint256 propertyId) external view returns (Property memory) {
         return properties[propertyId];
     }
 
-    /**
-     * @notice Get all property IDs
-     */
     function getAllPropertyIds() external view returns (uint256[] memory) {
         return _allPropertyIds.values();
     }
 
-    /**
-     * @notice Get property count
-     */
     function getPropertyCount() external view returns (uint256) {
         return _allPropertyIds.length();
     }
 
-    /**
-     * @notice Check if property exists
-     */
     function propertyExists(uint256 propertyId) external view returns (bool) {
         return _allPropertyIds.contains(propertyId);
     }
 
-    // ============ Regulatory Compliance Functions ============
-
-    /**
-     * @notice Record KYC verification for an address
-     * @param account Address that passed KYC
-     * @param verificationId External verification ID from KYC provider
-     */
     function recordKYCVerification(
         address account,
         bytes32 verificationId
@@ -458,11 +395,6 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         emit KYCVerificationCompleted(account, block.timestamp, verificationId);
     }
 
-    /**
-     * @notice Revoke KYC verification for an address
-     * @param account Address to revoke KYC
-     * @param reason Reason for revocation
-     */
     function revokeKYCVerification(
         address account,
         string calldata reason
@@ -470,15 +402,11 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         delete kycVerificationIds[account];
         delete kycVerificationTimestamps[account];
         whitelist[account] = false;
+        _setResidency(account, residencyTier[account], false);
         emit KYCVerificationRevoked(account, block.timestamp, reason);
         emit AddressRemovedFromWhitelist(account);
     }
 
-    /**
-     * @notice Record AML check result
-     * @param account Address that passed AML check
-     * @param checkId External AML check ID
-     */
     function recordAMLCheck(
         address account,
         bytes32 checkId
@@ -487,51 +415,26 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         emit AMLCheckPassed(account, block.timestamp, checkId);
     }
 
-    /**
-     * @notice Record failed AML check
-     * @param account Address that failed AML check
-     * @param reason Reason for failure
-     */
     function recordAMLFailure(
         address account,
         string calldata reason
     ) external onlyRole(WHITELIST_ADMIN_ROLE) {
         whitelist[account] = false;
+        _setResidency(account, residencyTier[account], false);
         emit AMLCheckFailed(account, block.timestamp, reason);
         emit AddressRemovedFromWhitelist(account);
     }
 
-    /**
-     * @notice Create a compliance checkpoint for audit trail
-     * @param propertyId Property ID to checkpoint
-     */
     function createComplianceCheckpoint(uint256 propertyId) external onlyRole(DEFAULT_ADMIN_ROLE) {
         Property storage prop = properties[propertyId];
         require(prop.isActive, "Property not active");
-        
-        // Count unique holders (simplified - in production use a more efficient method)
-        uint256 holderCount = 0; // Would need holder enumeration for actual count
-        
-        emit ComplianceCheckpoint(
-            propertyId,
-            block.timestamp,
-            holderCount,
-            prop.mintedSupply
-        );
+        emit ComplianceCheckpoint(propertyId, block.timestamp, 0, prop.mintedSupply);
     }
 
-    /**
-     * @notice Request regulator audit (emits event for off-chain tracking)
-     * @param propertyId Property ID for audit
-     */
     function requestRegulatorAudit(uint256 propertyId) external onlyRole(DEFAULT_ADMIN_ROLE) {
         emit RegulatorAuditRequested(propertyId, msg.sender, block.timestamp);
     }
 
-    /**
-     * @notice Get KYC status for an address
-     * @param account Address to check
-     */
     function getKYCStatus(address account) external view returns (
         bool isVerified,
         bytes32 verificationId,
@@ -544,110 +447,118 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         );
     }
 
-    // ============ Hybrid Permissioned Transfer Gate ============
-
     /**
-     * @notice Permanent transfer eligibility check (hybrid model)
-     * @dev Transfers remain gated for the life of the interest. Funding status is no longer a cliff.
-     *      Both parties must remain on the whitelist and have recorded KYC verification.
-     *      Additional permanent rules (lock-ups, community thresholds, offering-specific restrictions)
-     *      can be layered here without changing the public posture.
-     * @param propertyId Property being transferred
-     * @param from Sender
-     * @param to Recipient
-     * @return allowed Whether the transfer is permitted under current compliance rules
+     * @notice Compliance gate (whitelist, recorded KYC, active property).
+     *         The funding lock is applied separately and currently dominates.
      */
+    function isComplianceTransferAllowed(
+        uint256 propertyId,
+        address from,
+        address to
+    ) public view returns (bool) {
+        if (from == address(0) || to == address(0)) return true;
+        if (!whitelist[to] || !whitelist[from]) return false;
+        if (kycVerificationIds[to] == bytes32(0) || kycVerificationIds[from] == bytes32(0)) return false;
+        if (!properties[propertyId].isActive) return false;
+        return true;
+    }
+
+    function transferLockReason(uint256 propertyId) public view returns (string memory) {
+        Property storage prop = properties[propertyId];
+        if (prop.fundingClockStart == 0 || block.timestamp < prop.fundingDeadline) {
+            return "Transfers locked through common funding period";
+        }
+        // TODO(owner): post-period liquidity is undecided. postPeriodTransfersEnabled does not open transfers.
+        postPeriodTransfersEnabled;
+        return "Post-period liquidity policy undecided";
+    }
+
     function isTransferAllowed(
         uint256 propertyId,
         address from,
         address to,
-        uint256 /* amount */
+        uint256 amount
     ) public view returns (bool) {
-        // Minting and burning are not restricted by this gate
-        if (from == address(0) || to == address(0)) {
-            return true;
-        }
-
-        // Both parties must remain eligible
-        if (!whitelist[to] || !whitelist[from]) {
+        if (from == address(0) || to == address(0)) return true;
+        if (bytes(transferLockReason(propertyId)).length != 0 && !transferExceptionApplies(propertyId, from, to, amount)) {
             return false;
         }
-
-        // Ongoing KYC status must be present (using existing storage)
-        if (kycVerificationIds[to] == bytes32(0) || kycVerificationIds[from] == bytes32(0)) {
-            return false;
-        }
-
-        // Property must still be active
-        if (!properties[propertyId].isActive) {
-            return false;
-        }
-
-        // Future permanent rules (lock-ups, community thresholds, etc.) go here
-        return true;
+        return isComplianceTransferAllowed(propertyId, from, to);
     }
 
-    /**
-     * @notice Override transfer to enforce permanent permissioned rules and maintain phase tracking
-     * @dev Hybrid model: transfers stay gated for the life of the interest.
-     *      Removed the old funding-cliff require(properties[propertyId].isFunded).
-     */
     function _update(
         address from,
         address to,
         uint256[] memory ids,
         uint256[] memory values
     ) internal virtual override(ERC1155, ERC1155Supply) whenNotPaused {
-        // Permanent permissioned gate for regular transfers
         if (from != address(0) && to != address(0)) {
             for (uint256 i = 0; i < ids.length; i++) {
+                string memory lockReason = transferLockReason(ids[i]);
+                if (bytes(lockReason).length != 0 && !transferExceptionApplies(ids[i], from, to, values[i])) {
+                    revert(lockReason);
+                }
                 require(
-                    isTransferAllowed(ids[i], from, to, values[i]),
+                    isComplianceTransferAllowed(ids[i], from, to),
                     "Transfer not permitted under compliance rules"
                 );
             }
         }
-        
-        // Handle transfers and burns - update holdingsByPhase
+
+        if (from != address(0) || to != address(0)) {
+            for (uint256 i = 0; i < ids.length; i++) {
+                if (from != address(0)) {
+                    uint256 oldFrom = balanceOf(from, ids[i]);
+                    _syncWeight(ids[i], from, oldFrom, oldFrom - values[i]);
+                }
+                if (to != address(0)) {
+                    uint256 oldTo = balanceOf(to, ids[i]);
+                    _syncWeight(ids[i], to, oldTo, oldTo + values[i]);
+                }
+            }
+        }
+
         if (from != address(0)) {
             for (uint256 i = 0; i < ids.length; i++) {
                 uint256 propertyId = ids[i];
-                uint256 amount = values[i];
-                
-                // Deduct from sender's phase holdings (FIFO - earliest phase first)
-                uint256 remaining = amount;
-                for (uint8 p = 0; p <= uint8(Phase.International) && remaining > 0; p++) {
+                uint256 remaining = values[i];
+                for (uint8 p = 0; p <= uint8(Phase.National) && remaining > 0; p++) {
                     Phase phase = Phase(p);
                     uint256 holdings = holdingsByPhase[propertyId][from][phase];
-                    if (holdings > 0) {
-                        uint256 toDeduct = holdings > remaining ? remaining : holdings;
-                        holdingsByPhase[propertyId][from][phase] -= toDeduct;
-                        
-                        // For burns (to == address(0)), also update global state
-                        if (to == address(0)) {
-                            properties[propertyId].mintedSupply -= toDeduct;
-                            phaseMinted[propertyId][phase] -= toDeduct;
-                            emit TokensBurned(propertyId, from, toDeduct, phase);
-                        } else {
-                            // For transfers, add to recipient's phase holdings
-                            holdingsByPhase[propertyId][to][phase] += toDeduct;
-                        }
-                        
-                        remaining -= toDeduct;
+                    if (holdings == 0) continue;
+                    uint256 toDeduct = holdings > remaining ? remaining : holdings;
+                    holdingsByPhase[propertyId][from][phase] -= toDeduct;
+                    if (to == address(0)) {
+                        properties[propertyId].mintedSupply -= toDeduct;
+                        soldInStage[propertyId][phase] -= toDeduct;
+                        emit TokensBurned(propertyId, from, toDeduct, phase);
+                    } else {
+                        holdingsByPhase[propertyId][to][phase] += toDeduct;
                     }
+                    remaining -= toDeduct;
                 }
-                
-                // Revert if we couldn't account for all tokens
                 require(remaining == 0, "Insufficient phase-tracked holdings");
             }
         }
-        
+
         super._update(from, to, ids, values);
+
+        if (from != address(0)) {
+            for (uint256 i = 0; i < ids.length; i++) {
+                if (balanceOf(from, ids[i]) == 0) {
+                    _holderProperties[from].remove(ids[i]);
+                }
+            }
+        }
+        if (to != address(0)) {
+            for (uint256 i = 0; i < ids.length; i++) {
+                if (values[i] > 0) {
+                    _holderProperties[to].add(ids[i]);
+                }
+            }
+        }
     }
 
-    /**
-     * @notice Required override for AccessControl
-     */
     function supportsInterface(bytes4 interfaceId)
         public
         view
@@ -655,5 +566,87 @@ contract PropertyToken is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
+    }
+
+    function _purchaseBlockReason(
+        uint256 propertyId,
+        address buyer,
+        uint256 amount
+    ) internal view returns (string memory) {
+        if (!whitelist[buyer]) return "Buyer not whitelisted";
+        Property storage prop = properties[propertyId];
+        if (!prop.isActive) return "Property not active";
+        if (prop.custodian == address(0)) return "No LLC backing";
+        if (prop.fundingClockStart == 0) return "Funding clock not started";
+        if (block.timestamp >= prop.fundingDeadline) return "Funding period ended";
+        if (amount == 0) return "Amount must be positive";
+        if (perPersonAllowance[propertyId] == 0) return "Per-person allowance not configured";
+
+        Phase stage = stageOf(propertyId);
+        if (!_eligible(residencyTierOf(propertyId, buyer), stage)) {
+            return "Not eligible for current stage";
+        }
+
+        uint256 already = purchasedInStage[propertyId][uint8(stage)][buyer];
+        if (already + amount > perPersonAllowance[propertyId]) {
+            return "Exceeds per-person allowance";
+        }
+        if (amount > prop.totalSupply - prop.mintedSupply) {
+            return "Exceeds unsold remainder";
+        }
+        return "";
+    }
+
+    function _eligible(uint8 tier, Phase stage) internal pure returns (bool) {
+        if (tier == TIER_COUNTY) return true;
+        if (tier == TIER_IN_STATE) return stage != Phase.County;
+        if (tier == TIER_OTHER_US) return stage == Phase.National;
+        return false;
+    }
+
+    function _weightBps(uint256 propertyId, address account) internal view returns (uint256) {
+        return voteWeightBps(residencyTierOf(propertyId, account));
+    }
+
+    function _syncWeight(
+        uint256 propertyId,
+        address account,
+        uint256 oldBalance,
+        uint256 newBalance
+    ) internal {
+        uint256 bps = _weightBps(propertyId, account);
+        _applyPowerDelta(propertyId, (oldBalance * bps) / 10000, (newBalance * bps) / 10000);
+    }
+
+    function _applyPowerDelta(uint256 propertyId, uint256 oldPower, uint256 newPower) internal {
+        if (newPower >= oldPower) {
+            totalWeightedVotingPower[propertyId] += newPower - oldPower;
+        } else {
+            uint256 drop = oldPower - newPower;
+            uint256 cur = totalWeightedVotingPower[propertyId];
+            totalWeightedVotingPower[propertyId] = drop >= cur ? 0 : cur - drop;
+        }
+    }
+
+    function _setResidency(address account, uint8 tier, bool verified) internal {
+        uint256[] memory ids = _holderProperties[account].values();
+        uint256[] memory oldBps = new uint256[](ids.length);
+        uint256[] memory balances = new uint256[](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) {
+            balances[i] = balanceOf(account, ids[i]);
+            oldBps[i] = _weightBps(ids[i], account);
+        }
+
+        residencyTier[account] = tier;
+        residencyVerified[account] = verified;
+
+        for (uint256 i = 0; i < ids.length; i++) {
+            uint256 newBps = _weightBps(ids[i], account);
+            _applyPowerDelta(
+                ids[i],
+                (balances[i] * oldBps[i]) / 10000,
+                (balances[i] * newBps) / 10000
+            );
+        }
     }
 }
