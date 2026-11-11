@@ -75,7 +75,7 @@ const TOTAL_GUIDES = 5;
 
 const iconTrayItems: IconTrayItem[] = [
   { id: "process-guide", label: "Process Guide", icon: FileText },
-  { id: "journey", label: "4-Phase Journey", icon: Rocket },
+  { id: "journey", label: "Access stages", icon: Rocket },
   { id: "blockchain-101", label: "Blockchain 101", icon: Layers },
   { id: "dao-governance", label: "DAO Governance", icon: Vote },
   { id: "glossary", label: "Glossary", icon: Book },
@@ -84,10 +84,10 @@ const iconTrayItems: IconTrayItem[] = [
 function ProcessGuideSection() {
   const steps = [
     { number: 1, title: "Evaluate", description: "Property eligibility and valuation", icon: Search, details: ["Nomination submitted", "Title verification", "Chainlink oracle valuation"] },
-    { number: 2, title: "Configure", description: "Legal structure and token parameters", icon: Settings, details: ["Create property-holding LLC", "Set phase pricing ($12.50 to $37.50)", "Configure per-person limits"] },
+    { number: 2, title: "Configure", description: "Legal structure and token parameters", icon: Settings, details: ["Create property-holding LLC", "Set the initial price parameter", "Set one per-person allowance"] },
     { number: 3, title: "Tokenize", description: "Smart contract deployment", icon: Coins, details: ["Deploy ERC-1155 multi-token contract", "Implement transfer restrictions", "Security audit"] },
-    { number: 4, title: "Launch", description: "4-phase community-first offering", icon: Rocket, details: ["Phase 1 (County): $12.50/token", "Phase 2 (State): $18.75/token", "Phase 3-4: National/International"] },
-    { number: 5, title: "Close & Issue", description: "Funding completion and token distribution", icon: Target, details: ["100% funding target required", "USDC escrow with 3% APR", "Tokens minted to investor wallets"] },
+    { number: 4, title: "Launch", description: "Staged access to the full supply", icon: Rocket, details: ["Days 0–90: verified county residents", "Days 91–180: statewide", "After day 180: nationwide remainder"] },
+    { number: 5, title: "Close", description: "Common 365-day funding clock", icon: Target, details: ["Clock starts when residents choose the project", "Shares stay locked through that clock", "Refunds and later liquidity are not decided"] },
   ];
 
   return (
@@ -132,29 +132,28 @@ function ProcessGuideSection() {
 
 function FourPhaseJourneySection() {
   const phases = [
-    { name: "County Phase", price: "$12.50", multiplier: "1.5x", limit: "100 tokens/person", color: "bg-chart-3/10 border-chart-3/20 text-chart-3" },
-    { name: "State Phase", price: "$18.75", multiplier: "1.25x", limit: "250 tokens/person", color: "bg-chart-1/10 border-chart-1/20 text-chart-1" },
-    { name: "National Phase", price: "$28.13", multiplier: "1.0x", limit: "500 tokens/person", color: "bg-chart-4/10 border-chart-4/20 text-chart-4" },
-    { name: "International Phase", price: "$37.50", multiplier: "0.75x", limit: "1000 tokens/person", color: "bg-muted border text-muted-foreground" },
+    { name: "County", window: "Days 0–90", multiplier: "1.5x", limit: "Verified county residents", color: "bg-chart-3/10 border-chart-3/20 text-chart-3" },
+    { name: "Statewide", window: "Days 91–180", multiplier: "1.0x", limit: "Other in-state holders", color: "bg-chart-1/10 border-chart-1/20 text-chart-1" },
+    { name: "Nationwide", window: "After day 180", multiplier: "0.75x", limit: "Other US holders", color: "bg-chart-4/10 border-chart-4/20 text-chart-4" },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-xl font-semibold mb-2">4-Phase Investment Journey</h3>
-        <p className="text-muted-foreground text-sm">Community-first pricing ensures local investors get the best deal and the most voting power.</p>
+        <h3 className="text-xl font-semibold mb-2">Staged access</h3>
+        <p className="text-muted-foreground text-sm">The full supply is open to the current stage. Later stages sell only the unsold remainder. Vote weights follow residency, not purchase stage.</p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {phases.map((phase, idx) => (
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {phases.map((phase) => (
           <Card key={phase.name} className={`p-4 border ${phase.color.split(" ")[1]}`}>
             <div className="flex items-center gap-2 mb-3">
-              <Badge variant="outline" className="text-xs">Phase {idx + 1}</Badge>
+              <Badge variant="outline" className="text-xs">{phase.window}</Badge>
             </div>
             <h4 className="font-semibold mb-2">{phase.name}</h4>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Price</span><span className="font-bold">{phase.price}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Price</span><span className="font-bold">One parameter</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Voting</span><span className="font-bold">{phase.multiplier}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Limit</span><span className="text-xs">{phase.limit}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Who</span><span className="text-xs">{phase.limit}</span></div>
             </div>
           </Card>
         ))}
@@ -163,7 +162,7 @@ function FourPhaseJourneySection() {
         <div className="flex items-start gap-2">
           <Zap className="h-4 w-4 text-primary shrink-0 mt-0.5" />
           <p className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">75% engagement threshold:</span> When community participation reaches 75%, the phase automatically advances via the PhaseManager smart contract.
+            <span className="font-medium text-foreground">The allowance is not chosen yet.</span> Every eligible person in a stage gets the same number once it is configured. Engagement does not shorten a stage.
           </p>
         </div>
       </Card>

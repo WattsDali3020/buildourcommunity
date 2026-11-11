@@ -14,7 +14,7 @@ const steps = [
     icon: Coins,
     number: "02",
     title: "Invest",
-    description: "Purchase tokens starting at $12.50 with community-first pricing",
+    description: "County residents have the first 90 days. The price is a parameter.",
     color: "text-chart-2",
     bgColor: "bg-chart-2/10",
   },

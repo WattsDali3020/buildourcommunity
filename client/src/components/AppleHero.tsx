@@ -164,7 +164,7 @@ export function AppleHero() {
           <div style="font-weight:600;font-size:14px;margin-bottom:4px;">${prop.name}</div>
           <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">${prop.city}, ${prop.state}</div>
           <div style="display:flex;justify-content:space-between;font-size:12px;">
-            <span style="color:#94a3b8;">$12.50/token</span>
+            <span style="color:#94a3b8;">Price is configured</span>
             <span style="color:#22c55e;font-weight:600;">${prop.projectedROI || 0}% ROI</span>
           </div>
         </div>
@@ -376,9 +376,9 @@ export function AppleHero() {
               <div className="text-center" data-testid="stat-engagement">
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <DollarSign className="h-4 w-4 text-chart-4" />
-                  <span className="text-2xl sm:text-3xl font-bold text-chart-4">$12.50</span>
+                  <span className="text-2xl sm:text-3xl font-bold text-chart-4">90 days</span>
                 </div>
-                <p className="text-sm text-gray-400">Min. Investment</p>
+                <p className="text-sm text-gray-400">County access first</p>
               </div>
             </div>
           </div>

@@ -4,11 +4,11 @@
 
 `deployment-addresses.json` currently records a Hardhat local deploy (chainId 31337). Treat zero-addresses in `client/src/lib/contracts/addresses.ts` as not-live. Do not read this README as a live county GDP, escrow, or ownership claim.
 
-RevitaHub is a community demand + owner-consent layer for fractional real estate interests held in an SPV. County-phase tickets start at $12.50. Target chain is Base with Chainlink oracles when addresses are actually deployed.
+RevitaHub is a community demand + owner-consent layer for fractional real estate interests held in an SPV. Sale access is staged (county, then statewide, then nationwide). The initial token price is a parameter. Target chain is Base with Chainlink oracles when addresses are actually deployed.
 
 > Solo Founder: **Build Our Community, LLC**
 >
-> Pins are RevitaHub records only. Escrow does not move until PhaseManager crosses 75% and an offering actually funds.
+> Pins are RevitaHub records only. Sale stages follow a 365-day clock. A 75% engagement reading does not open the next stage.
 
 See `docs/CONCISE_LOOP.md` for the five-stock public model.
 
@@ -16,8 +16,8 @@ See `docs/CONCISE_LOOP.md` for the five-stock public model.
 
 ## Key Features
 
-- **$12.50 Minimum Token Pricing** — County-phase fractional ownership (KYC / whitelist required before mint)
-- **4-Phase Pricing Ramp** — County ($12.50) → State ($18.75) → National ($28.13) → International ($37.50)
+- **Configurable initial price** — one parameter for every stage. Not a public price ladder.
+- **Staged access** — days 0–90 verified county residents, days 91–180 statewide, then the unsold remainder nationwide. Vote weights 1.5 / 1.0 / 0.75.
 - **DAO Governance** — Token-weighted voting with gasless EIP-712 signatures
 - **2-of-3 Multi-Sig Treasury** — Pass-through treasury. Does **not** skim the founder fee
 - **Impact-gated founder economics** — Escrow Payment 1 = 1% of gross **only if** the offering funds **and** Governance impact score ≥ 70. Payment 2 = 1% of quarterly property income. No 24-month Treasury vest. No 5% platform cut

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { ArrowRight, Building2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { INITIAL_TOKEN_PRICE_USD } from "@shared/schema";
 import type { Property as DBProperty } from "@shared/schema";
 import { inferMixCategory, passesSeedGate } from "@/lib/concise-loop";
 
@@ -28,7 +29,7 @@ export function FeaturedProperties() {
         location: { city: p.city, state: p.state },
         type: p.propertyType as Property["type"],
         image: p.imageUrl || undefined,
-        tokenPrice: 12.50,
+        tokenPrice: INITIAL_TOKEN_PRICE_USD,
         totalTokens: 0,
         tokensSold: 0,
         fundingGoal: parseFloat(p.fundingGoal || "0"),

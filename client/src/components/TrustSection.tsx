@@ -18,8 +18,8 @@ const trustIndicators = [
   },
   {
     icon: FileCheck,
-    title: "3% APR Protection",
-    description: "Refund guarantee if funding goals aren't met",
+    title: "Refund terms open",
+    description: "What happens if funding is not completed is not decided",
   },
 ];
 

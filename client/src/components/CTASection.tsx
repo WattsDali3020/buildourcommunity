@@ -18,11 +18,11 @@ export function CTASection() {
               </h2>
               <p className="text-primary-foreground/80 text-lg mb-2">
                 Join the waitlist for updates on blockchain integration, first pilots, and early access opportunities.
-                Your $12.50 investment could be the start of something transformative.
+                A verified county resident's participation is what opens a project.
               </p>
               <div className="flex items-center gap-2 text-primary-foreground/70 text-sm">
                 <Shield className="h-4 w-4" />
-                <span>Protected by our 3% APR investor guarantee</span>
+                <span>Refund terms are not decided</span>
               </div>
             </div>
             <div className="flex flex-col items-center gap-3">

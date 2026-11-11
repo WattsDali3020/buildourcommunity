@@ -83,10 +83,10 @@ export function TokenPurchaseModal({
   const getPhaseInfo = () => {
     if (!activePhase) return null;
     const phaseNames: Record<string, string> = {
-      county: "County Phase",
-      state: "State Phase",
-      national: "National Phase",
-      international: "International Phase",
+      county: "County stage",
+      state: "Statewide stage",
+      national: "Nationwide stage",
+      international: "Not a sale stage",
     };
     return phaseNames[activePhase.phase] || activePhase.phase;
   };

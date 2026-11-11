@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Users, Vote, Wallet, MapPin, Flag, Globe, Info, ShieldCheck, ArrowRight, FileText, CheckCircle2, Clock, MessageSquare, ThumbsUp, ThumbsDown, Zap, Calendar, ArrowDown } from "lucide-react";
+import { Plus, Users, Vote, Wallet, MapPin, Flag, Info, ShieldCheck, ArrowRight, FileText, CheckCircle2, Clock, MessageSquare, ThumbsUp, ThumbsDown, Zap, Calendar, ArrowDown } from "lucide-react";
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { Link } from "wouter";
@@ -238,49 +238,39 @@ export default function Governance() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                Early investors from local communities have greater governance power. Voting power is weighted 
-                based on the phase in which tokens were purchased, ensuring local voices are prioritized.
+                Voting power is the tokens you hold times your verified residency. It is not set by the stage you bought in.
               </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-3 rounded-md bg-chart-3/10 border border-chart-3/20">
                   <div className="flex items-center gap-2 mb-2">
                     <MapPin className="h-4 w-4 text-chart-3" />
-                    <span className="text-sm font-medium">County Phase</span>
+                    <span className="text-sm font-medium">County resident</span>
                   </div>
                   <p className="text-2xl font-bold text-chart-3">1.5x</p>
-                  <p className="text-xs text-muted-foreground">Voting multiplier</p>
+                  <p className="text-xs text-muted-foreground">Verified county residency</p>
                 </div>
                 <div className="p-3 rounded-md bg-chart-1/10 border border-chart-1/20">
                   <div className="flex items-center gap-2 mb-2">
                     <Flag className="h-4 w-4 text-chart-1" />
-                    <span className="text-sm font-medium">State Phase</span>
+                    <span className="text-sm font-medium">Other in-state</span>
                   </div>
-                  <p className="text-2xl font-bold text-chart-1">1.25x</p>
-                  <p className="text-xs text-muted-foreground">Voting multiplier</p>
+                  <p className="text-2xl font-bold text-chart-1">1.0x</p>
+                  <p className="text-xs text-muted-foreground">Same state, outside the county</p>
                 </div>
                 <div className="p-3 rounded-md bg-chart-4/10 border border-chart-4/20">
                   <div className="flex items-center gap-2 mb-2">
                     <Users className="h-4 w-4 text-chart-4" />
-                    <span className="text-sm font-medium">National Phase</span>
+                    <span className="text-sm font-medium">Other US</span>
                   </div>
-                  <p className="text-2xl font-bold text-chart-4">1.0x</p>
-                  <p className="text-xs text-muted-foreground">Voting multiplier</p>
-                </div>
-                <div className="p-3 rounded-md bg-muted border">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Globe className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">International</span>
-                  </div>
-                  <p className="text-2xl font-bold">0.75x</p>
-                  <p className="text-xs text-muted-foreground">Voting multiplier</p>
+                  <p className="text-2xl font-bold text-chart-4">0.75x</p>
+                  <p className="text-xs text-muted-foreground">Still votes. No outside-vote cap.</p>
                 </div>
               </div>
               <div className="mt-4 p-3 rounded-md bg-primary/5 border border-primary/20 flex gap-2">
                 <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <p className="text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">Example:</span> A County Phase investor with 50 tokens has 75 voting power (50 x 1.5x), 
-                  while an International Phase investor with 100 tokens has 75 voting power (100 x 0.75x). 
-                  This ensures local community members maintain governance influence even against larger external investors.
+                  <span className="font-medium text-foreground">Example:</span> A verified county resident with 100 tokens has 150 voting power.
+                  Another US holder with 100 tokens has 75. Both votes count. County weight requires verified residency, and it does not guarantee a resident majority.
                 </p>
               </div>
             </CardContent>
@@ -295,8 +285,7 @@ export default function Governance() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-6">
-                When community engagement reaches 75%, the phase auto-advances via PhaseManager smart contract. 
-                No gatekeepers — the community drives momentum.
+                Sale stages follow the calendar: county for 90 days, statewide through day 180, then nationwide. Engagement does not open the next stage early.
               </p>
               <div className="text-center py-8 text-muted-foreground" data-testid="text-no-engagement">
                 <p className="text-sm">No active property phases yet. Engagement meters will appear once properties are live.</p>
@@ -304,9 +293,8 @@ export default function Governance() {
               <div className="mt-4 p-3 rounded-md bg-primary/5 border border-primary/20 flex gap-2">
                 <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <p className="text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">75% threshold:</span>{" "}
-                  The vertical line on each bar marks the 75% engagement threshold. Once reached, 
-                  PhaseManager.sol automatically advances the property to the next phase via Chainlink Automation.
+                  <span className="font-medium text-foreground">75% is not a sale-stage trigger.</span>{" "}
+                  What a 75% loan-evaluation metric means is not decided. It does not move access from county to statewide or nationwide.
                 </p>
               </div>
             </CardContent>

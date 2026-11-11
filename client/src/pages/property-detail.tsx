@@ -23,7 +23,7 @@ import {
 import { useParams, useSearch, Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import riverfrontImage from "@assets/generated_images/riverfront_wellness_community_hub.png";
-import { PHASE_CONFIG } from "@shared/schema";
+import { getPhaseConfig, INITIAL_TOKEN_PRICE_USD } from "@shared/schema";
 import type { User, Property, TokenOffering, OfferingPhase } from "@shared/schema";
 import {
   getCountyByName,
@@ -78,8 +78,8 @@ export default function PropertyDetail() {
   const phases: Phase[] = apiPhases.map((p, index) => ({
     id: p.id,
     phase: p.phase,
-    phaseName: PHASE_CONFIG[p.phase]?.name || p.phase,
-    description: PHASE_CONFIG[p.phase]?.description || "",
+    phaseName: getPhaseConfig(p.phase)?.name || p.phase,
+    description: getPhaseConfig(p.phase)?.description || "",
     basePrice: Number(p.basePrice),
     currentPrice: Number(p.currentPrice),
     priceMultiplier: Number(p.priceMultiplier),
@@ -262,7 +262,7 @@ export default function PropertyDetail() {
   const countyData = useMemo(() => getCountyByName(property.county || ""), [property.county]);
   const propertyType = (property.propertyType || "Affordable Housing") as any;
   const propertyValue = fundingGoal || 500000;
-  const tokenPrice = currentPrice || 12.50;
+  const tokenPrice = currentPrice || INITIAL_TOKEN_PRICE_USD;
 
   const impactMetrics = useMemo(
     () => calculateImpactMetrics(countyData, propertyType, propertyValue),
@@ -330,7 +330,7 @@ export default function PropertyDetail() {
                 <Badge className="bg-chart-5 text-white">{property.propertyType || "Property"}</Badge>
                 {activePhase && (
                   <Badge className="bg-chart-3 text-white">
-                    {PHASE_CONFIG[activePhase.phase]?.name || activePhase.phase} Active
+                    {getPhaseConfig(activePhase.phase)?.name || activePhase.phase} Active
                   </Badge>
                 )}
                 {isPrivateOffering && (
@@ -668,7 +668,7 @@ export default function PropertyDetail() {
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Current Phase</span>
                       <Badge className="bg-chart-3 text-white">
-                        {activePhase ? PHASE_CONFIG[activePhase.phase]?.name : "Upcoming"}
+                        {activePhase ? getPhaseConfig(activePhase.phase)?.name : "Upcoming"}
                       </Badge>
                     </div>
                     <div className="flex justify-between text-sm">

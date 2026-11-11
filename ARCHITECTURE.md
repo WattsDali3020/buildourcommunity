@@ -1,6 +1,6 @@
 # RevitaHub — Technical Architecture
 
-RevitaHub is a community-owned real estate revitalization platform on Base (Coinbase L2). It uses ERC-1155 tokenization to enable fractional property ownership starting at $12.50/token, DAO governance with phase-weighted voting, and a transparent 1% founder sustainability cut. Built by Build Our Community, LLC.
+RevitaHub is a community-owned real estate revitalization platform on Base (Coinbase L2). It uses ERC-1155 tokens with staged access, residency-weighted votes, and a configurable initial price. Built by Build Our Community, LLC.
 
 > **Platform Status**: Pre-launch / blank-state configuration. All database tables are empty, all pages are API-driven with proper empty-state handling, and no seed or mock data exists.
 
@@ -466,24 +466,21 @@ All future contract work, frontend surfaces, and disclosure language must confor
 
 ```typescript
 PHASE_CONFIG = {
-  county:        { multiplier: 1.0,  allocation: 0.30, maxPerPerson: 100, votingMultiplier: 1.5  },
-  state:         { multiplier: 1.5,  allocation: 0.30, maxPerPerson: 75,  votingMultiplier: 1.25 },
-  national:      { multiplier: 2.25, allocation: 0.25, maxPerPerson: 50,  votingMultiplier: 1.0  },
-  international: { multiplier: 3.0,  allocation: 0.15, maxPerPerson: 25,  votingMultiplier: 0.75 },
+  county:   { voteWeight: 1.5, opensOnDay: 0 },
+  state:    { voteWeight: 1.0, opensOnDay: 90 },
+  national: { voteWeight: 0.75, opensOnDay: 180 },
 }
-// Base price: $12.50 → $18.75 → $28.13 → $37.50
+// No reserved buckets. Initial price is a parameter (owner intent 12.50 USD), not a ladder.
 
 FUNDING_TIMELINE_CONFIG = {
   totalDurationDays: 365,
-  phaseDurations: {
-    county:        { daysMin: 30, daysMax: 90,  targetPercent: 25  },
-    state:         { daysMin: 45, daysMax: 120, targetPercent: 50  },
-    national:      { daysMin: 60, daysMax: 120, targetPercent: 75  },
-    international: { daysMin: 30, daysMax: 35,  targetPercent: 100 },
+  stages: {
+    county:   { startDay: 0, endDay: 90 },
+    state:    { startDay: 90, endDay: 180 },
+    national: { startDay: 180, endDay: 365 },
   },
-  refundAPR: 3.0,
-  engagementThreshold: 0.75,
 }
+// Refund policy, early completion, and post-period liquidity are not decided.
 ```
 
 ---
@@ -774,9 +771,9 @@ FUNDING_TIMELINE_CONFIG = {
 ### PropertyToken.sol (ERC-1155)
 - **Roles**: DEFAULT_ADMIN, MINTER, PAUSER, WHITELIST_ADMIN, PHASE_ADVANCER, BURNER
 - **Property struct**: id, name, uri, totalSupply, mintedSupply, fundingTarget, fundingDeadline, currentPhase, isActive, isFunded
-- **Phase pricing**: County 1.0x → State 1.5x → National 2.25x → International 3.0x (base $12.50)
-- **Voting power**: Phase multipliers — County 1.5x, State 1.25x, National 1.0x, International 0.75x
-- **Transfer locks**: Whitelist-only transfers until property is funded
+- **Access**: Days 0–90 county, 91–180 statewide, after 180 nationwide. Each stage sells the unsold remainder. Per-person allowance is unset until configured.
+- **Voting power**: Residency weights — verified county 1.5x, other in-state 1.0x, other US 0.75x. Outside holders vote.
+- **Transfer locks**: Shares stay locked through the common 365-day clock. Post-period liquidity is not decided.
 - **Key functions**: `createProperty()`, `mintTokens()`, `advancePhase()`, `markFunded()`, `burnFromOnFailure()`, `getCurrentPrice()`, `getVotingPower()`, `addToWhitelist()`, `autoWhitelist()`
 
 ### Escrow.sol

@@ -27,7 +27,7 @@ const nudgeConfigs: Record<NudgeType, NudgeConfig> = {
   invest: {
     icon: TrendingUp,
     title: "Phase 1 Closing Soon",
-    description: "County residents get 1.5x voting power. 3 days left at $12.50/token",
+    description: "Verified county residents have first access and 1.5 vote weight. The price is the configured parameter.",
     action: "Invest Now",
     color: "text-chart-2",
     bgColor: "bg-chart-2/10",

@@ -240,7 +240,7 @@ export default function OwnerResponse() {
                   </div>
                   <h3 className="font-medium mb-2">Community Funding</h3>
                   <p className="text-sm text-muted-foreground">
-                    The community pools resources through fractional ownership tokens starting at $12.50.
+                    The community pools resources through project tokens. The initial price is configured per project.
                   </p>
                 </div>
                 <div className="text-center">

@@ -187,9 +187,9 @@ export function GenesisHero() {
               <div className="text-center" data-testid="stat-engagement">
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <DollarSign className="h-4 w-4 text-primary" />
-                  <span className="font-serif text-2xl font-bold text-primary">$12.50</span>
+                  <span className="font-serif text-2xl font-bold text-primary">90 days</span>
                 </div>
-                <p className="text-xs uppercase tracking-widest text-gray-400 font-semibold">Min. investment</p>
+                <p className="text-xs uppercase tracking-widest text-gray-400 font-semibold">County access first</p>
               </div>
             </div>
           </div>

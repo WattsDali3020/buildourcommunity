@@ -22,7 +22,7 @@ your-project/
 ## Contracts Overview
 
 ### 1. PropertyToken.sol (ERC-1155)
-Fractional property ownership tokens with phase-based pricing, whitelist-only transfers, transfer locks until funded, and phase-weighted voting power.
+Fractional property tokens. Staged access to the full supply (no reserved buckets), residency-weighted votes (1.5 / 1.0 / 0.75), and a common 365-day transfer lock. Post-period liquidity is not decided. Residency checks are an admin or oracle stub. No KYC provider is integrated.
 
 ### 2. Escrow.sol
 Purchase and refund handling with:
@@ -34,10 +34,10 @@ Purchase and refund handling with:
 - Treasury does not take this fee
 
 ### 3. Governance.sol
-DAO voting with phase-weighted power (County 1.5x … International 0.75x), EIP-712 gasless votes, demand bars, impact report used by Escrow.
+DAO voting with residency-weighted power (county 1.5x, other in-state 1.0x, other US 0.75x). Outside holders vote. EIP-712 gasless votes, demand bars, impact report used by Escrow.
 
 ### 4. PhaseManager.sol
-75% engagement threshold, poll bonuses, Chainlink Automation, geo-oracle local bonus.
+Engagement metrics and nudges. It does not advance sale stages. Token bonuses are disabled because they are outside the confirmed sale rules.
 
 ### 5. Treasury.sol
 2-of-3 multi-sig pass-through, relayer reimbursement, reserve verification. No founder vest schedule on this contract.

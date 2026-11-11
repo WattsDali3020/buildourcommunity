@@ -82,10 +82,9 @@ export default function About() {
                     <span className="text-xl font-semibold">Our Mission</span>
                   </div>
                   <p className="text-muted-foreground leading-relaxed mb-6">
-                    We believe that community wealth-building shouldn't be limited to those who can 
-                    afford traditional real estate investments. By lowering the barrier to $12.50, 
-                    we're making property ownership accessible to the ~231,000 adults in Cherokee County 
-                    and similar communities across America.
+                    We believe neighborhood projects should be open to the people who live with the outcome.
+                    The initial token price stays a parameter. Verified county residents, starting with Cherokee County,
+                    have the first 90 days.
                   </p>
                   <Button variant="outline" asChild>
                     <a href="https://x.com/RevitaHub" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">

@@ -6,11 +6,11 @@ import { ArrowRight, CheckCircle2, Shield, DollarSign, Vote } from "lucide-react
 const keyPoints = [
   {
     icon: DollarSign,
-    text: "Start investing with just $12.50",
+    text: "County residents have the first 90 days",
   },
   {
     icon: Shield,
-    text: "3% APR investor protection guarantee",
+    text: "Refund terms are not decided",
   },
   {
     icon: Vote,

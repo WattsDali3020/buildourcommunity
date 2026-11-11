@@ -279,7 +279,7 @@ export default function DemandDashboard() {
                     Phase Engagement Tracker
                   </CardTitle>
                   <CardDescription>
-                    Community engagement level — 75% unlocks automatic phase advancement
+                    Community engagement level. It does not open the next sale stage.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -302,13 +302,14 @@ export default function DemandDashboard() {
                       </span>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-                      {["County", "State", "National", "International"].map((phase, idx) => (
-                        <div key={phase} className="text-center p-3 rounded-md bg-muted/50">
-                          <p className="text-xs text-muted-foreground mb-1">Phase {idx + 1}</p>
-                          <p className="text-sm font-semibold">{phase}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {idx === 0 ? "1.5x" : idx === 1 ? "1.25x" : idx === 2 ? "1.0x" : "0.75x"} vote weight
-                          </p>
+                      {[
+                        ["County resident", "1.5x"],
+                        ["Other in-state", "1.0x"],
+                        ["Other US", "0.75x"],
+                      ].map(([label, weight]) => (
+                        <div key={label} className="text-center p-3 rounded-md bg-muted/50">
+                          <p className="text-sm font-semibold">{label}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{weight} vote weight</p>
                         </div>
                       ))}
                     </div>

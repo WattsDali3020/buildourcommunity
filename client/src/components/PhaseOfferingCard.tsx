@@ -113,8 +113,8 @@ export function PhaseOfferingCard({ phase, propertyName, onPurchase }: PhaseOffe
           </div>
           <div className="p-3 rounded-md bg-muted/50">
             <p className="text-xs text-muted-foreground mb-1">Max Per Person</p>
-            <p className="text-xl font-bold">{phase.maxTokensPerPerson}</p>
-            <p className="text-xs text-muted-foreground">tokens</p>
+            <p className="text-xl font-bold">{phase.maxTokensPerPerson > 0 ? phase.maxTokensPerPerson : "Not set"}</p>
+            <p className="text-xs text-muted-foreground">{phase.maxTokensPerPerson > 0 ? "same allowance" : "allowance not chosen"}</p>
           </div>
         </div>
 
@@ -125,7 +125,7 @@ export function PhaseOfferingCard({ phase, propertyName, onPurchase }: PhaseOffe
           </div>
           <Progress value={percentSold} className="h-2" />
           <p className="text-xs text-muted-foreground mt-1">
-            {tokensRemaining.toLocaleString()} tokens remaining
+            {phase.tokensSold.toLocaleString()} sold this stage. Later stages can sell only the unsold remainder.
           </p>
         </div>
 

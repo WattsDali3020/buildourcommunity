@@ -1,7 +1,7 @@
 # RevitaHub — AI-Nudged RevitalDAO
 
 ## Overview
-RevitaHub is a community-owned real estate revitalization platform built on Base (Coinbase L2). It uses blockchain tokenization to enable fractional property ownership, empowering communities to invest in distressed properties and transform them into neighborhood assets. Key features include a $12.50 minimum token pricing for broad financial inclusion, DAO governance with AI-moderated voting, a 4-phase pricing ramp (County → State → National → International), and transparent 1% founder economics. The platform aims to be a blank-state, pre-launch configuration with empty database tables and API-driven pages.
+RevitaHub is a community-owned real estate revitalization platform built on Base (Coinbase L2). It uses blockchain tokenization to enable fractional property ownership, empowering communities to invest in distressed properties and transform them into neighborhood assets. Key features include staged access to the full token supply (county, statewide, then nationwide), residency-weighted votes (1.5 / 1.0 / 0.75), one 365-day funding clock, and a configurable initial price. The legal and fee structure is not settled. The platform aims to be a blank-state, pre-launch configuration with empty database tables and API-driven pages.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.

@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertPropertySchema, insertPropertySubmissionSchema, insertPropertyNominationSchema, insertPropertyGrantSchema, insertWishSchema, insertServiceBidSchema } from "@shared/schema";
+import { residencyTierOf, weightedVotingPower } from "@shared/accessRules";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { setupAuth, isAuthenticated, isAdmin, requireKYCApproved } from "./replit_integrations/auth";
@@ -1009,6 +1010,31 @@ export async function registerRoutes(
   });
 
   // Admin KYC verification endpoints
+  app.post("/api/admin/offerings/:id/adult-census", isAdmin, async (req: Request, res: Response) => {
+    const stage = req.body?.stage;
+    const count = Number(req.body?.count);
+    const source = String(req.body?.source ?? "").trim();
+    const vintage = String(req.body?.vintage ?? "").trim();
+    if (stage !== "county" && stage !== "state" && stage !== "national") {
+      return res.status(400).json({ error: "stage must be county, state, or national" });
+    }
+    if (!Number.isInteger(count) || count <= 0) {
+      return res.status(400).json({ error: "count must be a positive whole number of adults 18+" });
+    }
+    if (!source || !vintage) {
+      return res.status(400).json({ error: "source and vintage are required" });
+    }
+
+    const existing = await storage.getTokenOffering(req.params.id);
+    if (!existing) {
+      return res.status(404).json({ error: "Offering not found" });
+    }
+
+    const adultCensus = { ...(existing.adultCensus ?? {}), [stage]: { count, source, vintage } };
+    const offering = await storage.updateOffering(existing.id, { adultCensus });
+    res.json({ adultCensus: offering?.adultCensus });
+  });
+
   app.get("/api/admin/kyc-pending", isAdmin, async (req: Request, res: Response) => {
     const users = await storage.getUsersByKYCStatus("submitted");
     res.json(users);
@@ -1182,7 +1208,7 @@ export async function registerRoutes(
     }
   });
 
-  // Investor protection: Calculate refund with 3% APR
+  // Refunds are not enabled. This route does not price interest.
   app.get("/api/investor-protection/:propertyId", async (req: Request, res: Response) => {
     const { propertyId } = req.params;
     const userId = req.session.userId;
@@ -1217,35 +1243,18 @@ export async function registerRoutes(
     const fundingGoal = parseFloat(offering.minimumFundingThreshold?.toString() || "0");
     const fundingRaised = parseFloat(offering.totalFundingRaised?.toString() || "0");
     const fundingPercent = fundingGoal > 0 ? (fundingRaised / fundingGoal) * 100 : 0;
-    const minimumThreshold = 60;
 
     const deadlineDate = offering.fundingDeadline ? new Date(offering.fundingDeadline) : null;
     const now = new Date();
     const deadlinePassed = deadlineDate ? now > deadlineDate : false;
 
-    const tokenCount = propertyHolding.tokenCount;
-    const avgPrice = parseFloat(propertyHolding.averagePurchasePrice || "0");
-    const investedAmount = tokenCount * avgPrice;
-    const holdingUpdatedAt = propertyHolding.updatedAt ? new Date(propertyHolding.updatedAt) : now;
-    const daysHeld = Math.floor((now.getTime() - holdingUpdatedAt.getTime()) / (1000 * 60 * 60 * 24));
-    const yearFraction = daysHeld / 365;
-    const aprAmount = investedAmount * 0.03 * yearFraction;
-    const refundAmount = investedAmount + aprAmount;
-
-    const eligible = fundingPercent < minimumThreshold && deadlinePassed;
-
     res.json({
-      eligible,
+      eligible: false,
+      reason: "Refunds are not enabled",
       fundingPercent: fundingPercent.toFixed(1),
-      minimumThreshold,
       deadlinePassed,
       deadline: offering.fundingDeadline,
-      investedAmount: investedAmount.toFixed(2),
-      tokenCount,
-      daysHeld,
-      aprAmount: aprAmount.toFixed(2),
-      refundAmount: refundAmount.toFixed(2),
-      options: eligible ? ["refund", "transfer"] : [],
+      tokenCount: propertyHolding.tokenCount,
     });
   });
 
@@ -1305,15 +1314,12 @@ export async function registerRoutes(
       return res.status(400).json({ error: "Price mismatch. Please refresh and try again." });
     }
 
-    const VOTING_MULTIPLIERS: Record<string, number> = {
-      county: 1.5,
-      state: 1.25,
-      national: 1.0,
-      international: 0.75,
-    };
-
+    const propertyForVote = await storage.getProperty(propertyId);
     const pricePerToken = amount / tokenCount;
-    const votingPower = Math.round(tokenCount * (VOTING_MULTIPLIERS[phase] || 1));
+    const votingPower = weightedVotingPower(
+      tokenCount,
+      residencyTierOf(user, propertyForVote ?? { county: "", state: "" })
+    );
 
     if (paymentMethod === "card") {
       const paymentIntent = await createPaymentIntent(amount, {
@@ -1493,15 +1499,13 @@ export async function registerRoutes(
       });
     }
 
-    const VOTING_MULTIPLIERS: Record<string, number> = {
-      county: 1.5,
-      state: 1.25,
-      national: 1.0,
-      international: 0.75,
-    };
-
+    const buyer = await storage.getUser(userId);
+    const propertyRecord = await storage.getProperty(propertyId);
     const pricePerToken = amount / tokenCount;
-    const votingPower = Math.round(tokenCount * (VOTING_MULTIPLIERS[phase] || 1));
+    const votingPower = weightedVotingPower(
+      tokenCount,
+      residencyTierOf(buyer ?? {}, propertyRecord ?? { county: "", state: "" })
+    );
 
     try {
       await storage.updateOrCreateHolding(userId, offering.id, tokenCount, pricePerToken, votingPower);
@@ -1858,13 +1862,11 @@ export async function registerRoutes(
 
         const parsedTokenCount = parseInt(tokenCount, 10);
         const amount = paymentIntent.amount / 100;
-        
-        // Apply voting power multipliers
-        const multiplier = phase === "county" ? 1.5 
-          : phase === "state" ? 1.25 
-          : phase === "national" ? 1.0 
-          : 0.75;
-        const addedVotingPower = Math.floor(parsedTokenCount * multiplier);
+        const buyer = await storage.getUser(userId);
+        const addedVotingPower = weightedVotingPower(
+          parsedTokenCount,
+          residencyTierOf(buyer ?? {}, property)
+        );
 
         // Update holdings with proper voting power
         await storage.updateOrCreateHolding(
@@ -2637,35 +2639,7 @@ export async function registerRoutes(
       return res.status(400).json({ error: "Missing required fields: offeringId, tokenCount" });
     }
 
-    try {
-      const holding = await storage.getHoldingByUserAndOffering(userId, offeringId);
-      if (!holding) {
-        return res.status(404).json({ error: "No holdings found for this offering" });
-      }
-
-      if (holding.tokenCount < tokenCount) {
-        return res.status(400).json({ error: `Insufficient tokens. You hold ${holding.tokenCount} tokens.` });
-      }
-
-      const { calculateRefundWithInterest } = await import("@shared/schema");
-      const originalAmount = tokenCount * parseFloat(holding.averagePurchasePrice || "0");
-      const purchaseDate = holding.updatedAt || new Date();
-      const { interest, total } = calculateRefundWithInterest(originalAmount, purchaseDate);
-
-      const refund = await storage.createRefundRequest({
-        userId,
-        offeringId,
-        tokenCount,
-        originalAmount: originalAmount.toFixed(2),
-        interestEarned: interest.toFixed(2),
-        totalRefundAmount: total.toFixed(2),
-      });
-
-      res.status(201).json(refund);
-    } catch (error) {
-      console.error("Failed to create refund request:", error);
-      res.status(500).json({ error: "Failed to create refund request" });
-    }
+    return res.status(409).json({ error: "Refunds are not enabled" });
   });
 
   // ═══════════════════════════════════════════════════

@@ -3,16 +3,21 @@
  * 
  * Manages the full lifecycle of property tokenization:
  * 1. Property approval → Contract deployment
- * 2. Phase management for 5-phase offering
+ * 2. Staged access to the unsold remainder (county, statewide, nationwide)
  * 3. Investor protection (refunds if funding fails)
  * 4. Dividend distribution for successful properties
  */
 
 import { storage } from "../storage";
+import {
+  INITIAL_TOKEN_PRICE_USD,
+  commonFundingDeadline,
+  elapsedDaysBetween,
+  stageForElapsedDays,
+} from "@shared/accessRules";
 import { 
   simulateDeployment, 
   calculatePhasePricing,
-  calculateRefundWithInterest,
   getExplorerUrl,
   TokenDeploymentConfig,
   DeploymentResult,
@@ -96,7 +101,8 @@ export async function initiateTokenization(
   
   // 3. Calculate funding parameters
   const fundingGoal = request.propertyValue; // 100% funding required for loan issuance
-  const fundingDeadline = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
+  const fundingClockStart = new Date();
+  const fundingDeadline = commonFundingDeadline(fundingClockStart);
   
   // 4. Deploy smart contract
   const deploymentConfig: TokenDeploymentConfig = {
@@ -125,6 +131,8 @@ export async function initiateTokenization(
     totalSupply: request.totalTokens,
     minimumFundingThreshold: fundingGoal.toString(),
     fundingDeadline,
+    fundingClockStart,
+    perPersonAllowance: null,
     totalFundingRaised: "0",
     interestRateOnRefund: "3.00",
     fundingOutcome: "in_progress",
@@ -135,26 +143,37 @@ export async function initiateTokenization(
   // 6. Update offering with contract address
   // Note: In a real implementation, we'd update the offering record
   
-  // 7. Create offering phases with pricing
-  const phaseConfigs = calculatePhasePricing(12.50); // $12.50 base price
+  // 7. Create access stages. One price parameter. No reserved buckets.
+  //    Allowance stays unset until the owner chooses it.
+  const phaseConfigs = calculatePhasePricing(INITIAL_TOKEN_PRICE_USD, fundingClockStart);
   const phases = [];
+  const priceText = INITIAL_TOKEN_PRICE_USD.toFixed(2);
   
-  const phaseOrderMap = { county: 1, state: 2, national: 3, international: 4 };
+  const phaseOrderMap = { county: 1, state: 2, national: 3 };
   
   for (const config of phaseConfigs) {
     const phase = await storage.createOfferingPhase({
       offeringId: offering.id,
       phase: config.phase,
       phaseOrder: phaseOrderMap[config.phase],
-      basePrice: "12.50",
-      priceMultiplier: config.priceMultiplier.toString(),
-      currentPrice: (12.50 * config.priceMultiplier).toFixed(2),
-      maxTokensPerPerson: config.maxTokensPerPerson,
-      tokenAllocation: Math.floor(request.totalTokens / 4), // 25% per phase
+      basePrice: priceText,
+      priceMultiplier: "1.00",
+      currentPrice: priceText,
+      maxTokensPerPerson: 0,
+      tokenAllocation: request.totalTokens,
+      eligibilityCounty: config.phase === "county" ? nomination.county : null,
+      eligibilityState: config.phase === "national" ? null : nomination.state,
+      eligibilityCountry: config.phase === "national" ? "USA" : null,
       startsAt: config.startDate,
       endsAt: config.endDate,
     });
     phases.push(phase);
+  }
+
+  const countyPhase = phases.find((phase) => phase.phase === "county");
+  if (countyPhase) {
+    await storage.updateOfferingPhase(countyPhase.id, { isActive: true });
+    countyPhase.isActive = true;
   }
   
   console.log(`[Orchestrator] Created ${phases.length} offering phases`);
@@ -181,8 +200,8 @@ export async function initiateTokenization(
 }
 
 /**
- * Process refunds for failed funding (< 100% target reached after 1 year)
- * Implements 3% APR interest calculation for investor protection
+ * Hard-gated. The old 3% path is not a live rule.
+ * TODO(owner): any later cash return is off-chain and is not calculated here.
  */
 export async function processRefunds(offeringId: string): Promise<{
   success: boolean;
@@ -197,136 +216,50 @@ export async function processRefunds(offeringId: string): Promise<{
   }>;
   error?: string;
 }> {
-  console.log(`[Orchestrator] Processing refunds for offering: ${offeringId}`);
-  
-  const offering = await storage.getTokenOffering(offeringId);
-  if (!offering) {
-    return { success: false, refundsProcessed: 0, totalRefundAmount: 0, refundDetails: [], error: "Offering not found" };
-  }
-  
-  // Check if funding period has ended
-  if (offering.fundingDeadline && new Date() < new Date(offering.fundingDeadline)) {
-    return { success: false, refundsProcessed: 0, totalRefundAmount: 0, refundDetails: [], error: "Funding period has not ended yet" };
-  }
-  
-  // Check if 100% funding target was met
-  const raised = parseFloat(offering.totalFundingRaised || "0");
-  const threshold = parseFloat(offering.minimumFundingThreshold || "0");
-  
-  if (raised >= threshold) {
-    return { success: false, refundsProcessed: 0, totalRefundAmount: 0, refundDetails: [], error: "Funding was successful, no refunds needed" };
-  }
-  
-  const refundDate = new Date();
-  let totalRefundAmount = 0;
-  let refundsProcessed = 0;
-  const refundDetails: Array<{
-    purchaseId: string;
-    principal: number;
-    interest: number;
-    total: number;
-    daysHeld: number;
-  }> = [];
-  
-  console.log(`[Orchestrator] Funding failed (${raised} < ${threshold}). Processing refunds with 3% APR...`);
-  
-  // Get all confirmed purchases for this offering
-  const phases = await storage.getOfferingPhases(offeringId);
-  
-  for (const phase of phases) {
-    // For each investor's purchase, calculate refund with 3% APR interest
-    // In production, this would fetch actual purchases and process each:
-    
-    // Example calculation for each purchase:
-    // const purchases = await storage.getPurchasesByPhase(phase.id);
-    // for (const purchase of purchases) {
-    //   const refund = calculateRefundWithInterest(
-    //     parseFloat(purchase.totalAmount),
-    //     new Date(purchase.purchasedAt),
-    //     refundDate
-    //   );
-    //   
-    //   // Record refund
-    //   refundDetails.push({
-    //     purchaseId: purchase.id,
-    //     principal: refund.principal,
-    //     interest: refund.interest,
-    //     total: refund.total,
-    //     daysHeld: Math.floor((refundDate.getTime() - new Date(purchase.purchasedAt).getTime()) / (1000 * 60 * 60 * 24)),
-    //   });
-    //   
-    //   totalRefundAmount += refund.total;
-    //   refundsProcessed++;
-    // }
-  }
-  
-  // Simulate demo refund calculation
-  if (raised > 0) {
-    const avgDaysHeld = 180; // Assume 6 months average
-    const interestRate = 0.03; // 3% APR
-    const yearFraction = avgDaysHeld / 365;
-    const interest = raised * interestRate * yearFraction;
-    
-    totalRefundAmount = raised + interest;
-    refundsProcessed = Math.ceil(raised / 500); // Estimate ~$500 avg investment
-    
-    refundDetails.push({
-      purchaseId: "aggregate",
-      principal: raised,
-      interest: Math.round(interest * 100) / 100,
-      total: Math.round(totalRefundAmount * 100) / 100,
-      daysHeld: avgDaysHeld,
-    });
-    
-    console.log(`[Orchestrator] Calculated refunds: $${raised} principal + $${interest.toFixed(2)} interest (3% APR) = $${totalRefundAmount.toFixed(2)}`);
-  }
-  
-  // Update offering status to refunded
-  // In production: await storage.updateOfferingStatus(offeringId, 'refunded');
-  
+  console.log(`[Orchestrator] Refunds are not enabled for offering: ${offeringId}`);
   return {
-    success: true,
-    refundsProcessed,
-    totalRefundAmount: Math.round(totalRefundAmount * 100) / 100,
-    refundDetails,
+    success: false,
+    refundsProcessed: 0,
+    totalRefundAmount: 0,
+    refundDetails: [],
+    error: "Refunds are not enabled",
   };
 }
 
 /**
- * Advance offering to next phase (county → state → national → international)
+ * Align the active stage with the common funding clock.
+ * Does not skip ahead of day 90 or day 180.
  */
-export async function advancePhase(offeringId: string): Promise<{
+export async function syncAccessStage(offeringId: string): Promise<{
   success: boolean;
   newPhase?: string;
   error?: string;
 }> {
-  console.log(`[Orchestrator] Advancing phase for offering: ${offeringId}`);
-  
+  const offering = await storage.getTokenOffering(offeringId);
+  if (!offering) {
+    return { success: false, error: "Offering not found" };
+  }
+  if (!offering.fundingClockStart) {
+    return { success: false, error: "Funding clock has not started" };
+  }
+
+  const stage = stageForElapsedDays(elapsedDaysBetween(new Date(offering.fundingClockStart), new Date()));
   const phases = await storage.getOfferingPhases(offeringId);
-  const activePhase = phases.find(p => p.isActive);
-  
-  if (!activePhase) {
-    return { success: false, error: "No active phase found" };
+  for (const phase of phases) {
+    const shouldBeActive = phase.phase === stage;
+    if (Boolean(phase.isActive) !== shouldBeActive) {
+      await storage.updateOfferingPhase(phase.id, { isActive: shouldBeActive });
+    }
   }
-  
-  const phaseOrder = ["county", "state", "national", "international"];
-  const currentIndex = phaseOrder.indexOf(activePhase.phase);
-  
-  if (currentIndex === phaseOrder.length - 1) {
-    return { success: false, error: "Already at final phase (international)" };
+  if (offering.currentPhase !== stage) {
+    await storage.updateOffering(offering.id, { currentPhase: stage });
   }
-  
-  // Deactivate current phase
-  // Activate next phase
-  // In production, this would update the smart contract as well
-  
-  const nextPhase = phaseOrder[currentIndex + 1];
-  console.log(`[Orchestrator] Advanced from ${activePhase.phase} to ${nextPhase}`);
-  
-  return {
-    success: true,
-    newPhase: nextPhase,
-  };
+  return { success: true, newPhase: stage };
+}
+
+/** @deprecated Use syncAccessStage. Manual bucket advancement is not supported. */
+export async function advancePhase(offeringId: string) {
+  return syncAccessStage(offeringId);
 }
 
 /**

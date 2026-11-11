@@ -24,7 +24,6 @@ import {
   type ProfessionalServiceArea, type InsertProfessionalServiceArea,
   type AgentTask, type InsertAgentTask,
   type ReputationEvent, type InsertReputationEvent,
-  PHASE_CONFIG, calculatePhasePrice, getPhaseAllocation,
   users, properties, tokenOfferings, offeringPhases, tokenPurchases, 
   tokenHoldings, proposals, votes, propertySubmissions, submissionDocuments,
   propertyNominations, desiredUseVotes, privateOfferingInvites, propertyGrants, waitlist, wishes,
@@ -36,6 +35,7 @@ import { db } from "./db";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import type { IStorage } from "./storage";
+import { elapsedDaysBetween, evaluateStagedPurchase, residencyTierOf, stageForElapsedDays, unsoldRemainder, weightedVotingPower, type AccessStage, type AdultCensus, type StageSupplySnapshot } from "@shared/accessRules";
 
 export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
@@ -139,6 +139,8 @@ export class DatabaseStorage implements IStorage {
       .insert(tokenOfferings)
       .values({
         ...offering,
+        adultCensus: offering.adultCensus as AdultCensus | null | undefined,
+        stageSupplySnapshot: offering.stageSupplySnapshot as StageSupplySnapshot | null | undefined,
         id: randomUUID(),
         createdAt: new Date(),
       })
@@ -172,7 +174,7 @@ export class DatabaseStorage implements IStorage {
     return newPhase;
   }
 
-  async updateOffering(id: string, data: Partial<{ tokensSold: number; totalFundingRaised: string }>): Promise<TokenOffering | undefined> {
+  async updateOffering(id: string, data: Partial<{ tokensSold: number; totalFundingRaised: string; currentPhase: TokenOffering["currentPhase"]; perPersonAllowance: number | null; fundingClockStart: Date | null; fundingDeadline: Date | null; adultCensus: AdultCensus | null; stageSupplySnapshot: StageSupplySnapshot | null }>): Promise<TokenOffering | undefined> {
     const [updated] = await db
       .update(tokenOfferings)
       .set(data)
@@ -181,7 +183,7 @@ export class DatabaseStorage implements IStorage {
     return updated || undefined;
   }
 
-  async updateOfferingPhase(id: string, data: Partial<{ tokensSold: number }>): Promise<OfferingPhase | undefined> {
+  async updateOfferingPhase(id: string, data: Partial<{ tokensSold: number; isActive: boolean; maxTokensPerPerson: number }>): Promise<OfferingPhase | undefined> {
     const [updated] = await db
       .update(offeringPhases)
       .set(data)
@@ -281,18 +283,22 @@ export class DatabaseStorage implements IStorage {
     return updated || undefined;
   }
 
-  private async updateHoldings(userId: string, offeringId: string, addedTokenCount: number, phase?: string): Promise<void> {
+  private async updateHoldings(userId: string, offeringId: string, addedTokenCount: number, _phase?: string): Promise<void> {
     const [existing] = await db.select().from(tokenHoldings)
       .where(and(
         eq(tokenHoldings.userId, userId),
         eq(tokenHoldings.offeringId, offeringId)
       ));
-    
-    const multiplier = phase === "county" ? 1.5 
-      : phase === "state" ? 1.25 
-      : phase === "national" ? 1.0 
-      : 0.75;
-    const addedVotingPower = Math.floor(addedTokenCount * multiplier);
+
+    const [offering] = await db.select().from(tokenOfferings).where(eq(tokenOfferings.id, offeringId));
+    const property = offering
+      ? (await db.select().from(properties).where(eq(properties.id, offering.propertyId)))[0]
+      : undefined;
+    const buyer = await this.getUser(userId);
+    const addedVotingPower = weightedVotingPower(
+      addedTokenCount,
+      residencyTierOf(buyer ?? {}, property ?? { county: "", state: "" })
+    );
     
     if (existing) {
       await db.update(tokenHoldings)
@@ -346,22 +352,57 @@ export class DatabaseStorage implements IStorage {
       return { allowed: false, reason: "This phase is not currently active" };
     }
 
+    const user = await this.getUser(userId);
+    if (!user) {
+      return { allowed: false, reason: "User not found" };
+    }
+
+    const offering = await this.getTokenOffering(phase.offeringId);
+    if (!offering) {
+      return { allowed: false, reason: "Offering not found" };
+    }
+    const property = await this.getProperty(offering.propertyId);
+    if (!property) {
+      return { allowed: false, reason: "Property not found" };
+    }
+
     const userPurchases = await this.getUserPurchasesForPhase(userId, phaseId);
-    const totalUserTokens = userPurchases.reduce((sum, p) => sum + p.tokenCount, 0);
+    const alreadyPurchasedThisStage = userPurchases
+      .filter((p) => p.status !== "failed")
+      .reduce((sum, p) => sum + p.tokenCount, 0);
 
-    if (totalUserTokens + tokenCount > phase.maxTokensPerPerson) {
-      return { 
-        allowed: false, 
-        reason: `Exceeds maximum of ${phase.maxTokensPerPerson} tokens per person in this phase` 
-      };
+    const sold = offering.tokensSold || 0;
+    const remainder = unsoldRemainder(offering.totalSupply, sold);
+    const clockStart = offering.fundingClockStart ? new Date(offering.fundingClockStart) : null;
+    const openStage = clockStart ? stageForElapsedDays(elapsedDaysBetween(clockStart, new Date())) : null;
+    const stageKey = phase.phase as AccessStage;
+    let stageSupply = offering.totalSupply;
+    if ((stageKey === "state" || stageKey === "national") && openStage === stageKey) {
+      const frozen = offering.stageSupplySnapshot?.[stageKey];
+      if (frozen == null) {
+        const nextSnapshot: StageSupplySnapshot = { ...(offering.stageSupplySnapshot ?? {}), [stageKey]: remainder };
+        await this.updateOffering(offering.id, { stageSupplySnapshot: nextSnapshot });
+        stageSupply = remainder;
+      } else {
+        stageSupply = frozen;
+      }
     }
 
-    const tokensAvailable = phase.tokenAllocation - (phase.tokensSold || 0);
-    if (tokenCount > tokensAvailable) {
-      return { allowed: false, reason: `Only ${tokensAvailable} tokens remaining in this phase` };
-    }
+    const decision = evaluateStagedPurchase({
+      now: new Date(),
+      clockStart,
+      fundingDeadline: offering.fundingDeadline ? new Date(offering.fundingDeadline) : null,
+      tier: residencyTierOf(user, property),
+      requestedStage: phase.phase,
+      tokenCount,
+      alreadyPurchasedThisStage,
+      adultCount: offering.adultCensus?.[stageKey]?.count ?? null,
+      stageSupply,
+      totalSupply: offering.totalSupply,
+      tokensSold: sold,
+    });
 
-    return { allowed: true };
+    return { allowed: decision.allowed, reason: decision.reason };
   }
 
   async getUserHoldings(userId: string): Promise<TokenHolding[]> {
@@ -394,11 +435,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createHolding(data: { userId: string; offeringId: string; tokenCount: number; purchasePhase: string; averagePurchasePrice: string }): Promise<TokenHolding> {
-    const multiplier = data.purchasePhase === "county" ? 1.5 
-      : data.purchasePhase === "state" ? 1.25 
-      : data.purchasePhase === "national" ? 1.0 
-      : 0.75;
-    const votingPower = Math.floor(data.tokenCount * multiplier);
+    const offering = await this.getTokenOffering(data.offeringId);
+    const property = offering ? await this.getProperty(offering.propertyId) : undefined;
+    const buyer = await this.getUser(data.userId);
+    const votingPower = weightedVotingPower(
+      data.tokenCount,
+      residencyTierOf(buyer ?? {}, property ?? { county: "", state: "" })
+    );
     
     const [holding] = await db
       .insert(tokenHoldings)
@@ -539,26 +582,14 @@ export class DatabaseStorage implements IStorage {
         eq(tokenPurchases.status, "confirmed")
       ));
     
-    let totalVotingPower = 0;
-    
-    for (const purchase of purchases) {
-      // Get the phase to determine the multiplier
-      const [phase] = await db.select()
-        .from(offeringPhases)
-        .where(eq(offeringPhases.id, purchase.phaseId));
-      
-      if (phase) {
-        // Apply phase-based voting multipliers (Community-First model)
-        // County: 1.5x, State: 1.25x, National: 1.0x, International: 0.75x
-        const multiplier = phase.phase === "county" ? 1.5 
-          : phase.phase === "state" ? 1.25 
-          : phase.phase === "national" ? 1.0 
-          : 0.75;
-        totalVotingPower += Math.floor(purchase.tokenCount * multiplier);
-      }
-    }
-    
-    return totalVotingPower;
+    const tokenCount = purchases.reduce((sum, purchase) => sum + purchase.tokenCount, 0);
+    const offering = await this.getTokenOffering(offeringId);
+    const property = offering ? await this.getProperty(offering.propertyId) : undefined;
+    const user = await this.getUser(userId);
+    return weightedVotingPower(
+      tokenCount,
+      residencyTierOf(user ?? {}, property ?? { county: "", state: "" })
+    );
   }
 
   async createPropertySubmission(submission: InsertPropertySubmission): Promise<PropertySubmission> {

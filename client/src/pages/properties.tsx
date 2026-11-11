@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LayoutGrid, Map as MapIcon, MapPin, Search, Building2, SlidersHorizontal, Columns2 } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { INITIAL_TOKEN_PRICE_USD } from "@shared/schema";
 import Map, { Marker, NavigationControl } from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { Property as DBProperty } from "@shared/schema";
@@ -98,7 +99,7 @@ export default function Properties() {
     location: { city: p.city, state: p.state },
     type: p.propertyType as Property["type"],
     image: p.imageUrl || undefined,
-    tokenPrice: 12.50,
+    tokenPrice: INITIAL_TOKEN_PRICE_USD,
     totalTokens: 0,
     tokensSold: 0,
     fundingGoal: parseFloat(p.fundingGoal || "0"),
