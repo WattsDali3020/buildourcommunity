@@ -6,13 +6,15 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import express, { type Express, type Request, type RequestHandler, type Response } from "express";
+import { createHash } from "node:crypto";
 import {
-  DISABLED_WRITE_ROUTES,
+  DISABLED_ROUTES,
   SOFT_MARKETING_WRITES_DISABLED,
   UNAVAILABLE_MESSAGE,
   createSoftMarketingWriteGate,
   matchesDisabledWrite,
   softMarketingWriteGate,
+  wishRecordForStorage,
 } from "./softMarketingPhase";
 
 const SAMPLE_BODY = {
@@ -26,7 +28,6 @@ const SAMPLE_BODY = {
 
 const LEFT_ON_WRITES: Array<[string, string]> = [
   ["POST", "/api/properties"],
-  ["POST", "/api/purchases/check-eligibility"],
   ["POST", "/api/proposals"],
   ["POST", "/api/property-submissions"],
   ["PATCH", "/api/property-submissions/sub-1"],
@@ -44,10 +45,8 @@ const LEFT_ON_WRITES: Array<[string, string]> = [
   ["POST", "/api/owner-response/tok-1"],
   ["POST", "/api/tokenize"],
   ["POST", "/api/offerings/off-1/advance-phase"],
-  ["POST", "/api/offerings/off-1/process-refunds"],
   ["POST", "/api/user/acknowledge-risks"],
   ["PATCH", "/api/user/email-preferences"],
-  ["GET", "/api/admin/kyc-pending"],
   ["POST", "/api/admin/reconciliation/purch-1/retry"],
   ["POST", "/api/admin/reconciliation/purch-1/refund"],
   ["POST", "/api/private-offerings/validate-access"],
@@ -76,6 +75,7 @@ const LEFT_ON_WRITES: Array<[string, string]> = [
   ["GET", "/api/user/transfers"],
   ["GET", "/api/user/refunds"],
   ["GET", "/api/user/purchases"],
+  ["GET", "/api/user/holdings"],
   ["POST", "/api/admin/revitascore/keys"],
   ["GET", "/api/revitascore/counties"],
   ["GET", "/api/revitascore/Fulton/housing"],
@@ -108,7 +108,7 @@ function mountEcho(app: Express, hits: string[]) {
     app[lower](path, touch);
   };
 
-  for (const route of DISABLED_WRITE_ROUTES) {
+  for (const route of DISABLED_ROUTES) {
     mount(route.method, route.path);
     mount("GET", route.path);
   }
@@ -160,12 +160,14 @@ test("soft-marketing writes are disabled by the production constant", () => {
 });
 
 test("matcher pauses only the approved write routes", () => {
-  for (const route of DISABLED_WRITE_ROUTES) {
+  for (const route of DISABLED_ROUTES) {
     const path = examplePath(route.path);
     assert.equal(matchesDisabledWrite(route.method, path), true, `${route.method} ${path}`);
     assert.equal(matchesDisabledWrite(route.method, `${path}/`), true, `trailing slash ${path}`);
     assert.equal(matchesDisabledWrite(route.method, `${path}?x=1`), true, `query ${path}`);
-    assert.equal(matchesDisabledWrite("GET", path), false, `GET ${path}`);
+    if (route.method !== "GET") {
+      assert.equal(matchesDisabledWrite("GET", path), false, `GET ${path}`);
+    }
   }
 
   for (const [method, path] of LEFT_ON_WRITES) {
@@ -176,7 +178,7 @@ test("matcher pauses only the approved write routes", () => {
 test("paused writes return 503 and do not run the handler or echo the body", async () => {
   await withServer(softMarketingWriteGate, async (port, hits) => {
     const extraPaths = ["/api/waitlist/", "/api/waitlist?source=page", "/api/user/kyc?unused=1"];
-    for (const route of DISABLED_WRITE_ROUTES) {
+    for (const route of DISABLED_ROUTES) {
       const path = examplePath(route.path);
       const before = hits.length;
       const result = await send(port, route.method, path);
@@ -196,7 +198,8 @@ test("paused writes return 503 and do not run the handler or echo the body", asy
       assert.equal(hits.length, before, path);
     }
 
-    for (const route of DISABLED_WRITE_ROUTES) {
+    for (const route of DISABLED_ROUTES) {
+      if (route.method === "GET") continue;
       const path = examplePath(route.path);
       const result = await send(port, "GET", path);
       assert.equal(result.status, 200, `GET ${path}`);
@@ -214,13 +217,12 @@ test("left-on routes still reach their handlers", async () => {
       ["GET", "/api/wishes"],
       ["GET", "/api/service-bids"],
       ["GET", "/api/user/purchases"],
+      ["GET", "/api/user/holdings"],
       ["GET", "/api/revitascore/counties"],
-      ["GET", "/api/admin/kyc-pending"],
       ["POST", "/api/wishes"],
       ["POST", "/api/wishes/wish-1/vote"],
       ["POST", "/api/nominations/nom-1/vote"],
       ["POST", "/api/private-offerings/validate-access"],
-      ["POST", "/api/purchases/check-eligibility"],
       ["POST", "/api/user/acknowledge-risks"],
       ["POST", "/api/proposals"],
       ["POST", "/api/property-submissions"],
@@ -231,7 +233,6 @@ test("left-on routes still reach their handlers", async () => {
       ["POST", "/api/professionals/apply"],
       ["POST", "/api/tokenize"],
       ["POST", "/api/offerings/off-1/advance-phase"],
-      ["POST", "/api/offerings/off-1/process-refunds"],
       ["POST", "/api/admin/reconciliation/purch-1/refund"],
       ["POST", "/api/admin/revitascore/keys"],
       ["PATCH", "/api/service-bids/bid-1/status"],
@@ -267,7 +268,7 @@ test("registerRoutes installs the gate without removing handlers", () => {
   assert.ok(rateLimitAt > gateAt);
   assert.ok(waitlistAt > gateAt);
 
-  for (const route of DISABLED_WRITE_ROUTES) {
+  for (const route of DISABLED_ROUTES) {
     assert.ok(
       source.includes(`"${route.path}"`),
       `missing handler registration for ${route.method} ${route.path}`,
@@ -283,7 +284,10 @@ test("registerRoutes installs the gate without removing handlers", () => {
   assert.match(source, /app\.post\("\/api\/user\/acknowledge-risks"/);
   assert.match(source, /app\.post\("\/api\/private-offerings\/validate-access"/);
   assert.match(source, /app\.post\("\/api\/wishes"/);
+  assert.match(source, /wishRecordForStorage\(req\.body\)/);
   assert.match(source, /app\.post\("\/api\/tokenize"/);
+  assert.match(source, /app\.post\("\/api\/nominations\/:id\/vote"/);
+  assert.equal(source.includes("contracts/Escrow.sol"), false);
 
   const authSource = readFileSync(
     new URL("./replit_integrations/auth/replitAuth.ts", import.meta.url),
@@ -295,6 +299,47 @@ test("registerRoutes installs the gate without removing handlers", () => {
   const gateSource = readFileSync(new URL("./softMarketingPhase.ts", import.meta.url), "utf8");
   assert.equal(gateSource.includes("req.body"), false);
   assert.equal(gateSource.includes("console."), false);
+});
+
+test("wish email is dropped and the rest of the wish is kept", () => {
+  const address = "person@example.com";
+  const withoutEmail = wishRecordForStorage({
+    title: "A shaded corner",
+    description: "Benches and trees",
+    category: "park",
+    location: "Cherokee County",
+    zipCode: "30114",
+  });
+  assert.equal(withoutEmail.email, null);
+  assert.equal(withoutEmail.title, "A shaded corner");
+  assert.equal(withoutEmail.description, "Benches and trees");
+  assert.equal(withoutEmail.category, "park");
+  assert.equal(withoutEmail.location, "Cherokee County");
+  assert.equal(withoutEmail.zipCode, "30114");
+
+  const withEmail = wishRecordForStorage({
+    title: "A shaded corner",
+    description: "Benches and trees",
+    category: "park",
+    location: "Cherokee County",
+    zipCode: "30114",
+    email: address,
+  });
+  assert.equal(withEmail.email, null);
+  assert.equal(JSON.stringify(withEmail).includes(address), false);
+  assert.equal(withEmail.title, "A shaded corner");
+
+  const stored: Array<{ email: string | null }> = [];
+  stored.push({ email: withEmail.email ?? null });
+  stored.push({ email: withoutEmail.email ?? null });
+  assert.equal(stored.every((row) => row.email === null), true);
+  assert.equal(JSON.stringify(stored).includes(address), false);
+});
+
+test("Escrow.sol is unchanged", () => {
+  const escrow = readFileSync(new URL("../contracts/Escrow.sol", import.meta.url));
+  const hash = createHash("sha256").update(escrow).digest("hex");
+  assert.equal(hash, "3040d8b2cd3ba772c9dd3e7b7bbc7abf875ffd7f07362202708b3bfc8a614706");
 });
 
 test("real route registration pauses approved writes and keeps the original handlers for routes that stay on", async () => {

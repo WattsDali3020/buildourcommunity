@@ -53,27 +53,33 @@ async function main() {
     await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
     const port = (server.address() as AddressInfo).port;
 
-    const paused = [
-      "/api/waitlist",
-      "/api/revitascore/register",
-      "/api/service-bids",
-      "/api/user/kyc",
-      "/api/admin/kyc/user-1/approve",
-      "/api/admin/kyc/user-1/reject",
-      "/api/user/wallet",
-      "/api/purchases",
-      "/api/purchase",
-      "/api/purchase/confirm",
-      "/api/webhooks/stripe",
-      "/api/transfers",
-      "/api/refunds",
-      "/api/private-offerings/off-1/invites",
-      "/api/private-offerings/invites/inv-1/accept",
-      "/api/proposals/prop-1/vote",
+    const paused: Array<[string, string]> = [
+      ["POST", "/api/waitlist"],
+      ["POST", "/api/revitascore/register"],
+      ["POST", "/api/service-bids"],
+      ["POST", "/api/user/kyc"],
+      ["GET", "/api/admin/kyc-pending"],
+      ["POST", "/api/admin/kyc/user-1/approve"],
+      ["POST", "/api/admin/kyc/user-1/reject"],
+      ["POST", "/api/user/wallet"],
+      ["POST", "/api/purchases"],
+      ["POST", "/api/purchases/check-eligibility"],
+      ["POST", "/api/purchase"],
+      ["POST", "/api/purchase/confirm"],
+      ["POST", "/api/webhooks/stripe"],
+      ["POST", "/api/transfers"],
+      ["POST", "/api/refunds"],
+      ["POST", "/api/offerings/off-1/process-refunds"],
+      ["GET", "/api/investor-protection/prop-1"],
+      ["POST", "/api/private-offerings/off-1/invites"],
+      ["POST", "/api/private-offerings/invites/inv-1/accept"],
+      ["POST", "/api/proposals/prop-1/vote"],
+      ["GET", "/api/users/user-1/holdings"],
+      ["GET", "/api/users/user-1/voting-power/off-1"],
     ];
 
-    for (const path of paused) {
-      const result = await send(port, "POST", path);
+    for (const [method, path] of paused) {
+      const result = await send(port, method, path);
       assert.equal(result.status, 503, path);
       assert.equal(result.text, JSON.stringify({ error: UNAVAILABLE_MESSAGE }));
       assert.equal(result.text.includes(SAMPLE_BODY.email), false, path);
@@ -98,10 +104,6 @@ async function main() {
     assert.equal(callback.status, 404);
     assert.equal(callback.text.includes(UNAVAILABLE_MESSAGE), false);
 
-    const eligibility = await send(port, "POST", "/api/purchases/check-eligibility");
-    assert.equal(eligibility.status, 400);
-    assert.equal(eligibility.text, JSON.stringify({ error: "Missing required fields" }));
-
     const validateAccess = await send(port, "POST", "/api/private-offerings/validate-access");
     assert.equal(validateAccess.status, 400);
     assert.equal(validateAccess.text, JSON.stringify({ error: "Offering ID is required" }));
@@ -110,6 +112,19 @@ async function main() {
     assert.equal(wish.status, 400);
     assert.equal(wish.text.includes("Invalid wish data"), true);
     assert.equal(wish.text.includes(UNAVAILABLE_MESSAGE), false);
+    assert.equal(wish.text.includes(SAMPLE_BODY.email), false);
+
+    const nominationVote = await send(port, "POST", "/api/nominations/nom-1/vote");
+    assert.equal(nominationVote.status, 400);
+    assert.equal(nominationVote.text, JSON.stringify({ error: "Missing required fields" }));
+
+    const ownHoldings = await send(port, "GET", "/api/user/holdings");
+    assert.equal(ownHoldings.status, 401);
+    assert.equal(ownHoldings.text, JSON.stringify({ error: "Unauthorized" }));
+
+    const advancePhase = await send(port, "POST", "/api/offerings/off-1/advance-phase");
+    assert.equal(advancePhase.status, 401);
+    assert.equal(advancePhase.text, JSON.stringify({ error: "Unauthorized" }));
 
     for (const path of [
       "/api/user/acknowledge-risks",
