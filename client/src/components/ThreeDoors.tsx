@@ -1,17 +1,29 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, Users, HardHat, ArrowRight } from "lucide-react";
+import { Home, Users, HardHat, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 
-const doors = [
+type Door = {
+  id: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  icon: typeof Home;
+  cta?: string;
+  href?: string;
+  iconBg: string;
+  iconColor: string;
+};
+
+const doors: Door[] = [
   {
-    id: "investor",
-    title: "Investor",
-    subtitle: "Build wealth through community ownership",
-    description: "Invest in tokenized properties starting at $12.50. Earn dividends, vote on development plans, and grow your portfolio as communities revitalize.",
-    icon: TrendingUp,
-    cta: "Browse Properties",
-    href: "/properties",
+    id: "resident",
+    title: "Resident",
+    subtitle: "Have a real say in what gets built nearby",
+    description: "Suggest the homes, shops and storefronts, and job sites your county needs, and weigh in on what goes first.",
+    icon: Home,
+    cta: "Suggest a Project",
+    href: "/wishlist",
     iconBg: "bg-primary/10",
     iconColor: "text-primary",
   },
@@ -19,9 +31,9 @@ const doors = [
     id: "neighbor",
     title: "Neighbor",
     subtitle: "Shape your community's future",
-    description: "Nominate distressed properties, vote on what gets built, and earn bonus tokens for active participation. Local voices get 1.5x voting power.",
+    description: "Point out the empty storefront, the lot that could hold homes, or the building that could bring jobs closer.",
     icon: Users,
-    cta: "Nominate Property",
+    cta: "Suggest a Place",
     href: "/wishlist",
     iconBg: "bg-chart-3/10",
     iconColor: "text-chart-3",
@@ -29,11 +41,9 @@ const doors = [
   {
     id: "professional",
     title: "Professional",
-    subtitle: "Win verified project contracts",
-    description: "Licensed contractors, realtors, and attorneys join the verified network. Get matched with funded projects and build your reputation on-chain.",
+    subtitle: "Help build what neighbors choose",
+    description: "Licensed contractors, realtors, and attorneys could join a verified network and be matched with the projects residents choose.",
     icon: HardHat,
-    cta: "Join Pro Network",
-    href: "/services",
     iconBg: "bg-chart-2/10",
     iconColor: "text-chart-2",
   },
@@ -46,12 +56,12 @@ export function ThreeDoors() {
     <section className="py-20 md:py-24" data-testid="section-three-doors" style={{ background: 'hsl(var(--background))' }}>
       <div className="mx-auto px-5 md:px-10" style={{ maxWidth: '1100px' }}>
         <div className="text-center mb-12">
-          <p className="text-xs font-semibold uppercase tracking-[1.5px] text-muted-foreground mb-3" data-testid="text-doors-eyebrow">Choose Your Path</p>
+          <p className="text-xs font-semibold uppercase tracking-[1.5px] text-muted-foreground mb-3" data-testid="text-doors-eyebrow">Who It's For</p>
           <h2 className="font-serif text-3xl md:text-4xl tracking-tight mb-3" style={{ letterSpacing: '-1px' }} data-testid="text-doors-title">
             How Will You Build?
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto" style={{ lineHeight: '1.7' }}>
-            RevitaHub serves three kinds of community builders. Pick the path that fits you.
+            RevitaHub is being designed with three kinds of community builders in mind.
           </p>
         </div>
 
@@ -89,15 +99,17 @@ export function ThreeDoors() {
                   <p className={`text-sm mb-5 leading-relaxed ${isActive ? 'text-background/50' : 'text-muted-foreground'}`} style={{ lineHeight: '1.7' }}>
                     {door.description}
                   </p>
-                  <Link href={door.href}>
-                    <span
-                      className="inline-flex items-center gap-1.5 text-primary font-semibold text-sm hover:underline"
-                      data-testid={`link-door-${door.id}`}
-                    >
-                      {door.cta}
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </span>
-                  </Link>
+                  {door.cta && door.href && (
+                    <Link href={door.href}>
+                      <span
+                        className="inline-flex items-center gap-1.5 text-primary font-semibold text-sm hover:underline"
+                        data-testid={`link-door-${door.id}`}
+                      >
+                        {door.cta}
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </span>
+                    </Link>
+                  )}
                 </motion.div>
               </motion.div>
             );

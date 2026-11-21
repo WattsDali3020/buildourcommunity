@@ -81,7 +81,7 @@ function Router() {
       <Route path="/services"><Redirect to="/participate#directories" /></Route>
       <Route path="/league"><Redirect to="/participate#revitaleague" /></Route>
       <Route path="/litepaper" component={Litepaper} />
-      <Route path="/how-it-works"><Redirect to="/learn#process-guide" /></Route>
+      <Route path="/how-it-works"><Redirect to="/#how-it-works" /></Route>
 
       <Route component={NotFound} />
     </Switch>
