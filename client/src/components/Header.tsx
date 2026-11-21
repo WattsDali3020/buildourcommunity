@@ -2,7 +2,23 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { Building2, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
+
+const HOW_IT_WORKS_HASH = "#how-it-works";
+
+function subscribeToHash(onStoreChange: () => void) {
+  const events = ["hashchange", "popstate", "pushState", "replaceState"] as const;
+  for (const eventName of events) window.addEventListener(eventName, onStoreChange);
+  return () => {
+    for (const eventName of events) window.removeEventListener(eventName, onStoreChange);
+  };
+}
+
+function navIsActive(href: string, path: string, hash: string) {
+  if (href === `/${HOW_IT_WORKS_HASH}`) return path === "/" && hash === HOW_IT_WORKS_HASH;
+  if (href === "/") return path === "/" && hash !== HOW_IT_WORKS_HASH;
+  return path === href;
+}
 
 // Homepage-rewrite nav: only routes without offer copy. Explore points at
 // how it could work. Nominate, Learn, Dashboard and the wallet button are
@@ -14,6 +30,7 @@ const allLinks = [
 
 export function Header() {
   const [location] = useLocation();
+  const hash = useSyncExternalStore(subscribeToHash, () => window.location.hash, () => "");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -29,7 +46,7 @@ export function Header() {
             {allLinks.map((link) => (
               <Link key={link.href} href={link.href}>
                 <Button
-                  variant={location === link.href ? "secondary" : "ghost"}
+                  variant={navIsActive(link.href, location, hash) ? "secondary" : "ghost"}
                   size="sm"
                   className="text-[13px] font-medium tracking-[0.3px]"
                   data-testid={`link-nav-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
@@ -60,7 +77,7 @@ export function Header() {
               {allLinks.map((link) => (
                 <Link key={link.href} href={link.href}>
                   <Button
-                    variant={location === link.href ? "secondary" : "ghost"}
+                    variant={navIsActive(link.href, location, hash) ? "secondary" : "ghost"}
                     className="w-full justify-start text-[13px] font-medium tracking-[0.3px]"
                     onClick={() => setMobileMenuOpen(false)}
                     data-testid={`link-mobile-nav-${link.label.toLowerCase().replace(/\s+/g, '-')}`}

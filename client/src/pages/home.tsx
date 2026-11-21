@@ -4,8 +4,8 @@ import { GenesisHero } from "@/components/GenesisHero";
 import { ThreeDoors } from "@/components/ThreeDoors";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Link } from "wouter";
-import { useRef } from "react";
+import { Link, useLocation } from "wouter";
+import { useLayoutEffect, useRef } from "react";
 import { motion, useScroll, useInView, useSpring } from "framer-motion";
 import {
   ArrowRight,
@@ -204,7 +204,25 @@ function ScrollProgressIndicator() {
   );
 }
 
+const HOW_IT_WORKS_HASH = "#how-it-works";
+
+function scrollToHowItWorks() {
+  if (window.location.hash !== HOW_IT_WORKS_HASH) return;
+  document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 export default function Home() {
+  const [location] = useLocation();
+
+  useLayoutEffect(() => {
+    scrollToHowItWorks();
+    const events = ["hashchange", "popstate", "pushState", "replaceState"] as const;
+    for (const eventName of events) window.addEventListener(eventName, scrollToHowItWorks);
+    return () => {
+      for (const eventName of events) window.removeEventListener(eventName, scrollToHowItWorks);
+    };
+  }, [location]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
