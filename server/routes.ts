@@ -1,12 +1,13 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPropertySchema, insertPropertySubmissionSchema, insertPropertyNominationSchema, insertPropertyGrantSchema, insertWishSchema, insertServiceBidSchema } from "@shared/schema";
+import { insertPropertySchema, insertPropertySubmissionSchema, insertPropertyNominationSchema, insertPropertyGrantSchema, insertServiceBidSchema } from "@shared/schema";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { setupAuth, isAuthenticated, isAdmin, requireKYCApproved } from "./replit_integrations/auth";
 import { createPaymentIntent, isStripeConfigured, verifyPaymentAndGetMetadata, constructWebhookEvent } from "./services/payments";
 import { purchaseRateLimit, voteRateLimit, globalWriteRateLimit } from "./middleware/rateLimit";
+import { softMarketingWriteGate, wishRecordForStorage } from "./softMarketingPhase";
 import { sendPurchaseConfirmation, sendWaitlistNotification, sendPhaseAdvancementNotification, sendRefundNotification, sendProposalNotification } from "./services/email";
 import { 
   lookupOwnerByAddress, 
@@ -37,6 +38,10 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   await setupAuth(app);
+
+  // Soft-marketing phase: selected writes return 503 before their handlers.
+  // The handlers below are unchanged. Flip SOFT_MARKETING_WRITES_DISABLED to restore them.
+  app.use(softMarketingWriteGate);
 
   app.use((req, res, next) => {
     if (["POST", "PATCH", "PUT", "DELETE"].includes(req.method)) {
@@ -1988,7 +1993,7 @@ export async function registerRoutes(
 
   app.post("/api/wishes", async (req: Request, res: Response) => {
     try {
-      const parsed = insertWishSchema.parse(req.body);
+      const parsed = wishRecordForStorage(req.body);
       const wish = await storage.createWish(parsed);
       res.status(201).json(wish);
     } catch (error) {
