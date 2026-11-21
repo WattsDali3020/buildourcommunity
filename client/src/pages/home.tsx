@@ -206,9 +206,22 @@ function ScrollProgressIndicator() {
 
 const HOW_IT_WORKS_HASH = "#how-it-works";
 
+let pendingHowItWorksScroll = 0;
+
 function scrollToHowItWorks() {
   if (window.location.hash !== HOW_IT_WORKS_HASH) return;
-  document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  cancelAnimationFrame(pendingHowItWorksScroll);
+  // The mobile menu lives in the sticky header. Its close is batched with the
+  // same click that pushState uses to scroll, so measuring immediately uses the
+  // open header and then overshoots once the menu unmounts. Wait two frames so
+  // that close has committed before scrollIntoView reads the layout.
+  pendingHowItWorksScroll = requestAnimationFrame(() => {
+    pendingHowItWorksScroll = requestAnimationFrame(() => {
+      pendingHowItWorksScroll = 0;
+      if (window.location.hash !== HOW_IT_WORKS_HASH) return;
+      document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
 }
 
 export default function Home() {
@@ -219,6 +232,7 @@ export default function Home() {
     const events = ["hashchange", "popstate", "pushState", "replaceState"] as const;
     for (const eventName of events) window.addEventListener(eventName, scrollToHowItWorks);
     return () => {
+      cancelAnimationFrame(pendingHowItWorksScroll);
       for (const eventName of events) window.removeEventListener(eventName, scrollToHowItWorks);
     };
   }, [location]);
