@@ -7,6 +7,7 @@ import { registerObjectStorageRoutes } from "./replit_integrations/object_storag
 import { setupAuth, isAuthenticated, isAdmin, requireKYCApproved } from "./replit_integrations/auth";
 import { createPaymentIntent, isStripeConfigured, verifyPaymentAndGetMetadata, constructWebhookEvent } from "./services/payments";
 import { purchaseRateLimit, voteRateLimit, globalWriteRateLimit } from "./middleware/rateLimit";
+import { softMarketingWriteGate } from "./softMarketingPhase";
 import { sendPurchaseConfirmation, sendWaitlistNotification, sendPhaseAdvancementNotification, sendRefundNotification, sendProposalNotification } from "./services/email";
 import { 
   lookupOwnerByAddress, 
@@ -37,6 +38,10 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   await setupAuth(app);
+
+  // Soft-marketing phase: selected writes return 503 before their handlers.
+  // The handlers below are unchanged. Flip SOFT_MARKETING_WRITES_DISABLED to restore them.
+  app.use(softMarketingWriteGate);
 
   app.use((req, res, next) => {
     if (["POST", "PATCH", "PUT", "DELETE"].includes(req.method)) {
