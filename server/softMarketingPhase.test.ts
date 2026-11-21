@@ -140,7 +140,7 @@ async function withServer(
 }
 
 async function send(port: number, method: string, path: string) {
-  const hasBody = method !== "GET" && method !== "DELETE";
+  const hasBody = method !== "GET" && method !== "HEAD" && method !== "DELETE";
   const response = await fetch(`http://127.0.0.1:${port}${path}`, {
     method,
     headers: hasBody ? { "content-type": "application/json" } : undefined,
@@ -171,6 +171,45 @@ test("matcher pauses only the approved write routes", () => {
   }
 
   for (const [method, path] of LEFT_ON_WRITES) {
+    assert.equal(matchesDisabledWrite(method, path), false, `${method} ${path}`);
+  }
+
+  const bypasses: Array<[string, string]> = [
+    ["POST", "/API/WAITLIST"],
+    ["POST", "/api/Waitlist"],
+    ["POST", "/api/revitascore/REGISTER"],
+    ["POST", "/api/Service-Bids"],
+    ["POST", "/api/webhooks/Stripe"],
+    ["POST", "/API/purchase"],
+    ["POST", "/api/Refunds"],
+    ["POST", "/api/User/KYC"],
+    ["POST", "/api/Proposals/p1/vote"],
+    ["GET", "/api/Users/u1/holdings"],
+    ["GET", "/api/USERS/u1/voting-power/o1"],
+    ["GET", "/api/Investor-Protection/p1"],
+    ["GET", "/API/admin/KYC-pending"],
+    ["HEAD", "/api/users/u1/holdings"],
+    ["HEAD", "/api/investor-protection/p1"],
+    ["HEAD", "/api/admin/kyc-pending"],
+    ["HEAD", "/api/Users/u1/holdings"],
+    ["HEAD", "/API/INVESTOR-PROTECTION/p1"],
+  ];
+  for (const [method, path] of bypasses) {
+    assert.equal(matchesDisabledWrite(method, path), true, `${method} ${path}`);
+  }
+
+  const stillOpen: Array<[string, string]> = [
+    ["HEAD", "/api/waitlist"],
+    ["HEAD", "/api/wishes"],
+    ["HEAD", "/api/user/holdings"],
+    ["GET", "/API/User/Holdings"],
+    ["HEAD", "/API/User/Holdings"],
+    ["POST", "/api/Nominations/n1/vote"],
+    ["POST", "/API/WISHES"],
+    ["HEAD", "/api/private-offerings/off-1/invites"],
+    ["GET", "/api/Service-Bids"],
+  ];
+  for (const [method, path] of stillOpen) {
     assert.equal(matchesDisabledWrite(method, path), false, `${method} ${path}`);
   }
 });
@@ -248,6 +287,97 @@ test("left-on routes still reach their handlers", async () => {
       assert.equal(result.text, JSON.stringify({ reached: true }), `${method} ${path}`);
     }
   });
+});
+
+test("mixed-case paths and HEAD on gated GETs return 503 and do not reach handlers", async () => {
+  const hits: string[] = [];
+  const app = express();
+  app.use(express.json());
+  app.use(softMarketingWriteGate);
+  const touch = (req: Request, res: Response) => {
+    hits.push(`${req.method} ${req.path}`);
+    res.status(200).json({ reached: true });
+  };
+  app.post("/api/waitlist", touch);
+  app.post("/api/webhooks/stripe", touch);
+  app.post("/api/revitascore/register", touch);
+  app.post("/api/service-bids", touch);
+  app.post("/api/purchase", touch);
+  app.post("/api/refunds", touch);
+  app.post("/api/user/kyc", touch);
+  app.post("/api/proposals/:id/vote", touch);
+  app.get("/api/users/:userId/holdings", touch);
+  app.get("/api/users/:userId/voting-power/:offeringId", touch);
+  app.get("/api/investor-protection/:propertyId", touch);
+  app.get("/api/admin/kyc-pending", touch);
+  app.get("/api/user/holdings", touch);
+  app.get("/api/wishes", touch);
+  app.get("/api/service-bids", touch);
+  app.get("/api/private-offerings/:offeringId/invites", touch);
+  app.post("/api/nominations/:id/vote", touch);
+  app.post("/api/wishes", touch);
+
+  const server = createServer(app);
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const port = (server.address() as AddressInfo).port;
+  try {
+    const stopped: Array<[string, string]> = [
+      ["POST", "/API/WAITLIST"],
+      ["POST", "/api/Waitlist"],
+      ["POST", "/api/revitascore/REGISTER"],
+      ["POST", "/api/Service-Bids"],
+      ["POST", "/api/webhooks/Stripe"],
+      ["POST", "/API/purchase"],
+      ["POST", "/api/Refunds"],
+      ["POST", "/api/User/KYC"],
+      ["POST", "/api/Proposals/p1/vote"],
+      ["GET", "/api/Users/u1/holdings"],
+      ["GET", "/api/USERS/u1/voting-power/o1"],
+      ["GET", "/api/Investor-Protection/p1"],
+      ["GET", "/API/admin/KYC-pending"],
+      ["HEAD", "/api/users/u1/holdings"],
+      ["HEAD", "/api/investor-protection/p1"],
+      ["HEAD", "/api/admin/kyc-pending"],
+      ["HEAD", "/api/Users/u1/holdings"],
+    ];
+    for (const [method, path] of stopped) {
+      const before = hits.length;
+      const result = await send(port, method, path);
+      assert.equal(result.status, 503, `${method} ${path} -> ${result.status} ${result.text}`);
+      if (method !== "HEAD") {
+        assert.equal(result.text, JSON.stringify({ error: UNAVAILABLE_MESSAGE }), `${method} ${path}`);
+      }
+      assert.equal(result.text.includes("Email and role are required"), false, path);
+      assert.equal(result.text.includes("reached"), false, path);
+      assert.equal(hits.length, before, `handler ran for ${method} ${path}`);
+    }
+
+    const open: Array<[string, string]> = [
+      ["GET", "/api/user/holdings"],
+      ["HEAD", "/api/user/holdings"],
+      ["GET", "/API/User/Holdings"],
+      ["HEAD", "/API/User/Holdings"],
+      ["GET", "/api/wishes"],
+      ["HEAD", "/api/wishes"],
+      ["GET", "/api/Service-Bids"],
+      ["HEAD", "/api/private-offerings/off-1/invites"],
+      ["POST", "/api/Nominations/n1/vote"],
+      ["POST", "/API/WISHES"],
+    ];
+    for (const [method, path] of open) {
+      const before = hits.length;
+      const result = await send(port, method, path);
+      assert.equal(result.status, 200, `${method} ${path} -> ${result.status} ${result.text}`);
+      if (method !== "HEAD") {
+        assert.equal(result.text, JSON.stringify({ reached: true }), `${method} ${path}`);
+      }
+      assert.equal(hits.length, before + 1, `${method} ${path}`);
+    }
+  } finally {
+    await new Promise<void>((resolve, reject) => {
+      server.close((error) => (error ? reject(error) : resolve()));
+    });
+  }
 });
 
 test("turning the flag off lets a paused route reach its handler", async () => {

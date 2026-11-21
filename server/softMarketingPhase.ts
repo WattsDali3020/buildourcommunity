@@ -58,7 +58,8 @@ function pathToRegExp(path: string): RegExp {
       return segment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     })
     .join("/");
-  return new RegExp(`^${body}$`);
+  // Express matches paths case-insensitively unless case sensitive routing is on.
+  return new RegExp(`^${body}$`, "i");
 }
 
 export function normalizeRequestPath(path: string): string {
@@ -69,8 +70,15 @@ export function normalizeRequestPath(path: string): string {
   return withoutQuery;
 }
 
+function methodForGate(method: string): string {
+  const upper = method.toUpperCase();
+  // Express dispatches HEAD to the GET handler when no HEAD handler is registered.
+  if (upper === "HEAD") return "GET";
+  return upper;
+}
+
 export function matchesDisabledWrite(method: string, path: string): boolean {
-  const normalizedMethod = method.toUpperCase();
+  const normalizedMethod = methodForGate(method);
   const normalizedPath = normalizeRequestPath(path);
   return compiledRoutes.some(
     (route) => route.method === normalizedMethod && route.pattern.test(normalizedPath),

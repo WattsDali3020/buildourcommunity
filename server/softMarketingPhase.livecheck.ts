@@ -19,7 +19,7 @@ const SAMPLE_BODY = {
 };
 
 async function send(port: number, method: string, path: string) {
-  const hasBody = method !== "GET" && method !== "DELETE";
+  const hasBody = method !== "GET" && method !== "HEAD" && method !== "DELETE";
   const response = await fetch(`http://127.0.0.1:${port}${path}`, {
     method,
     headers: hasBody ? { "content-type": "application/json" } : undefined,
@@ -125,6 +125,34 @@ async function main() {
     const advancePhase = await send(port, "POST", "/api/offerings/off-1/advance-phase");
     assert.equal(advancePhase.status, 401);
     assert.equal(advancePhase.text, JSON.stringify({ error: "Unauthorized" }));
+
+    const bypasses: Array<[string, string]> = [
+      ["POST", "/API/WAITLIST"],
+      ["POST", "/api/Waitlist"],
+      ["POST", "/api/webhooks/Stripe"],
+      ["POST", "/api/revitascore/REGISTER"],
+      ["POST", "/api/Service-Bids"],
+      ["GET", "/api/Users/u1/holdings"],
+      ["GET", "/api/Investor-Protection/p1"],
+      ["HEAD", "/api/users/u1/holdings"],
+      ["HEAD", "/api/investor-protection/p1"],
+      ["HEAD", "/api/admin/kyc-pending"],
+      ["HEAD", "/api/Users/u1/holdings"],
+    ];
+    for (const [method, path] of bypasses) {
+      const result = await send(port, method, path);
+      assert.equal(result.status, 503, `${method} ${path} ${result.text}`);
+      if (method !== "HEAD") {
+        assert.equal(result.text, JSON.stringify({ error: UNAVAILABLE_MESSAGE }), `${method} ${path}`);
+      }
+      assert.equal(result.text.includes("Email and role are required"), false, path);
+      assert.equal(result.text.includes("Not authenticated"), false, path);
+      assert.equal(result.text.includes("Unauthorized"), false, path);
+    }
+
+    const nominationMixed = await send(port, "POST", "/api/Nominations/nom-1/vote");
+    assert.equal(nominationMixed.status, 400);
+    assert.equal(nominationMixed.text, JSON.stringify({ error: "Missing required fields" }));
 
     for (const path of [
       "/api/user/acknowledge-risks",
