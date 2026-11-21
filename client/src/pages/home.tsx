@@ -1,25 +1,20 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { GenesisHero } from "@/components/GenesisHero";
-import { CherokeeCommandStrip } from "@/components/CherokeeCommandStrip";
 import { ThreeDoors } from "@/components/ThreeDoors";
-import { FourStepCTA } from "@/components/FourStepCTA";
-import { WaitlistModal } from "@/components/WaitlistModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Link } from "wouter";
-import { useState, useRef } from "react";
+import { Link, useLocation } from "wouter";
+import { useLayoutEffect, useRef } from "react";
 import { motion, useScroll, useInView, useSpring } from "framer-motion";
 import {
   ArrowRight,
   Shield,
-  CheckCircle2,
-  TrendingUp,
   Vote,
-  Zap,
-  BarChart3,
-  Lock,
   MapPin,
+  Home as HomeIcon,
+  Store,
+  Factory,
 } from "lucide-react";
 
 function ScrollReveal({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -38,43 +33,31 @@ function ScrollReveal({ children, className }: { children: React.ReactNode; clas
   );
 }
 
-const phases = [
-  { label: "County", price: "$12.50", multiplier: "1.5x", active: true },
-  { label: "State", price: "$18.75", multiplier: "1.25x", active: false },
-  { label: "National", price: "$28.13", multiplier: "1.0x", active: false },
-  { label: "International", price: "$37.50", multiplier: "0.75x", active: false },
+const projectTypes = [
+  { label: "Homes", desc: "Places people who work here can afford to live.", icon: HomeIcon },
+  { label: "Shops & storefronts", desc: "Everyday businesses on the street.", icon: Store },
+  { label: "Jobs & industrial", desc: "Workplaces close to where people live.", icon: Factory },
 ];
 
 const votingTiers = [
-  { label: "County Investor", multiplier: "1.5x", color: "text-green-400 border-green-500/30 bg-green-500/10" },
-  { label: "State Investor", multiplier: "1.25x", color: "text-blue-400 border-blue-500/30 bg-blue-500/10" },
-  { label: "National Investor", multiplier: "1.0x", color: "text-purple-400 border-purple-500/30 bg-purple-500/10" },
+  { label: "Verified county residents", weight: "Extra weight", color: "text-green-400 border-green-500/30 bg-green-500/10" },
+  { label: "Elsewhere in the state", weight: "Standard weight", color: "text-blue-400 border-blue-500/30 bg-blue-500/10" },
+  { label: "Elsewhere in the U.S.", weight: "Lighter weight", color: "text-purple-400 border-purple-500/30 bg-purple-500/10" },
 ];
 
-function PhaseTimeline() {
-  const timelineRef = useRef(null);
-  const isTimelineInView = useInView(timelineRef, { once: true, margin: "-80px" });
+function ProjectTypesPanel() {
   return (
-    <div className="order-2 lg:order-1" ref={timelineRef}>
-      <div className="rounded-xl border bg-muted/30 p-6">
-        <div className="flex items-center gap-1 w-full">
-          {phases.map((phase, i) => (
-            <div key={phase.label} className="flex-1 flex flex-col items-center">
-              <div className="text-xs text-muted-foreground mb-2">{phase.label}</div>
-              <div className="relative flex items-center w-full h-1.5">
-                <div className="absolute inset-0 rounded-full bg-muted-foreground/20" />
-                {phase.active && (
-                  <motion.div className="absolute inset-y-0 left-0 rounded-full bg-primary" initial={{ width: "0%" }} animate={isTimelineInView ? { width: "100%" } : { width: "0%" }} transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }} />
-                )}
-                {phase.active && (
-                  <motion.div className="absolute right-0 h-4 w-4 rounded-full bg-primary border-2 border-background" style={{ top: "50%", transform: "translateY(-50%)" }} initial={{ scale: 0, opacity: 0 }} animate={isTimelineInView ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }} transition={{ scale: { duration: 0.4, delay: 1.4 }, opacity: { duration: 0.4, delay: 1.4 } }} />
-                )}
-              </div>
-              <div className={`font-serif text-lg font-bold mt-2 ${phase.active ? "text-primary" : "text-muted-foreground"}`}>{phase.price}</div>
-              <div className="text-xs text-muted-foreground">per token</div>
+    <div className="order-2 lg:order-1">
+      <div className="rounded-xl border bg-muted/30 p-6 space-y-3">
+        {projectTypes.map((t) => (
+          <div key={t.label} className="flex items-start gap-3 rounded-lg border bg-background/80 p-4">
+            <t.icon className="h-5 w-5 text-primary mt-0.5" />
+            <div>
+              <div className="text-sm font-semibold">{t.label}</div>
+              <div className="text-xs text-muted-foreground">{t.desc}</div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -82,13 +65,13 @@ function PhaseTimeline() {
 
 function HowItWorks() {
   return (
-    <section className="py-20 md:py-24" data-testid="section-how-it-works">
+    <section id="how-it-works" className="py-20 md:py-24" data-testid="section-how-it-works">
       <div className="mx-auto px-5 md:px-10" style={{ maxWidth: "1100px" }}>
         <ScrollReveal>
           <div className="text-center mb-16">
-            <p className="text-xs font-semibold uppercase tracking-[1.5px] text-primary mb-4">How It Works</p>
-            <h2 className="font-serif text-3xl lg:text-4xl tracking-tight mb-4" data-testid="text-how-it-works-title">Three Steps to Community Ownership</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">From nomination to governance, every step is powered by the community.</p>
+            <p className="text-xs font-semibold uppercase tracking-[1.5px] text-primary mb-4">How It Could Work</p>
+            <h2 className="font-serif text-3xl lg:text-4xl tracking-tight mb-4" data-testid="text-how-it-works-title">Three Steps, From Idea to Built</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">A proposed design for how neighbors could suggest projects and weigh in on what gets built nearby.</p>
           </div>
         </ScrollReveal>
         <div className="space-y-24">
@@ -97,12 +80,12 @@ function HowItWorks() {
               <div>
                 <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[1.5px] text-primary mb-4">
                   <span className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">1</span>
-                  Nominate
+                  Suggest
                 </div>
-                <h3 className="font-serif text-2xl mb-4">Spot a Distressed Property</h3>
-                <p className="text-muted-foreground leading-relaxed mb-6">Nominate it. Neighbors vote. Only those pins become offerings — not every parcel on the map.</p>
+                <h3 className="font-serif text-2xl mb-4">Spot What Your Area Needs</h3>
+                <p className="text-muted-foreground leading-relaxed mb-6">A lot that could hold homes, a storefront that has sat empty, a site that could bring jobs closer. Suggest it, and neighbors can weigh in.</p>
                 <Button asChild variant="outline" data-testid="button-nominate">
-                  <Link href="/wishlist"><MapPin className="mr-2 h-4 w-4" />Nominate Property</Link>
+                  <Link href="/wishlist"><MapPin className="mr-2 h-4 w-4" />Suggest a Project</Link>
                 </Button>
               </div>
               <div className="rounded-xl border bg-muted/30 p-8 flex items-center justify-center" style={{ minHeight: 280 }}>
@@ -110,7 +93,7 @@ function HowItWorks() {
                   <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 mb-4">
                     <MapPin className="h-8 w-8 text-primary" />
                   </div>
-                  <p className="text-sm text-muted-foreground">Cherokee County alpha.</p>
+                  <p className="text-sm text-muted-foreground">Starting in Cherokee County.</p>
                   <p className="text-sm text-muted-foreground">Pins are RevitaHub properties only.</p>
                 </div>
               </div>
@@ -118,17 +101,14 @@ function HowItWorks() {
           </ScrollReveal>
           <ScrollReveal>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <PhaseTimeline />
+              <ProjectTypesPanel />
               <div className="order-1 lg:order-2">
                 <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[1.5px] text-primary mb-4">
                   <span className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">2</span>
-                  Invest
+                  First Window
                 </div>
-                <h3 className="font-serif text-2xl mb-4">Get In Early at $12.50</h3>
-                <p className="text-muted-foreground leading-relaxed mb-6">County-phase price and 1.5x vote weight after KYC and whitelist. Transfers lock until the raise completes.</p>
-                <Button asChild variant="outline" data-testid="button-explore-properties">
-                  <Link href="/properties">Explore Properties<ArrowRight className="ml-2 h-4 w-4" /></Link>
-                </Button>
+                <h3 className="font-serif text-2xl mb-4">Who Goes First</h3>
+                <p className="text-muted-foreground leading-relaxed mb-6">In the proposed design, county residents would get the first window to help fund a chosen project, once their residency is verified. How that works legally is still being settled. This preview does not do this.</p>
               </div>
             </div>
           </ScrollReveal>
@@ -137,20 +117,17 @@ function HowItWorks() {
               <div>
                 <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[1.5px] text-primary mb-4">
                   <span className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">3</span>
-                  Govern
+                  Weigh In
                 </div>
-                <h3 className="font-serif text-2xl mb-4">Vote on What Gets Built</h3>
-                <p className="text-muted-foreground leading-relaxed mb-6">Token-weighted votes. Impact score ≥ 70 is what unlocks the founder 1% in Escrow — not a Treasury vest.</p>
-                <Button asChild variant="outline">
-                  <Link href="/governance"><Vote className="mr-2 h-4 w-4" />View Proposals</Link>
-                </Button>
+                <h3 className="font-serif text-2xl mb-4">Have a Say on What Goes First</h3>
+                <p className="text-muted-foreground leading-relaxed mb-6">In the proposed design, votes would be weighted by where you live: verified county residents would get extra weight per vote. This preview does not weight votes that way.</p>
               </div>
               <div className="rounded-xl border bg-muted/30 p-8">
                 <div className="space-y-3">
                   {votingTiers.map((tier) => (
                     <div key={tier.label} className={`flex items-center justify-between rounded-lg border p-4 ${tier.color}`}>
                       <span className="text-sm font-medium">{tier.label}</span>
-                      <span className="font-serif text-lg font-bold">{tier.multiplier} voting power</span>
+                      <span className="font-serif text-lg font-bold">{tier.weight}</span>
                     </div>
                   ))}
                 </div>
@@ -165,12 +142,12 @@ function HowItWorks() {
 
 function FeatureHighlights() {
   const features = [
-    { title: "Dynamic Community Vaults", desc: "Pricing, governance, and yield evolve as engagement grows — not static paper shares.", icon: BarChart3 },
-    { title: "4-Phase Pricing Ramp", desc: "County $12.50 → State $18.75 → National $28.13 → International $37.50.", icon: TrendingUp },
-    { title: "75% Engagement Auto-Advance", desc: "PhaseManager advances when engagement hits 75%. The community drives the clock.", icon: Zap },
-    { title: "Vote-to-Earn Governance", desc: "Local voices lead: County 1.5x, State 1.25x, National 1.0x.", icon: Vote },
-    { title: "Transparent Founder Economics", desc: "1% of gross at funding only if impact score is 70+, plus 1% of quarterly income. Paid by Escrow. No Treasury vest.", icon: Lock },
-    { title: "3% APR Investor Protection", desc: "Miss the target and Escrow refunds principal plus 3% APR.", icon: Shield },
+    { title: "Homes", desc: "Housing that people who already work in the county can afford, near the jobs they have.", icon: HomeIcon },
+    { title: "Shops & Storefronts", desc: "Everyday businesses on the street, so fewer errands mean leaving the county.", icon: Store },
+    { title: "Jobs & Industrial", desc: "Workshops and job sites closer to where people live, so fewer long commutes.", icon: Factory },
+    { title: "Local Voices Weighed In", desc: "Neighbors can suggest projects and weigh in on what gets built nearby.", icon: Vote },
+    { title: "Costs in the Open", desc: "In the proposed design, each project would show who nearby bears its costs, not only who benefits.", icon: Shield },
+    { title: "Walk to Work", desc: "Homes, shops, and workplaces near each other, so more people can live close to where they work.", icon: MapPin },
   ];
   return (
     <ScrollReveal>
@@ -178,7 +155,7 @@ function FeatureHighlights() {
         <div className="mx-auto px-5 md:px-10" style={{ maxWidth: "1100px" }}>
           <div className="text-center mb-12">
             <p className="text-xs font-semibold uppercase tracking-[1.5px] text-primary mb-4">Why RevitaHub</p>
-            <h2 className="font-serif text-3xl lg:text-4xl tracking-tight mb-4" data-testid="text-why-revitahub">Distribution Is the Real Unlock</h2>
+            <h2 className="font-serif text-3xl lg:text-4xl tracking-tight mb-4" data-testid="text-why-revitahub">Build What the County Is Missing</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, i) => (
@@ -199,25 +176,16 @@ function FeatureHighlights() {
   );
 }
 
-function InlineWaitlist({ onOpenWaitlist }: { onOpenWaitlist: () => void }) {
+function ClosingSection() {
   return (
     <ScrollReveal>
       <section className="py-20 md:py-24 bg-gradient-hero glow-gold">
         <div className="mx-auto px-5 md:px-10 text-center" style={{ maxWidth: "1100px" }}>
           <div className="rounded-2xl border bg-card/80 backdrop-blur-sm p-10 lg:p-14">
-            <h2 className="font-serif text-3xl lg:text-4xl mb-4 tracking-tight">Join the waitlist</h2>
-            <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">Cherokee County alpha. KYC before purchase. Tokens are SPV interests, not a Realtor listing.</p>
-            <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
-              {["Fractional SPV interests", "Refund + 3% APR if unfunded", "County-phase $12.50", "Impact-gated founder 1%"].map((item, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
+            <h2 className="font-serif text-3xl lg:text-4xl mb-4 tracking-tight">What is your area missing?</h2>
+            <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">This is an early design, shared to learn from neighbors. Homes, a storefront, a place to work: tell us what would make the biggest difference where you live.</p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="lg" onClick={onOpenWaitlist} data-testid="button-join-waitlist">Join Waitlist<ArrowRight className="ml-2 h-4 w-4" /></Button>
-              <Button size="lg" variant="outline" asChild><Link href="/litepaper">Read the Litepaper</Link></Button>
+              <Button size="lg" asChild data-testid="button-suggest-project"><Link href="/wishlist">Suggest a Project<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
             </div>
           </div>
         </div>
@@ -236,23 +204,51 @@ function ScrollProgressIndicator() {
   );
 }
 
+const HOW_IT_WORKS_HASH = "#how-it-works";
+
+let pendingHowItWorksScroll = 0;
+
+function scrollToHowItWorks() {
+  if (window.location.hash !== HOW_IT_WORKS_HASH) return;
+  cancelAnimationFrame(pendingHowItWorksScroll);
+  // The mobile menu lives in the sticky header. Its close is batched with the
+  // same click that pushState uses to scroll, so measuring immediately uses the
+  // open header and then overshoots once the menu unmounts. Wait two frames so
+  // that close has committed before scrollIntoView reads the layout.
+  pendingHowItWorksScroll = requestAnimationFrame(() => {
+    pendingHowItWorksScroll = requestAnimationFrame(() => {
+      pendingHowItWorksScroll = 0;
+      if (window.location.hash !== HOW_IT_WORKS_HASH) return;
+      document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+}
+
 export default function Home() {
-  const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const [location] = useLocation();
+
+  useLayoutEffect(() => {
+    scrollToHowItWorks();
+    const events = ["hashchange", "popstate", "pushState", "replaceState"] as const;
+    for (const eventName of events) window.addEventListener(eventName, scrollToHowItWorks);
+    return () => {
+      cancelAnimationFrame(pendingHowItWorksScroll);
+      for (const eventName of events) window.removeEventListener(eventName, scrollToHowItWorks);
+    };
+  }, [location]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <ScrollProgressIndicator />
       <main className="flex-1">
         <GenesisHero />
-        <CherokeeCommandStrip />
         <ThreeDoors />
         <HowItWorks />
         <FeatureHighlights />
-        <FourStepCTA />
-        <InlineWaitlist onOpenWaitlist={() => setWaitlistOpen(true)} />
+        <ClosingSection />
       </main>
       <Footer />
-      <WaitlistModal open={waitlistOpen} onOpenChange={setWaitlistOpen} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ArrowRight, MapPin, Building2, TrendingUp, Users, DollarSign } from "lucide-react";
+import { ArrowRight, MapPin, Building2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -141,57 +141,22 @@ export function GenesisHero() {
         <motion.div className="absolute z-20 left-0 right-0 flex flex-col items-center justify-center text-center px-4 pointer-events-none" style={{ top: "8%" }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: phase >= 2 ? 1 : 0, y: phase >= 2 ? 0 : 30 }}>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 border border-primary/25 px-4 py-1.5 text-sm font-medium text-primary mb-5 pointer-events-auto">
             <Building2 className="h-3.5 w-3.5" />
-            Cherokee County alpha
+            Cherokee County · design preview
           </span>
           <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl tracking-tight mb-5 text-white drop-shadow-lg" data-testid="text-hero-title">
-            Build Your Community,{" "}
-            <span className="text-gradient-animated italic">One Token at a Time</span>
+            Homes, Shops and Jobs,{" "}
+            <span className="text-gradient-animated italic">Chosen Closer to Home</span>
           </h1>
           <p className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto mb-6 font-light" data-testid="text-hero-subtitle">
-            Pins are RevitaHub properties only — not every parcel. Nominate, vote, then KYC before any purchase.
+            Housing people can afford, storefronts that serve the street, and work close to where people live. An early look at how residents could suggest and weigh in on what gets built nearby.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pointer-events-auto">
-            <Button size="lg" asChild className="min-w-[200px]" data-testid="button-explore-properties">
-              <Link href="/properties">Explore Properties<ArrowRight className="ml-2 h-4 w-4" /></Link>
+            <Button size="lg" asChild className="min-w-[200px]" data-testid="button-how-it-works">
+              <a href="#how-it-works">See How It Could Work<ArrowRight className="ml-2 h-4 w-4" /></a>
             </Button>
             <Button size="lg" variant="outline" asChild className="min-w-[200px] border-white/20 text-white hover:bg-white/10" data-testid="button-nominate">
-              <Link href="/wishlist"><MapPin className="mr-2 h-4 w-4" />Nominate Property</Link>
+              <Link href="/wishlist"><MapPin className="mr-2 h-4 w-4" />Suggest a Project</Link>
             </Button>
-          </div>
-        </motion.div>
-
-        <motion.div className="absolute z-20 bottom-0 left-0 right-0" style={{ background: "linear-gradient(to top, rgba(26,26,24,0.85), rgba(26,26,24,0.6))" }} data-testid="stats-bar" initial={{ opacity: 0, y: 40 }} animate={{ opacity: phase >= 5 ? 1 : 0, y: phase >= 5 ? 0 : 40 }}>
-          <div className="mx-auto px-5 md:px-10 py-5" style={{ maxWidth: "1100px" }}>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="text-center" data-testid="stat-properties">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <Building2 className="h-4 w-4 text-primary" />
-                  <span className="font-serif text-2xl font-bold text-primary">{properties.length}</span>
-                </div>
-                <p className="text-xs uppercase tracking-widest text-gray-400 font-semibold">Listed properties</p>
-              </div>
-              <div className="text-center" data-testid="stat-funded">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <TrendingUp className="h-4 w-4" style={{ color: "#2D6A4F" }} />
-                  <span className="font-serif text-2xl font-bold" style={{ color: "#2D6A4F" }}>$0</span>
-                </div>
-                <p className="text-xs uppercase tracking-widest text-gray-400 font-semibold">On-chain raised</p>
-              </div>
-              <div className="text-center" data-testid="stat-investors">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <Users className="h-4 w-4 text-chart-2" />
-                  <span className="font-serif text-2xl font-bold text-chart-2">0</span>
-                </div>
-                <p className="text-xs uppercase tracking-widest text-gray-400 font-semibold">Verified members</p>
-              </div>
-              <div className="text-center" data-testid="stat-engagement">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <DollarSign className="h-4 w-4 text-primary" />
-                  <span className="font-serif text-2xl font-bold text-primary">$12.50</span>
-                </div>
-                <p className="text-xs uppercase tracking-widest text-gray-400 font-semibold">Min. investment</p>
-              </div>
-            </div>
           </div>
         </motion.div>
       </section>

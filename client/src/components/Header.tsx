@@ -1,60 +1,37 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
-import { WalletButton } from "./WalletButton";
 import { Building2, Menu, X } from "lucide-react";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useAccount } from "wagmi";
-import type { User } from "@shared/schema";
+import { useState, useSyncExternalStore } from "react";
 
-const PROFESSIONAL_ROLES = ["contractor", "realtor", "attorney", "engineer", "architect", "lender", "inspector", "appraiser"];
+const HOW_IT_WORKS_HASH = "#how-it-works";
 
-// Phase 0 public nav: map, nominate, learn, dashboard. Extra desks stay routed, not featured.
-const basePublicNavLinks = [
+function subscribeToHash(onStoreChange: () => void) {
+  const events = ["hashchange", "popstate", "pushState", "replaceState"] as const;
+  for (const eventName of events) window.addEventListener(eventName, onStoreChange);
+  return () => {
+    for (const eventName of events) window.removeEventListener(eventName, onStoreChange);
+  };
+}
+
+function navIsActive(href: string, path: string, hash: string) {
+  if (href === `/${HOW_IT_WORKS_HASH}`) return path === "/" && hash === HOW_IT_WORKS_HASH;
+  if (href === "/") return path === "/" && hash !== HOW_IT_WORKS_HASH;
+  return path === href;
+}
+
+// Homepage-rewrite nav: only routes without offer copy. Explore points at
+// how it could work. Nominate, Learn, Dashboard and the wallet button are
+// hidden until their pages are cleaned in a separately approved change.
+const allLinks = [
   { href: "/", label: "Home" },
-  { href: "/explore", label: "Explore" },
-  { href: "/nominate", label: "Nominate" },
-  { href: "/learn", label: "Learn" },
-];
-
-const investNavLink = { href: "/invest", label: "Invest" };
-
-const authenticatedNavLinks = [
-  { href: "/dashboard", label: "Dashboard" },
+  { href: "/#how-it-works", label: "Explore" },
 ];
 
 export function Header() {
   const [location] = useLocation();
+  const hash = useSyncExternalStore(subscribeToHash, () => window.location.hash, () => "");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isConnected } = useAccount();
-
-  const { data: user } = useQuery<User | null>({
-    queryKey: ["/api/auth/user"],
-  });
-
-  const isProfessional = user?.role && PROFESSIONAL_ROLES.includes(user.role);
-
-  const publicNavLinks = isConnected
-    ? [
-        basePublicNavLinks[0],
-        basePublicNavLinks[1],
-        investNavLink,
-        ...basePublicNavLinks.slice(2),
-      ]
-    : basePublicNavLinks;
-
-  const filteredAuthLinks = isConnected
-    ? authenticatedNavLinks.filter(l => l.href !== "/dashboard")
-    : authenticatedNavLinks;
-
-  const allLinks = user
-    ? [
-        ...publicNavLinks,
-        ...filteredAuthLinks,
-        ...(isProfessional ? [{ href: "/dashboard/professional", label: "Pro Dashboard" }] : []),
-      ]
-    : publicNavLinks;
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" style={{ borderBottom: '1px solid hsl(38 55% 51% / 0.15)' }}>
@@ -69,7 +46,7 @@ export function Header() {
             {allLinks.map((link) => (
               <Link key={link.href} href={link.href}>
                 <Button
-                  variant={location === link.href ? "secondary" : "ghost"}
+                  variant={navIsActive(link.href, location, hash) ? "secondary" : "ghost"}
                   size="sm"
                   className="text-[13px] font-medium tracking-[0.3px]"
                   data-testid={`link-nav-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
@@ -82,9 +59,6 @@ export function Header() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <div className="hidden sm:block">
-              <WalletButton />
-            </div>
             <Button
               variant="ghost"
               size="icon"
@@ -103,7 +77,7 @@ export function Header() {
               {allLinks.map((link) => (
                 <Link key={link.href} href={link.href}>
                   <Button
-                    variant={location === link.href ? "secondary" : "ghost"}
+                    variant={navIsActive(link.href, location, hash) ? "secondary" : "ghost"}
                     className="w-full justify-start text-[13px] font-medium tracking-[0.3px]"
                     onClick={() => setMobileMenuOpen(false)}
                     data-testid={`link-mobile-nav-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
@@ -112,9 +86,6 @@ export function Header() {
                   </Button>
                 </Link>
               ))}
-              <div className="pt-2">
-                <WalletButton />
-              </div>
             </div>
           </nav>
         )}

@@ -1,145 +1,60 @@
 import { Link } from "wouter";
 import { Building2 } from "lucide-react";
-import { SiDiscord, SiX, SiGithub } from "react-icons/si";
+import { SiX } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 
-const footerLinks = {
-  platform: [
-    { href: "/explore", label: "Browse Properties" },
-    { href: "/governance", label: "Governance" },
-    { href: "/dashboard", label: "Dashboard" },
-    { href: "/submit", label: "Submit Project" },
-    { href: "/participate", label: "Participate" },
-    { href: "/participate#revitaleague", label: "RevitaLeague" },
-  ],
-  resources: [
-    { href: "/learn#blockchain-101", label: "Litepaper" },
-    { href: "/learn#process-guide", label: "How It Works" },
-    { href: "/community#gdp-simulator", label: "Impact Simulator" },
-    { href: "/grants", label: "Grants & Funding" },
-    { href: "/faq", label: "FAQ" },
-  ],
-  company: [
-    { href: "/about", label: "About Us" },
-    { href: "/about#team", label: "Team" },
-    { href: "/about#contact", label: "Contact" },
-    { href: "/about#careers", label: "Careers" },
-  ],
-};
+// Homepage-rewrite footer: only links to About, Privacy, Terms and Community.
+const footerLinks = [
+  { href: "/about", label: "About" },
+  { href: "/community#wishlist", label: "Community" },
+  { href: "/privacy", label: "Privacy" },
+  { href: "/terms", label: "Terms" },
+];
 
 export function Footer() {
   return (
     <footer className="border-t bg-muted/30">
       <div className="mx-auto px-5 md:px-10 py-12" style={{ maxWidth: '1100px' }}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-          <div className="lg:col-span-2">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8">
+          <div>
             <Link href="/" className="flex items-center gap-2 mb-4" data-testid="link-footer-home">
               <Building2 className="h-8 w-8 text-primary" />
               <span className="font-serif text-xl">RevitaHub</span>
             </Link>
-            <p className="text-sm text-muted-foreground max-w-xs mb-4">
-              A Build Our Community, LLC project. Transforming vacant properties into thriving community assets through blockchain-enabled fractional ownership.
+            <p className="text-sm text-muted-foreground max-w-xs">
+              A Build Our Community, LLC project. An early design for residents to choose, and help fund, the homes, shops, and jobs their county needs.
             </p>
-            <a
-              href="https://buildourcommunity.co"
-              className="text-sm text-primary hover:underline mb-4 inline-block"
-              data-testid="link-footer-website"
-            >
-              buildourcommunity.co
-            </a>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" asChild data-testid="link-social-twitter">
                 <a href="https://x.com/RevitaHub" target="_blank" rel="noopener noreferrer">
                   <SiX className="h-5 w-5" />
                 </a>
               </Button>
-              <Button variant="ghost" size="icon" data-testid="link-social-discord">
-                <SiDiscord className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" asChild data-testid="link-social-github">
-                <a href="https://github.com/WattsDali3020/buildourcommunity" target="_blank" rel="noopener noreferrer">
-                  <SiGithub className="h-5 w-5" />
-                </a>
-              </Button>
             </div>
           </div>
 
-          <div>
-            <h4 className="font-semibold mb-4">Platform</h4>
-            <ul className="space-y-2">
-              {footerLinks.platform.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    data-testid={`link-footer-${link.label.toLowerCase().replace(/\s/g, "-")}`}
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-semibold mb-4">Resources</h4>
-            <ul className="space-y-2">
-              {footerLinks.resources.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    data-testid={`link-footer-${link.label.toLowerCase().replace(/\s/g, "-")}`}
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-semibold mb-4">Company</h4>
-            <ul className="space-y-2">
-              {footerLinks.company.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    data-testid={`link-footer-${link.label.toLowerCase().replace(/\s/g, "-")}`}
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <ul className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            {footerLinks.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid={`link-footer-${link.label.toLowerCase().replace(/\s/g, "-")}`}
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div className="border-t mt-8 pt-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
-            <p className="text-sm text-muted-foreground">
-              2026 Build Our Community, LLC (Georgia, USA). All rights reserved.
-            </p>
-            <div className="flex items-center flex-wrap gap-4 text-sm text-muted-foreground">
-              <Link href="/privacy" className="hover:text-foreground transition-colors" data-testid="link-privacy">
-                Privacy Policy
-              </Link>
-              <Link href="/terms" className="hover:text-foreground transition-colors" data-testid="link-terms">
-                Terms of Service
-              </Link>
-              <Link href="/risk-disclosure" className="hover:text-foreground transition-colors" data-testid="link-risk-disclosure">
-                Risk Disclosure
-              </Link>
-            </div>
-          </div>
+          <p className="text-sm text-muted-foreground text-center mb-4">
+            2026 Build Our Community, LLC (Cherokee County, Georgia). All rights reserved.
+          </p>
           <p className="text-xs text-muted-foreground/70 text-center max-w-3xl mx-auto">
-            RevitaHub is a technology platform operated by Build Our Community, LLC (Georgia).
-            Each property is held in a separate Special Purpose Vehicle (SPV). Tokens represent interests in property SPVs.
-            Founder economics: Escrow pays 1% of gross at funding only if Governance impact score is 70 or higher, plus 1% of quarterly property income.
-            Treasury is a 2-of-3 multi-sig pass-through and does not skim that fee.
-            This is not an offer to sell securities. Cherokee County alpha — map pins are RevitaHub properties only, not every parcel.
-            On-chain addresses are not live on Base until published in deployment-addresses.json.
+            RevitaHub is operated by Build Our Community, LLC (Georgia).
+            Educational. Proposed design, not live, not an offer.
           </p>
         </div>
       </div>

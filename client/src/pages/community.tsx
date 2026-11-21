@@ -77,7 +77,7 @@ const PROJECT_ICONS: Record<ProjectType, typeof Home> = {
 };
 
 const WISH_CATEGORIES = [
-  "All", "Housing", "Retail", "Entertainment", "Parks & Recreation",
+  "All", "Housing", "Retail", "Entertainment", "Jobs & Industrial",
   "Restaurant", "Healthcare", "Education", "Services", "Transportation",
 ];
 
